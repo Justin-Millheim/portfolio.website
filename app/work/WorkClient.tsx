@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 import type { Experience } from "@/content/experience";
 
@@ -41,6 +41,7 @@ export default function WorkClient({
 }) {
   const [filters, setFilters] = useState<string[]>([]);
   const [open, setOpen] = useState<string | null>("adobe");
+  const reduce = useReducedMotion();
 
   const toggleFilter = (t: string) =>
     setFilters((f) => (f.includes(t) ? f.filter((x) => x !== t) : [...f, t]));
@@ -52,15 +53,7 @@ export default function WorkClient({
   const renderRole = (e: Experience) => {
     const isOpen = open === e.id;
     return (
-      <motion.div
-        className="exp"
-        key={e.id}
-        layout
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
+      <div className="exp" key={e.id}>
         <div className="exp-head" onClick={() => setOpen(isOpen ? null : e.id)}>
           <div style={{ display: "flex", alignItems: "flex-start" }}>
             <Logo e={e} />
@@ -99,7 +92,7 @@ export default function WorkClient({
             </div>
           </div>
         )}
-      </motion.div>
+      </div>
     );
   };
 
@@ -123,23 +116,31 @@ export default function WorkClient({
         ))}
       </div>
 
-      {GROUPS.map((g) => {
-        const roles = shown.filter((e) => e.group === g.key);
-        if (roles.length === 0) return null;
-        return (
-          <div key={g.key} style={{ marginTop: 8 }}>
-            <div
-              className="eyebrow"
-              style={{ marginTop: 26, marginBottom: 14, paddingBottom: 8, borderBottom: "1px solid var(--line, #e7e3da)" }}
-            >
-              {g.label}
-            </div>
-            <AnimatePresence mode="popLayout" initial={false}>
-              {roles.map(renderRole)}
-            </AnimatePresence>
-          </div>
-        );
-      })}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={filters.join("|") || "all"}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
+          transition={{ duration: reduce ? 0.12 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {GROUPS.map((g) => {
+            const roles = shown.filter((e) => e.group === g.key);
+            if (roles.length === 0) return null;
+            return (
+              <div key={g.key} style={{ marginTop: 8 }}>
+                <div
+                  className="eyebrow"
+                  style={{ marginTop: 26, marginBottom: 14, paddingBottom: 8, borderBottom: "1px solid var(--line, #e7e3da)" }}
+                >
+                  {g.label}
+                </div>
+                {roles.map(renderRole)}
+              </div>
+            );
+          })}
+        </motion.div>
+      </AnimatePresence>
     </>
   );
 }

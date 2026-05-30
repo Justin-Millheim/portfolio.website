@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 
 export default function Reveal({
@@ -12,6 +12,8 @@ export default function Reveal({
   delay?: number;
   y?: number;
 }) {
+  const reduce = useReducedMotion();
+  if (reduce) return <>{children}</>;
   return (
     <motion.div
       initial={{ opacity: 0, y }}

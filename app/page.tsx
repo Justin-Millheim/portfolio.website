@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Boxes, Users, Sparkles, ArrowRight, ArrowUpRight, Mail, ChevronDown } from "lucide-react";
+import { Boxes, Users, Sparkles, ArrowRight, ArrowUpRight, Mail } from "lucide-react";
 import { projects } from "@/content/projects";
 import Reveal from "@/components/Reveal";
 import Testimonials from "@/components/Testimonials";
@@ -39,15 +39,16 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="scroll-cue rv" style={{ animationDelay: ".6s" }}>
-            <ChevronDown size={15} /> what I&rsquo;m about
-          </div>
         </div>
       </header>
 
-      <section className="section" style={{ paddingTop: "clamp(12px,3vw,32px)" }}>
+      <section className="section" style={{ paddingTop: "clamp(28px,5vw,56px)" }}>
         <div className="wrap">
           <Reveal>
+            <div className="sec-head">
+              <h2 className="serif">What I&rsquo;m about</h2>
+              <div className="rule" />
+            </div>
             <div className="modes">
               {modes.map((m) => (
                 <Link key={m.title} className="mode" href={m.href}>

@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/content/projects";
-
-const MotionLink = motion.create(Link);
 
 type LogItem = { slug: string; title: string; excerpt: string; dateLabel: string };
 
@@ -21,6 +19,7 @@ export default function ProjectsClient({
 }) {
   const [view, setView] = useState<"shipped" | "blog">("shipped");
   const [selected, setSelected] = useState<string[]>([]);
+  const reduce = useReducedMotion();
 
   const toggle = (t: string) =>
     setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
@@ -52,8 +51,15 @@ export default function ProjectsClient({
               </button>
             ))}
           </div>
-          <div className="grid">
-            <AnimatePresence mode="popLayout" initial={false}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              className="grid"
+              key={selected.join("|") || "all"}
+              initial={reduce ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              transition={{ duration: reduce ? 0.12 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+            >
               {shown.map((p) => {
                 const inner = (
                   <>
@@ -67,25 +73,18 @@ export default function ProjectsClient({
                     )}
                   </>
                 );
-                const anim = {
-                  layout: true,
-                  initial: { opacity: 0, scale: 0.96 },
-                  animate: { opacity: 1, scale: 1 },
-                  exit: { opacity: 0, scale: 0.96 },
-                  transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const },
-                };
                 return p.post ? (
-                  <MotionLink key={p.id} className="tile" href={`/blog/${p.post}`} {...anim}>
+                  <Link key={p.id} className="tile" href={`/blog/${p.post}`}>
                     {inner}
-                  </MotionLink>
+                  </Link>
                 ) : (
-                  <motion.div key={p.id} className="tile" style={{ cursor: "default" }} {...anim}>
+                  <div key={p.id} className="tile" style={{ cursor: "default" }}>
                     {inner}
-                  </motion.div>
+                  </div>
                 );
               })}
-            </AnimatePresence>
-          </div>
+            </motion.div>
+          </AnimatePresence>
         </>
       ) : (
         <div className="feed">

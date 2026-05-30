@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Quote } from "lucide-react";
 import { testimonials } from "@/content/testimonials";
 
-const ROTATE_MS = 5500;
+const ROTATE_MS = 7000;
 
 export default function Testimonials() {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
+  const reduce = useReducedMotion();
   const n = testimonials.length;
 
   useEffect(() => {
@@ -27,23 +29,33 @@ export default function Testimonials() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="eyebrow" style={{ textAlign: "center", marginBottom: 18 }}>
+      <div className="eyebrow" style={{ textAlign: "center", marginBottom: 20 }}>
         What coworkers say
       </div>
       <div className="quote-stage">
         <AnimatePresence mode="wait">
           <motion.blockquote
             key={i}
-            initial={{ opacity: 0, y: 16 }}
+            initial={reduce ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
+            transition={{ duration: reduce ? 0.15 : 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
             <Quote className="qmark" size={24} />
             <p className="quote-text">{t.quote}</p>
             <footer>
-              <span className="q-name">{t.name}</span>
-              <span className="q-title">{t.title}</span>
+              <Image
+                className="q-photo"
+                src={t.photo}
+                alt={t.name}
+                width={54}
+                height={54}
+              />
+              <div className="q-meta">
+                <span className="q-name">{t.name}</span>
+                <span className="q-title">{t.title}</span>
+                <span className="q-rel">{t.relation}</span>
+              </div>
             </footer>
           </motion.blockquote>
         </AnimatePresence>
@@ -52,7 +64,7 @@ export default function Testimonials() {
         {testimonials.map((_, d) => (
           <button
             key={d}
-            aria-label={`Show testimonial ${d + 1}`}
+            aria-label={`Show recommendation ${d + 1}`}
             className={`qdot${d === i ? " on" : ""}`}
             onClick={() => setI(d)}
           />
