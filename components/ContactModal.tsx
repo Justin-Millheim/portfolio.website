@@ -4,7 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, Send, Loader2, CheckCircle2 } from "lucide-react";
 
-const ACCESS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "";
+// Web3Forms access keys are public by design (used in client-side code; abuse is
+// handled by Web3Forms' spam protection, not key secrecy). The Vercel env var
+// overrides this fallback when present.
+const ACCESS_KEY =
+  process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "91c4fd0e-c7ed-4493-8341-349d50047309";
 
 type Status = "idle" | "sending" | "success" | "error";
 
@@ -40,35 +44,25 @@ export default function ContactModal({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
-    if (data.botcheck) return; // honeypot caught a bot
-
-    if (!ACCESS_KEY) {
-      setStatus("error");
-      setError("The contact form is not configured yet. Email me directly in the meantime.");
-      return;
-    }
+    const formData = new FormData(form);
+    formData.append("access_key", ACCESS_KEY);
+    formData.append("subject", "New message from justinmillheim.com");
+    formData.append("from_name", "justinmillheim.com");
 
     setStatus("sending");
     setError("");
     try {
       const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          access_key: ACCESS_KEY,
-          subject: "New message from justinmillheim.com",
-          from_name: "justinmillheim.com",
-          name: data.name,
-          email: data.email,
-          message: data.message,
-        }),
+        body: formData,
       });
-      const json = await res.json();
-      if (json.success) setStatus("success");
-      else {
+      const data = await res.json();
+      if (data.success) {
+        setStatus("success");
+        form.reset();
+      } else {
         setStatus("error");
-        setError(json.message || "Something went wrong. Please try again.");
+        setError(data.message || "Something went wrong. Please try again.");
       }
     } catch {
       setStatus("error");
