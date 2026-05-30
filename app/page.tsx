@@ -107,7 +107,7 @@ export default function Home() {
           <Reveal>
           <div className="cta">
             <h2 className="serif">Got a project in mind?</h2>
-            <p>I love a good build. Tell me what you&rsquo;re working on and let&rsquo;s talk shop.</p>
+            <p>I love a good build. Tell me what you&rsquo;re working on and let&rsquo;s talk shop. Maybe I can help.</p>
             <div className="cta-btns">
               <ContactButton className="btn solid">
                 <Mail size={15} /> Start a conversation
