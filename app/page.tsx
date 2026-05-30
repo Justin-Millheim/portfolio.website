@@ -71,10 +71,10 @@ export default function Home() {
         <div className="wrap">
           <Reveal>
             <div className="sec-head">
-              <h2 className="serif">Recent Projects</h2>
+              <h2 className="serif">What I&rsquo;ve been up to</h2>
               <div className="rule" />
               <Link className="nav-link" href="/projects">
-                see all →
+                See recent projects →
               </Link>
             </div>
             <div className="grid">

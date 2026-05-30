@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, Send, Loader2, CheckCircle2 } from "lucide-react";
 
@@ -22,7 +23,10 @@ export default function ContactModal({
   const reduce = useReducedMotion();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
   const firstRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -70,7 +74,9 @@ export default function ContactModal({
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -133,6 +139,7 @@ export default function ContactModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
