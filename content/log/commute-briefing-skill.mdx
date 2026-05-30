@@ -1,0 +1,19 @@
+---
+title: "Shipped a commute-briefing Claude Skill"
+date: "2026-05-20"
+excerpt: "Wanted my drive to be useful, not dead air. It pulls from a topic bank and outputs a Speechify-ready doc."
+---
+
+I have a commute. I also have a long list of things I keep meaning to learn. The two never met, so I built a Claude Skill to introduce them.
+
+The skill takes a topic from a running bank I keep in Google Drive and turns it into a briefing written for the ear, not the eye. The output drops into a "Speechify Ready" folder, and the drive does the rest.
+
+## The part that mattered
+
+The hard problem was not generating text. It was making the text sound like something worth listening to. A briefing read aloud has different rules than one you skim. Short sentences. Clear signposting. No dense clauses that lose you at 70 miles an hour.
+
+So the skill spends most of its effort on structure: a hook, three or four beats, and a close that lands. The voice rules are baked in so every briefing sounds like the same narrator.
+
+## What I would change
+
+Next version pulls the day's topic automatically based on what is on my calendar, so the briefing is relevant to whatever meeting I am driving toward. Build in public means admitting the v1 is manual on purpose. Ship first, automate second.
