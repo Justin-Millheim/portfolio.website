@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Mountain, Compass, BookOpen, Hammer, Sparkles, Github, Linkedin, Mail } from "lucide-react";
 
 export const metadata = {
@@ -23,8 +24,16 @@ export default function AboutPage() {
           <div className="rule" />
         </div>
         <div className="about">
-          {/* TODO: replace this placeholder with a real photo (next/image, 4:5) */}
-          <div className="photo">[ your photo here, a good one, 4:5 ]</div>
+          <div className="photo" style={{ position: "relative", overflow: "hidden", padding: 0 }}>
+            <Image
+              src="/headshot.png"
+              alt="Justin Millheim"
+              fill
+              sizes="300px"
+              style={{ objectFit: "cover" }}
+              priority
+            />
+          </div>
           <div>
             <p>
               I am a builder PM finishing my MBA at the University of Utah. Before grad school I did SaaS
