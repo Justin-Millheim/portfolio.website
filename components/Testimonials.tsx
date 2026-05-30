@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Quote } from "lucide-react";
 import { testimonials } from "@/content/testimonials";
 
-const ROTATE_MS = 7000;
+const ROTATE_MS = 10500;
 
 export default function Testimonials() {
   const [i, setI] = useState(0);
@@ -36,10 +36,10 @@ export default function Testimonials() {
         <AnimatePresence mode="wait">
           <motion.blockquote
             key={i}
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
-            transition={{ duration: reduce ? 0.15 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+            initial={reduce ? false : { opacity: 0, x: 90 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, x: -90 }}
+            transition={{ duration: reduce ? 0.15 : 0.6, ease: [0.4, 0, 0.2, 1] }}
           >
             <Quote className="qmark" size={24} />
             <p className="quote-text">{t.quote}</p>
