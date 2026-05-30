@@ -4,7 +4,7 @@ import WorkClient from "./WorkClient";
 
 export const metadata = {
   title: "Work — Justin Millheim",
-  description: "Interactive résumé. Filter by what you care about.",
+  description: "Interactive resume. Filter as you like.",
 };
 
 const education = [
@@ -17,17 +17,16 @@ export default function WorkPage() {
   return (
     <section className="section" style={{ paddingTop: "clamp(48px,7vw,90px)" }}>
       <div className="wrap">
-        <div className="eyebrow">The résumé, queryable</div>
+        <div className="eyebrow">The resume, on demand</div>
         <div className="sec-head" style={{ marginTop: 10 }}>
           <h2 className="serif">Work</h2>
           <div className="rule" />
-          {/* TODO: drop resume.pdf into /public */}
-          <a className="btn solid" href="/resume.pdf">
-            <Download size={14} /> Résumé
+          <a className="btn solid" href="/resume.pdf" target="_blank" rel="noopener noreferrer">
+            <Download size={14} /> Resume
           </a>
         </div>
         <p style={{ color: "var(--muted)", marginBottom: 26, maxWidth: "56ch" }}>
-          Filter by what you care about. The experience re-sorts to show the relevant proof. Tap a role to open the case.
+          Filter as you like. Expand any role to learn more.
         </p>
 
         <WorkClient experience={experience} tags={workTags} />

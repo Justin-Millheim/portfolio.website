@@ -58,11 +58,10 @@ export default function AboutPage() {
                 Always up to talk product, AI tooling, or where the trout are biting.
               </p>
               <div className="connect">
-                {/* TODO: replace with your real links */}
                 <a className="btn" href="https://www.linkedin.com/in/justin-millheim">
                   <Linkedin size={15} /> LinkedIn
                 </a>
-                <a className="btn" href="https://github.com/REPLACE-ME">
+                <a className="btn" href="https://github.com/Justin-Millheim">
                   <Github size={15} /> GitHub
                 </a>
                 <a className="btn" href="mailto:jaymillheim@gmail.com">

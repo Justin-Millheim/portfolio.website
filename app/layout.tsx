@@ -10,11 +10,11 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://justinmillheim.com"),
-  title: "Justin Millheim — Builder PM",
+  title: "Justin Millheim — Builder, Connector, AI Enthusiast",
   description:
-    "Builder PM and MBA candidate shipping AI tooling at Adobe. Clearer systems, closer teams, better work.",
+    "Builder, connector, and AI enthusiast turning messy problems into systems that make work better. Clearer systems, closer teams, better work.",
   openGraph: {
-    title: "Justin Millheim — Builder PM",
+    title: "Justin Millheim — Builder, Connector, AI Enthusiast",
     description: "Clearer systems, closer teams, better work.",
     url: "https://justinmillheim.com",
     siteName: "Justin Millheim",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Justin Millheim — Builder PM",
+    title: "Justin Millheim — Builder, Connector, AI Enthusiast",
     description: "Clearer systems, closer teams, better work.",
     images: ["/og-image.png"],
   },
