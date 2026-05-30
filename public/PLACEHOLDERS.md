@@ -1,17 +1,9 @@
-# Add these files before (or shortly after) going live
+# Remaining assets to add
 
-The site builds and runs without them, but these make it complete:
+Most launch items are done (résumé, headshot, and all the real LinkedIn/GitHub/email/Suno links are in). Still outstanding:
 
-- `resume.pdf` — linked from the Work page Résumé button.
-- `headshot.jpg` — your photo. Swap it into `app/about/page.tsx` (replace the `.photo` placeholder div with a `next/image`).
-- `og-image.png` — 1200x630 social share image. Referenced in `app/layout.tsx` metadata.
-- `favicon.ico` — drop into `/app` as `app/icon.png` or `app/favicon.ico`.
+- **`og-image.png`** — a 1200×630 social-share image. Referenced in `app/layout.tsx`. Without it, link previews are bare.
+- **Favicon** — add `app/icon.png` for a browser-tab icon.
+- **Adobe impact metric** — `content/experience.ts` still has an "in progress" placeholder for the Adobe role; swap in real numbers when the internship wraps.
 
-## Also replace these placeholder links
-
-Search the repo for `REPLACE-ME`:
-- LinkedIn, GitHub, and email in `components/Footer.tsx` and `app/about/page.tsx`.
-
-## And fill the TODO copy
-
-Search for `TODO` in `content/experience.ts` for the impact metrics only you have.
+See `MAINTENANCE.md` for the full editing guide.

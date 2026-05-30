@@ -6,20 +6,24 @@
 
 ## Throughline
 
-**Clearer systems, closer teams, better work.**
+**Cleaner systems, closer teams, better work.**
 
 This is the core line. Use it as the hero tagline, the LinkedIn one-liner, and anywhere the brand needs a single statement. It names what you do (clarity), who it's for (teams/people), and the payoff (quality), in a cadence that reads human instead of like a mission statement.
 
-- **Hero (site):** use the throughline as the tagline under the name. The H1 can expand on it (e.g. "I build clearer systems, closer teams, and better work.").
-- **Short slots (footer, social bio):** "Clearer systems, closer teams, better work." already works short. No separate tagline needed.
+- **Hero (site):** use the throughline as the H1, with the identity triad as the eyebrow above it.
+- **Short slots (footer, social bio):** "Cleaner systems, closer teams, better work." already works short.
 
 ---
 
+## Identity
+
+**Builder · Connector · AI Enthusiast** — the three-pillar identity (replaces the old "Builder PM" label). Durable, true, and not tied to a single job. Each pillar has its own first-person essay on the site (`/blog/what-builder-means`, `what-connector-means`, `what-ai-enthusiast-means`).
+
 ## Positioning lines
 
-- **LinkedIn headline:** Builder PM · MBA @ Utah · Shipping AI tooling at Adobe · Clearer systems, closer teams, better work.
-- **Résumé summary:** Builder PM who pairs product strategy with hands-on shipping: AI tooling, analytics, and systems that make work better for the people inside them.
-- **One-liner (out loud):** "I'm a builder PM. I make clearer systems, closer teams, and better work."
+- **LinkedIn headline:** Builder · Connector · AI Enthusiast · MBA @ Utah · Shipping AI tooling at Adobe.
+- **Résumé summary:** Builder and connector who pairs product strategy with hands-on shipping — AI tooling, analytics, and systems that make work better for the people inside them.
+- **One-liner (out loud):** "I build tools, systems, and communities, and I'm all-in on where AI is taking the work."
 
 ---
 
@@ -79,4 +83,4 @@ Pairing: Fraunces for what people notice, Hanken for what they read, Mono for th
 
 - **No logo, monogram, or maker's mark.** The wordmark (your name in Fraunces, ember on the surname) is the mark. Do not re-add a logo for the job search. A maker's mark is a fun separate project for the engraved-gifts side, not this.
 - **Dark mode is the default and only theme.**
-- **Section structure:** Home, Work, Projects (Shipped + Log views), About, plus a `/now` page.
+- **Section structure:** Home, Work, Projects (Shipped + Blog views), Blog, About. (The old `/now` page was removed.)

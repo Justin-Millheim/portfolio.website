@@ -1,218 +1,126 @@
 # Maintaining justinmillheim.com
 
-A practical guide to updating this site. Written for the person doing the edits — you don't
-need to be a developer to change wording, add a job, or post to the build log.
+A practical guide to updating the site. You don't need to be a developer to change wording, add a job, post to the blog, or swap an image.
 
 ---
 
-## 1. How publishing works now
-
-The site auto-deploys. You don't run any deploy commands.
+## 1. How publishing works
 
 ```
-edit a file  →  git commit  →  git push  →  Vercel rebuilds  →  justinmillheim.com updates (~30s)
+edit a file → git commit → git push → Vercel rebuilds → justinmillheim.com updates (~30s)
 ```
 
-- **Code lives on GitHub:** `Justin-Millheim/portfolio.website` (branch `main`).
-- **Vercel watches `main`.** Every push to `main` triggers a production build and updates the live domain.
-- **No manual deploys needed.** (The old `npx vercel --prod` still works as a fallback, but you shouldn't need it.)
+- **Code:** GitHub repo `Justin-Millheim/portfolio.website`, branch `main`.
+- **Hosting:** Vercel project `justinmillheim`. Every push to `main` auto-deploys to production + the domain.
+- **The everyday loop:**
+  ```bash
+  cd "~/Downloads/justinmillheim 2"
+  npm run dev            # preview at localhost:3000 while you edit
+  git add -A && git commit -m "what changed" && git push
+  ```
 
-### The one loop you'll repeat
-
-From the project folder (`~/Downloads/justinmillheim 2`):
-
+### For bigger changes, use a staging branch
+So the live site never shows half-finished work:
 ```bash
-# 1. (optional but recommended) preview locally first — see section 5
-npm run dev
-
-# 2. make your edits in the files below, then:
-git add -A
-git commit -m "Update About page wording"
-git push
+git checkout -b my-change      # work, commit
+git push -u origin my-change   # Vercel builds a private preview URL
 ```
-
-That's it. Watch it go live at https://justinmillheim.com a few seconds later.
-
-> **Tip:** Want to test a change without touching the live site? Push to a *different* branch
-> instead of `main`. Vercel builds a private **preview URL** for it, and `main` (the live site)
-> stays untouched until you're ready. See section 5.
+Review the preview, then merge to `main` (`git checkout main && git merge my-change && git push`) to go live. Delete the branch when done.
 
 ---
 
-## 2. Where every piece of text lives  ← start here for wording changes
+## 2. Where every piece of text lives
 
-Almost all of the site's copy is in a handful of files. This table maps what you see on the
-page to the file you edit.
-
-| What you see on the site | File to edit |
+| What you see on the site | File |
 |---|---|
-| **Browser tab title, Google/social preview text** | `app/layout.tsx` (the `metadata` block) |
-| **Top nav links + the "Justin Millheim" logo + "Let's talk" button** | `components/Nav.tsx` |
-| **Footer tagline, social links, location, "Built by me…" line** | `components/Footer.tsx` |
-| **Home headline ("Clearer systems, closer teams…")** | `app/page.tsx` (the `<h1>`) |
-| **Home intro paragraph + "Currently" block** | `app/page.tsx` (the `<header className="hero">` section) |
-| **Home's three cards (Product / Builder / Connector)** | `app/page.tsx` (the `modes` array at the top) |
-| **Home "Let's build something" call-to-action** | `app/page.tsx` (the `cta` section near the bottom) |
-| **About page bio (the 3 paragraphs)** | `app/about/page.tsx` |
-| **About "off the clock" interests (Rock hounding, Fishing…)** | `app/about/page.tsx` (the `offClock` array) |
-| **About contact links + "Reach me" text** | `app/about/page.tsx` |
-| **/now page ("Working on / Reading / Adventuring / Tinkering")** | `app/now/page.tsx` (the `rows` array) |
-| **Work page: your job history (roles, orgs, problem/did/impact)** | `content/experience.ts` |
-| **Work page: the filter chips (Data & Analytics, AI & Automation…)** | `content/experience.ts` (the `workTags` array) |
-| **Work page: Education cards** | `app/work/page.tsx` (the `education` array) |
-| **Work page: intro line + "Résumé" button** | `app/work/page.tsx` |
-| **Projects page: every project card (title, blurb, category)** | `content/projects.ts` |
-| **Projects page: the category filters (AI Tools, Systems…)** | `content/projects.ts` (the `projectDomains` array) |
-| **Build-log posts (the writing under /log/…)** | `content/log/*.mdx` (one file per post) |
+| Browser tab title + Google/social preview text | `app/layout.tsx` (`metadata`) |
+| Top nav: name, tabs (Home/Work/Projects/Blog/About), **Connect** button | `components/Nav.tsx` |
+| Footer: tagline, build credit, copyright | `components/Footer.tsx` |
+| Home headline, subhead, **"Currently"** block | `app/page.tsx` (the hero) |
+| Home **"What I'm about"** cards (Builder/Connector/AI Enthusiast) | `app/page.tsx` (`modes` array) — each links to its blog essay |
+| Home **"What I've been up to"** (featured projects) | pulled from `content/projects.ts` (the `featured` ones) |
+| Home **"What coworkers say"** testimonials | `content/testimonials.ts` |
+| Home closing call-to-action | `app/page.tsx` (the `cta` block) |
+| Work page intro + Education cards | `app/work/page.tsx` |
+| Work job history (roles, problem/did/impact, logos) | `content/experience.ts` |
+| Projects cards (title, blurb, tags, blog link) | `content/projects.ts` |
+| About bio, "Off the Clock" tags, contact buttons | `app/about/page.tsx` |
+| **Blog posts** | `content/blog/*.mdx` (one file per post) |
+| Carousel/gallery image sets | `content/galleries.ts` |
+| Contact form modal | `components/ContactModal.tsx` |
 
-**Rule of thumb:** anything that's a *list of similar things* (jobs, projects, interests, /now rows)
-lives in a clearly-named array — usually in `content/`. Edit the text inside the quotes and leave
-the surrounding punctuation/structure alone.
-
-> ⚠️ **Watch the quotes.** Text lives inside `"..."`. If your new wording contains a quote or an
-> apostrophe, the site already uses typographic spellings like `&rsquo;` (’) and `&rsquo;`/`’`
-> to stay safe. Easiest path: avoid straight `"` and `'` inside the text, or just preview locally
-> (section 5) — if the page loads, you're fine.
+**Rule of thumb:** lists of similar things (jobs, projects, testimonials, gallery images) live in clearly-named arrays in `content/`. Edit the text inside the quotes.
 
 ---
 
-## 3. Common tasks, step by step
+## 3. Common tasks
 
-### Reword something on a page
-1. Find it using the table in section 2.
-2. Open the file, change the text inside the quotes.
-3. `git add -A && git commit -m "…" && git push`.
+### Reword something
+Find it in the table above, edit the text inside the quotes, commit, push.
 
-### Add or edit a job (Work page)
-Open `content/experience.ts`. Each role is one block like this:
+### Add / edit a job (Work page)
+Edit `content/experience.ts`. Each role is a block with `role`, `org`, `dates`, `tags`, `problem`, `did`, `impact`, a `group` (`"professional"` or `"leadership"`), and an optional `logo` (a path in `public/logos/`). Copy an existing block to add one. `tags` must match entries in the `workTags` list at the top.
 
-```ts
-{
-  id: "adobe",                          // any unique short label, no spaces
-  role: "MBA Product Management Intern",
-  org: "Adobe — Customer Journey Analytics · Lehi, UT",
-  dates: "May 2026 – Present",
-  tags: ["AI & Automation", "Data & Analytics"],   // must match names in workTags
-  problem: "…",                          // the situation
-  did: "…",                              // what you did
-  impact: "…",                           // the result / metrics
-  todo: true,                            // OPTIONAL: marks impact as "in progress" styling
-},
-```
+### Add / edit a project (Projects page)
+Edit `content/projects.ts`. Each project has `title`, `tags` (array — multi-select filters; must match `projectDomains`), `blurb`, optional `featured: true` (shows on the home page), and optional `post: "<blog-slug>"` (makes the card click through to that blog post).
 
-- **To add a job:** copy an existing block, paste it where you want it in the list (order = display
-  order), and change the values. Give it a unique `id`.
-- **To remove a job:** delete its block (from the `{` to the matching `},`).
-- **Tags** must exactly match an entry in the `workTags` list at the top of the same file. Add a new
-  tag there first if you need a new filter.
+### Write a new blog post
+1. Create `content/blog/my-post.mdx`. The filename is the URL: `/blog/my-post`.
+2. Start with frontmatter, then write the body in Markdown:
+   ```mdx
+   ---
+   title: "My post title"
+   date: "2026-06-01"
+   excerpt: "One-line teaser shown in the blog feed."
+   ---
 
-### Add or edit a project (Projects page)
-Open `content/projects.ts`. Each project is one line:
+   Body in Markdown. Use ## headings, **bold**, and - bullet lists.
+   ```
+3. Posts sort newest-first by `date` and appear automatically at `/blog` and on the Projects → Blog tab.
+4. To make a project card link to it, set `post: "my-post"` on that project in `content/projects.ts`.
+5. Add `hidden: true` to the frontmatter to keep a page out of the feed but still reachable by URL (that's how the trip-plan page works).
 
-```ts
-{ id: "commute", title: "Commute Briefing Skill", domain: "AI Tools", blurb: "…", featured: true },
-```
-
-- `domain` must match an entry in `projectDomains` (top of the file) — that's the category filter.
-- `featured: true` makes it also appear in **"Selected work" on the home page.** Remove `featured: true`
-  to keep it on the Projects page only. (Keep ~3 featured so the home grid looks balanced.)
-
-### Write a new build-log post
-1. Create a new file in `content/log/`, e.g. `content/log/my-new-post.mdx`.
-   The filename becomes the URL: `/log/my-new-post`.
-2. Start it with this frontmatter block, then write the body in plain Markdown:
+### Use images, galleries, and embeds in a post
+Put image files in `public/blog/<post-slug>/`, then use these components in the `.mdx`:
 
 ```mdx
----
-title: "Your post title"
-date: "2026-06-15"
-excerpt: "One-sentence teaser shown in the feed and on the home page."
----
+<!-- a single captioned image (click-to-expand built in). w/h = the image's pixel size -->
+<Fig src="/blog/my-post/1.jpg" w={1440} h={960} alt="describe it" caption="optional caption" />
 
-Your first paragraph here.
+<!-- a swipe/arrow carousel or a grid gallery — image list comes from content/galleries.ts -->
+<Carousel slug="my-post" />
+<Gallery slug="my-post" />
 
-## A subheading
-
-More writing. Use **bold**, *italics*, and `##` headings normally.
+<!-- an embedded Suno player -->
+<Suno id="the-suno-embed-id" />
 ```
+For `<Carousel>`/`<Gallery>`, add the image list to `content/galleries.ts` under the post's slug. All blog images open in a lightbox on click.
 
-- Posts **sort newest-first automatically** by `date` (format `YYYY-MM-DD`).
-- The **two newest** appear on the home page; **all** appear on Projects → "Log" tab.
-- To delete a post, just delete its `.mdx` file.
-
-### Update the /now page
-Open `app/now/page.tsx`, edit the `rows` array (each row is `["Label", "Text"]`). The eyebrow says
-"updated monthly" — keep it honest or change that line too.
+### Edit the testimonials
+`content/testimonials.ts` — each entry has `quote`, `name`, `title`, `relation`, and `photo` (a file in `public/testimonials/`).
 
 ---
 
-## 4. Outstanding placeholders to replace (do these soon)
-
-These are real TODOs left in the site today. Search the repo for `REPLACE-ME` and `TODO` to find them.
-
-| Item | Where | What to do |
-|---|---|---|
-| **GitHub link** is a dead `REPLACE-ME` | `components/Footer.tsx`, `app/about/page.tsx` | Replace `https://github.com/REPLACE-ME` with your real profile (e.g. `https://github.com/Justin-Millheim`) |
-| **Résumé button** 404s | `app/work/page.tsx` links to `/resume.pdf` | Drop a `resume.pdf` into the `public/` folder |
-| **About photo** is a placeholder box | `app/about/page.tsx` (`.photo` div) | Add your photo to `public/` and swap the box for it (4:5 portrait) |
-| **Social share image** missing | referenced in `app/layout.tsx` as `/og-image.png` | Add a 1200×630 `og-image.png` to `public/` (this is the preview when you share the link) |
-| **Favicon** | — | Drop `app/icon.png` (or `app/favicon.ico`) |
-| **Adobe impact metric** is a "todo" placeholder | `content/experience.ts` (the `adobe` block) | Fill in real numbers when the internship wraps; remove `todo: true` |
-
-Anything in the `public/` folder is served at the root of the site (so `public/resume.pdf` → `/resume.pdf`).
+## 4. The contact form
+The **Connect** button (header) and **Start a conversation** (home) open a modal that emails you via **Web3Forms**. The access key is set as `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` in Vercel (with a fallback in `components/ContactModal.tsx`). Messages go to `jaymillheim@gmail.com`. Web3Forms keys are public by design, so this is safe.
 
 ---
 
-## 5. Preview before you publish (recommended)
-
-To see changes on your own machine before they go live:
-
-```bash
-cd ~/Downloads/"justinmillheim 2"
-npm run dev
-```
-
-Then open **http://localhost:3000**. It live-reloads as you save files. Press `Ctrl+C` to stop.
-If the local site loads without an error, your edits are safe to push.
-
-### Safer publishing with preview deploys
-If you want a change reviewed/staged before it hits the live domain:
-
-```bash
-git checkout -b draft-changes      # work on a side branch
-# …edit, commit…
-git push -u origin draft-changes   # Vercel builds a PRIVATE preview URL, live site untouched
-```
-
-Vercel comments the preview link on the push. When happy, merge the branch into `main`
-(or open a Pull Request on GitHub and merge it) — that's what goes live.
+## 5. Still-open placeholders
+- **`public/og-image.png`** (1200×630 social-share image) — not added yet, so link previews are bare. Referenced in `app/layout.tsx`.
+- **Favicon** — none yet; add `app/icon.png` for a browser-tab icon.
+- **Adobe impact metric** in `content/experience.ts` is still "in progress" — swap in real numbers when the internship wraps.
 
 ---
 
-## 6. If something breaks
-
-| Symptom | Likely cause / fix |
-|---|---|
-| **Pushed, but the live site didn't change** | Check the build at https://vercel.com/justin-millheims-projects/justinmillheim — a red "Error" means the build failed (see next row). The live site keeps serving the last good build, so nothing goes down. |
-| **Build failed on Vercel** | Open the failed deployment's logs. Most common cause is a typo in a `.ts`/`.tsx` file — a missing comma, quote, or brace. Run `npm run build` locally to reproduce and see the exact line. |
-| **`npm run dev` won't start** | Run `npm install` first (re-installs dependencies), then `npm run dev` again. |
-| **Domain shows the old GoDaddy "launching soon" page** | Only happens on a device with a stale DNS cache. Flush it: `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`, then hard-refresh. |
-| **`git push` asks for a username/password** | Your GitHub login (via the GitHub CLI) expired. Re-run: `~/.local/bin/gh auth login --hostname github.com --git-protocol https --web` and follow the browser prompt. |
+## 6. Preview & troubleshooting
+- **Preview locally:** `npm run dev` → http://localhost:3000.
+- **Pushed but nothing changed:** check the build at https://vercel.com/justin-millheims-projects/justinmillheim — a red "Error" means the build failed (usually a typo in a `.ts`/`.tsx`/`.mdx` file). Run `npm run build` locally to see the exact line. The live site keeps serving the last good build, so nothing goes down.
+- **`git push` asks for a password:** your GitHub CLI login expired. Re-run `~/.local/bin/gh auth login --hostname github.com --git-protocol https --web`.
 
 ---
 
 ## 7. Quick reference
-
-- **Live site:** https://justinmillheim.com (and `www.`)
-- **GitHub repo:** https://github.com/Justin-Millheim/portfolio.website (branch `main`)
-- **Vercel project:** `justinmillheim` → https://vercel.com/justin-millheims-projects/justinmillheim
-- **Local folder:** `~/Downloads/justinmillheim 2`
-- **Framework:** Next.js 14 (App Router) + TypeScript. SSL auto-renews via Vercel.
-- **GitHub CLI:** installed at `~/.local/bin/gh` (used for auth/pushes)
-
-### The 3 commands you'll use 90% of the time
-```bash
-npm run dev                 # preview locally at localhost:3000
-git add -A && git commit -m "what changed"   # save your changes
-git push                    # publish — live in ~30s
-```
+- **Live:** https://justinmillheim.com · **Repo:** github.com/Justin-Millheim/portfolio.website · **Vercel:** justin-millheims-projects/justinmillheim
+- **Local folder:** `~/Downloads/justinmillheim 2` · **Stack:** Next.js 14 (App Router) + TypeScript, Framer Motion, MDX. Dark "Ink & Ember" theme (`brand-reference.md`).
+- **The 3 commands you'll use most:** `npm run dev` · `git add -A && git commit -m "…"` · `git push`
