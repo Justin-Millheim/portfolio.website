@@ -240,3 +240,19 @@ a{ color:inherit; text-decoration:none; }
   .nav-link{ padding:8px 7px; font-size:12px; }
   .btn-talk{ padding:8px 12px; }
 }
+
+/* TESTIMONIALS CAROUSEL */
+.quotes{ max-width:720px; margin:0 auto; text-align:center; }
+.quote-stage{ position:relative; min-height:210px; display:grid; place-items:center; }
+.quote-stage blockquote{ margin:0; }
+.quote-stage .qmark{ color:var(--primary); opacity:.45; margin-bottom:12px; }
+.quote-text{ font-family:var(--font-serif), serif; font-weight:500; font-size:clamp(19px,2.5vw,25px);
+  line-height:1.5; color:var(--ink); margin:0 0 20px; letter-spacing:-.01em; }
+.quote-stage footer{ display:flex; flex-direction:column; gap:3px; }
+.q-name{ font-weight:600; font-size:15px; color:var(--ink); }
+.q-title{ font-size:13px; color:var(--muted); }
+.dots{ display:flex; gap:9px; justify-content:center; margin-top:24px; }
+.qdot{ width:8px; height:8px; border-radius:50%; border:none; padding:0; cursor:pointer;
+  background:var(--line); transition:transform .2s ease, background .2s ease; }
+.qdot.on{ background:var(--primary); transform:scale(1.3); }
+.qdot:hover{ background:var(--muted); }

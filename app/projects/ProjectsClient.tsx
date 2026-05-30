@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/content/projects";
+
+const MotionLink = motion.create(Link);
 
 type LogItem = { slug: string; title: string; excerpt: string; dateLabel: string };
 
@@ -50,29 +53,38 @@ export default function ProjectsClient({
             ))}
           </div>
           <div className="grid">
-            {shown.map((p) => {
-              const inner = (
-                <>
-                  <span className="dom">{p.tags.join(" · ")}</span>
-                  <h4>{p.title}</h4>
-                  <p>{p.blurb}</p>
-                  {p.post && (
-                    <span className="go">
-                      <ArrowUpRight size={17} />
-                    </span>
-                  )}
-                </>
-              );
-              return p.post ? (
-                <Link key={p.id} className="tile" href={`/blog/${p.post}`}>
-                  {inner}
-                </Link>
-              ) : (
-                <div key={p.id} className="tile" style={{ cursor: "default" }}>
-                  {inner}
-                </div>
-              );
-            })}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {shown.map((p) => {
+                const inner = (
+                  <>
+                    <span className="dom">{p.tags.join(" · ")}</span>
+                    <h4>{p.title}</h4>
+                    <p>{p.blurb}</p>
+                    {p.post && (
+                      <span className="go">
+                        <ArrowUpRight size={17} />
+                      </span>
+                    )}
+                  </>
+                );
+                const anim = {
+                  layout: true,
+                  initial: { opacity: 0, scale: 0.96 },
+                  animate: { opacity: 1, scale: 1 },
+                  exit: { opacity: 0, scale: 0.96 },
+                  transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const },
+                };
+                return p.post ? (
+                  <MotionLink key={p.id} className="tile" href={`/blog/${p.post}`} {...anim}>
+                    {inner}
+                  </MotionLink>
+                ) : (
+                  <motion.div key={p.id} className="tile" style={{ cursor: "default" }} {...anim}>
+                    {inner}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         </>
       ) : (

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Boxes, Users, Sparkles, ArrowRight, ArrowUpRight, Mail, ChevronDown } from "lucide-react";
 import { projects } from "@/content/projects";
+import Reveal from "@/components/Reveal";
+import Testimonials from "@/components/Testimonials";
 
 const modes = [
   { icon: Boxes, title: "Builder", line: "Tools, systems, and side projects I can not leave alone, built to make the work better.", href: "/blog/what-builder-means" },
@@ -45,49 +47,62 @@ export default function Home() {
 
       <section className="section" style={{ paddingTop: "clamp(12px,3vw,32px)" }}>
         <div className="wrap">
-          <div className="modes">
-            {modes.map((m) => (
-              <Link key={m.title} className="mode" href={m.href}>
-                <div className="ic">
-                  <m.icon size={22} />
-                </div>
-                <h3>{m.title}</h3>
-                <p>{m.line}</p>
-                <span className="more">
-                  explore <ArrowRight size={13} />
-                </span>
-              </Link>
-            ))}
-          </div>
+          <Reveal>
+            <div className="modes">
+              {modes.map((m) => (
+                <Link key={m.title} className="mode" href={m.href}>
+                  <div className="ic">
+                    <m.icon size={22} />
+                  </div>
+                  <h3>{m.title}</h3>
+                  <p>{m.line}</p>
+                  <span className="more">
+                    explore <ArrowRight size={13} />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </Reveal>
         </div>
       </section>
 
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="sec-head">
-            <h2 className="serif">Recent Projects</h2>
-            <div className="rule" />
-            <Link className="nav-link" href="/projects">
-              see all →
-            </Link>
-          </div>
-          <div className="grid">
-            {featured.map((p) => (
-              <Link key={p.id} className="tile" href={p.post ? `/blog/${p.post}` : "/projects"}>
-                <span className="dom">{p.tags.join(" · ")}</span>
-                <h4>{p.title}</h4>
-                <p>{p.blurb}</p>
-                <span className="go">
-                  <ArrowUpRight size={17} />
-                </span>
+          <Reveal>
+            <div className="sec-head">
+              <h2 className="serif">Recent Projects</h2>
+              <div className="rule" />
+              <Link className="nav-link" href="/projects">
+                see all →
               </Link>
-            ))}
-          </div>
+            </div>
+            <div className="grid">
+              {featured.map((p) => (
+                <Link key={p.id} className="tile" href={p.post ? `/blog/${p.post}` : "/projects"}>
+                  <span className="dom">{p.tags.join(" · ")}</span>
+                  <h4>{p.title}</h4>
+                  <p>{p.blurb}</p>
+                  <span className="go">
+                    <ArrowUpRight size={17} />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <Reveal>
+            <Testimonials />
+          </Reveal>
         </div>
       </section>
 
       <section className="section">
         <div className="wrap">
+          <Reveal>
           <div className="cta">
             <h2 className="serif">Got a project in mind?</h2>
             <p>I love a good build. Tell me what you&rsquo;re working on and let&rsquo;s talk shop.</p>
@@ -100,6 +115,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
+          </Reveal>
         </div>
       </section>
     </>

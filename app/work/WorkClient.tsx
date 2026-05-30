@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 import type { Experience } from "@/content/experience";
 
@@ -51,7 +52,15 @@ export default function WorkClient({
   const renderRole = (e: Experience) => {
     const isOpen = open === e.id;
     return (
-      <div className="exp" key={e.id}>
+      <motion.div
+        className="exp"
+        key={e.id}
+        layout
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="exp-head" onClick={() => setOpen(isOpen ? null : e.id)}>
           <div style={{ display: "flex", alignItems: "flex-start" }}>
             <Logo e={e} />
@@ -90,7 +99,7 @@ export default function WorkClient({
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
@@ -125,7 +134,9 @@ export default function WorkClient({
             >
               {g.label}
             </div>
-            {roles.map(renderRole)}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {roles.map(renderRole)}
+            </AnimatePresence>
           </div>
         );
       })}
