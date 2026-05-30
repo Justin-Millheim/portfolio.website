@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Download } from "lucide-react";
 import { experience, workTags } from "@/content/experience";
 import WorkClient from "./WorkClient";
@@ -8,9 +9,9 @@ export const metadata = {
 };
 
 const education = [
-  ["MBA · Product Management", "University of Utah · David Eccles", "2025 – 2027"],
-  ["M.S. Information Systems", "University of Utah · dual degree", "2025 – 2027"],
-  ["B.A. Chinese & Global Business", "Brigham Young University", "Advanced Mandarin · ACTFL Advanced-Mid"],
+  { degree: "MBA · Product Management", school: "University of Utah", note: "2025 – 2027", logo: "/logos/utah.png" },
+  { degree: "M.S. Information Systems", school: "University of Utah", note: "2025 – 2027", logo: "/logos/utah.png" },
+  { degree: "B.A. Chinese & Global Business", school: "Brigham Young University", note: "Advanced Mandarin · ACTFL Advanced-Mid", logo: "/logos/byu.png" },
 ];
 
 export default function WorkPage() {
@@ -38,11 +39,16 @@ export default function WorkPage() {
           <div className="rule" />
         </div>
         <div className="grid">
-          {education.map(([d, s, n]) => (
-            <div className="tile" key={d} style={{ cursor: "default", minHeight: "auto" }}>
-              <h4>{d}</h4>
-              <p style={{ color: "var(--ink)", opacity: 0.85 }}>{s}</p>
-              <span className="dom">{n}</span>
+          {education.map((e) => (
+            <div className="tile" key={e.degree} style={{ cursor: "default", minHeight: "auto" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 10 }}>
+                <span style={{ width: 38, height: 38, borderRadius: 10, background: "#fff", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flex: "0 0 auto" }}>
+                  <Image src={e.logo} alt="" width={28} height={28} style={{ objectFit: "contain", width: "auto", height: "auto", maxWidth: 28, maxHeight: 28 }} />
+                </span>
+                <h4 style={{ margin: 0 }}>{e.degree}</h4>
+              </div>
+              <p style={{ color: "var(--ink)", opacity: 0.85 }}>{e.school}</p>
+              <span className="dom">{e.note}</span>
             </div>
           ))}
         </div>

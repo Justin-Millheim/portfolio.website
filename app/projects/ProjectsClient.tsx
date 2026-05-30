@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/content/projects";
 
 type LogItem = { slug: string; title: string; excerpt: string; dateLabel: string };
@@ -15,10 +16,15 @@ export default function ProjectsClient({
   domains: string[];
   log: LogItem[];
 }) {
-  const [view, setView] = useState<"shipped" | "log">("shipped");
-  const [domain, setDomain] = useState<string>("All");
+  const [view, setView] = useState<"shipped" | "blog">("shipped");
+  const [selected, setSelected] = useState<string[]>([]);
 
-  const shown = domain === "All" ? projects : projects.filter((p) => p.domain === domain);
+  const toggle = (t: string) =>
+    setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
+
+  const shown = selected.length
+    ? projects.filter((p) => p.tags.some((t) => selected.includes(t)))
+    : projects;
 
   return (
     <>
@@ -26,44 +32,60 @@ export default function ProjectsClient({
         <button className={view === "shipped" ? "on" : ""} onClick={() => setView("shipped")}>
           Shipped
         </button>
-        <button className={view === "log" ? "on" : ""} onClick={() => setView("log")}>
-          Log
+        <button className={view === "blog" ? "on" : ""} onClick={() => setView("blog")}>
+          Blog
         </button>
       </div>
 
       {view === "shipped" ? (
         <>
           <div className="chips">
-            <button className={`chip${domain === "All" ? " on" : ""}`} onClick={() => setDomain("All")}>
+            <button className={`chip${selected.length === 0 ? " on" : ""}`} onClick={() => setSelected([])}>
               All
             </button>
             {domains.map((d) => (
-              <button key={d} className={`chip${domain === d ? " on" : ""}`} onClick={() => setDomain(d)}>
+              <button key={d} className={`chip${selected.includes(d) ? " on" : ""}`} onClick={() => toggle(d)}>
                 {d}
               </button>
             ))}
           </div>
           <div className="grid">
-            {shown.map((p) => (
-              <div key={p.id} className="tile" style={{ cursor: "default" }}>
-                <span className="dom">{p.domain}</span>
-                <h4>{p.title}</h4>
-                <p>{p.blurb}</p>
-              </div>
-            ))}
+            {shown.map((p) => {
+              const inner = (
+                <>
+                  <span className="dom">{p.tags.join(" · ")}</span>
+                  <h4>{p.title}</h4>
+                  <p>{p.blurb}</p>
+                  {p.post && (
+                    <span className="go">
+                      <ArrowUpRight size={17} />
+                    </span>
+                  )}
+                </>
+              );
+              return p.post ? (
+                <Link key={p.id} className="tile" href={`/blog/${p.post}`}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={p.id} className="tile" style={{ cursor: "default" }}>
+                  {inner}
+                </div>
+              );
+            })}
           </div>
         </>
       ) : (
         <div className="feed">
           {log.map((l) => (
-            <Link key={l.slug} className="entry" href={`/log/${l.slug}`}>
+            <Link key={l.slug} className="entry" href={`/blog/${l.slug}`}>
               <div className="d">{l.dateLabel}</div>
               <div className="entry-title serif">{l.title}</div>
               <p>{l.excerpt}</p>
             </Link>
           ))}
           {log.length === 0 && (
-            <p style={{ color: "var(--muted)" }}>No posts yet. Add an .mdx file to content/log/.</p>
+            <p style={{ color: "var(--muted)" }}>No posts yet. Add an .mdx file to content/blog/.</p>
           )}
         </div>
       )}

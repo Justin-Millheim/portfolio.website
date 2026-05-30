@@ -3,9 +3,9 @@ import { Boxes, Users, Sparkles, ArrowRight, ArrowUpRight, Mail, ChevronDown } f
 import { projects } from "@/content/projects";
 
 const modes = [
-  { icon: Boxes, title: "Builder", line: "Tools, systems, and side projects I can not leave alone, built to make the work better.", href: "/projects" },
-  { icon: Users, title: "Connector", line: "Communities, events, and experiences I design so people do their best work together.", href: "/about" },
-  { icon: Sparkles, title: "AI Enthusiast", line: "All-in on agentic AI: Claude Skills, MCP, and the workflows reshaping how product gets built.", href: "/work" },
+  { icon: Boxes, title: "Builder", line: "Tools, systems, and side projects I can not leave alone, built to make the work better.", href: "/blog/what-builder-means" },
+  { icon: Users, title: "Connector", line: "Communities, events, and experiences I design so people do their best work together.", href: "/blog/what-connector-means" },
+  { icon: Sparkles, title: "AI Enthusiast", line: "All-in on agentic AI: Claude Skills, MCP, and the workflows reshaping how product gets built.", href: "/blog/what-ai-enthusiast-means" },
 ];
 
 export default function Home() {
@@ -19,19 +19,19 @@ export default function Home() {
             Builder · Connector · AI Enthusiast
           </div>
           <h1 className="rv" style={{ animationDelay: ".15s" }}>
-            Clearer systems, closer teams, <em>better work.</em>
+            Cleaner systems, closer teams, <em>better work.</em>
           </h1>
           <p className="sub rv" style={{ animationDelay: ".3s" }}>
-            I build tools, systems, and communities &mdash; and I&rsquo;m all-in on where AI is taking the work. Lately, that means shipping AI tooling at Adobe.
+            I build tools, systems, and communities &mdash; and I&rsquo;m all-in on where AI is taking the work.
           </p>
           <div className="now rv" style={{ animationDelay: ".45s" }}>
             <span className="dot" />
             <div>
               <div className="label">Currently</div>
               <p>
-                PM intern at Adobe in Lehi, building Claude Skills, MCP workflows, and internal tooling &mdash; while finishing my MBA at Utah, where I&rsquo;m president of the Product Management Association, chair of Lassonde&rsquo;s Get Seeded, and VP of the MBA Student Association.{" "}
+                PM intern at Adobe, building Claude Skills, MCP workflows, and internal tooling &mdash; while finishing my MBA at Utah. President of the Product Management Association, Chair for Lassonde&rsquo;s Get Seeded program, and VP of the MBA Student Association.{" "}
                 <span style={{ color: "var(--muted)" }}>
-                  Off the clock I&rsquo;m usually building something by hand or somewhere along the Wasatch with bad cell service.
+                  Off the clock I&rsquo;m usually building something by hand or somewhere with bad cell service.
                 </span>
               </p>
             </div>
@@ -42,7 +42,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="section">
+      <section className="section" style={{ paddingTop: "clamp(12px,3vw,32px)" }}>
         <div className="wrap">
           <div className="modes">
             {modes.map((m) => (
@@ -72,8 +72,8 @@ export default function Home() {
           </div>
           <div className="grid">
             {featured.map((p) => (
-              <Link key={p.id} className="tile" href="/projects">
-                <span className="dom">{p.domain}</span>
+              <Link key={p.id} className="tile" href={p.post ? `/blog/${p.post}` : "/projects"}>
+                <span className="dom">{p.tags.join(" · ")}</span>
                 <h4>{p.title}</h4>
                 <p>{p.blurb}</p>
                 <span className="go">

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 
-const LOG_DIR = path.join(process.cwd(), "content/log");
+const LOG_DIR = path.join(process.cwd(), "content/blog");
 
 export type LogMeta = {
   slug: string;

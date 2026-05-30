@@ -9,7 +9,7 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: { params: { slug: string } }) {
   const post = getLogPosts().find((p) => p.slug === params.slug);
-  if (!post) return { title: "Log — Justin Millheim" };
+  if (!post) return { title: "Blog — Justin Millheim" };
   return { title: `${post.title} — Justin Millheim`, description: post.excerpt };
 }
 

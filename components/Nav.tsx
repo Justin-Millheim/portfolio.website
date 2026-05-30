@@ -28,7 +28,7 @@ export default function Nav() {
             </Link>
           ))}
           <Link className="btn-talk" href="/about">
-            Connect with me
+            Connect
           </Link>
         </div>
       </div>

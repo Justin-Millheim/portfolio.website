@@ -12,10 +12,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://justinmillheim.com"),
   title: "Justin Millheim — Builder, Connector, AI Enthusiast",
   description:
-    "Builder, connector, and AI enthusiast turning messy problems into systems that make work better. Clearer systems, closer teams, better work.",
+    "Builder, connector, and AI enthusiast turning messy problems into systems that make work better. Cleaner systems, closer teams, better work.",
   openGraph: {
     title: "Justin Millheim — Builder, Connector, AI Enthusiast",
-    description: "Clearer systems, closer teams, better work.",
+    description: "Cleaner systems, closer teams, better work.",
     url: "https://justinmillheim.com",
     siteName: "Justin Millheim",
     images: ["/og-image.png"],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Justin Millheim — Builder, Connector, AI Enthusiast",
-    description: "Clearer systems, closer teams, better work.",
+    description: "Cleaner systems, closer teams, better work.",
     images: ["/og-image.png"],
   },
 };

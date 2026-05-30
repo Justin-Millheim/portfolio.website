@@ -1,24 +1,23 @@
 import Image from "next/image";
-import { Mountain, Compass, BookOpen, Hammer, Sparkles, Github, Linkedin, Mail } from "lucide-react";
+import { Mountain, Compass, Hammer, Headphones, Music, Github, Linkedin, Mail } from "lucide-react";
 
 export const metadata = {
   title: "About — Justin Millheim",
-  description: "Builder PM, MBA candidate, and serial maker along the Wasatch Front.",
+  description: "Product manager and builder finishing an MBA at the University of Utah. The story behind the work.",
 };
 
 const offClock = [
-  { icon: Mountain, label: "Rock hounding" },
-  { icon: Compass, label: "Fishing the Wasatch" },
-  { icon: BookOpen, label: "Stormlight Archive" },
-  { icon: Hammer, label: "Laser engraving" },
-  { icon: Sparkles, label: "Camping" },
+  { icon: Hammer, label: "Serial hobbyist" },
+  { icon: Mountain, label: "Outdoor recreation" },
+  { icon: Compass, label: "Extreme adventure" },
+  { icon: Headphones, label: "Audiobook enthusiast" },
 ];
 
 export default function AboutPage() {
   return (
     <section className="section" style={{ paddingTop: "clamp(48px,7vw,90px)" }}>
       <div className="wrap">
-        <div className="eyebrow">Who is behind the workshop</div>
+        <div className="eyebrow">The man behind the name</div>
         <div className="sec-head" style={{ marginTop: 10 }}>
           <h2 className="serif">About</h2>
           <div className="rule" />
@@ -36,22 +35,27 @@ export default function AboutPage() {
           </div>
           <div>
             <p>
-              I am a builder PM finishing my MBA at the University of Utah. Before grad school I did SaaS
-              product management. Before that I got a degree in{" "}
-              <span className="hl">Mandarin Chinese</span>, which taught me more about ambiguity and
-              patience than any PM course has.
+              I am a product manager. I have spent the last several years shipping software at companies
+              like Domo, Visier, and Mity, and right now I am at Adobe while I finish an MBA and an M.S. in
+              Information Systems at the University of Utah.
             </p>
             <p>
-              The thread running through everything I do is the same. I like turning a vague, messy thing
-              into a <span className="hl">system that makes the experience better</span> for the people
-              inside it, whether that is a product roadmap, a student org&rsquo;s operating system, a weekend
-              trip for friends, or a slab of walnut on a laser bed.
+              What actually drives me is narrower than &ldquo;product.&rdquo; I like taking a messy,
+              undefined thing and turning it into a{" "}
+              <span className="hl">system that works</span> &mdash; a roadmap, a student club&rsquo;s
+              operating system, or a weekend trip I have over-planned for my friends. If something is vague
+              and a little broken, I have a hard time leaving it alone.
             </p>
             <p>
-              When I am not building software, you will find me along the Wasatch Front. Rock hounding for
-              geodes, chasing fresh DWR stocking reports, deep in the Stormlight Archive, or camping
-              somewhere with bad cell service and good views.
+              Before any of this I studied{" "}
+              <span className="hl">Mandarin Chinese</span>, which taught me more about sitting with
+              ambiguity than any PM framework has. These days I am usually building something &mdash; a
+              Claude skill, a side project, a gift on a laser bed &mdash; or outside somewhere without much
+              cell service.
             </p>
+            <div className="eyebrow" style={{ marginTop: 30, marginBottom: 12 }}>
+              Off the Clock
+            </div>
             <div className="oc">
               {offClock.map((o) => (
                 <span className="oc-item" key={o.label}>
@@ -64,14 +68,17 @@ export default function AboutPage() {
                 Reach me
               </div>
               <p style={{ fontSize: 15, color: "var(--muted)", marginBottom: 14 }}>
-                Always up to talk product, AI tooling, or where the trout are biting.
+                Always up to talk product, AI tooling, or a project you cannot stop thinking about.
               </p>
               <div className="connect">
-                <a className="btn" href="https://www.linkedin.com/in/justin-millheim">
+                <a className="btn" href="https://www.linkedin.com/in/justin-millheim" target="_blank" rel="noopener noreferrer">
                   <Linkedin size={15} /> LinkedIn
                 </a>
-                <a className="btn" href="https://github.com/Justin-Millheim">
+                <a className="btn" href="https://github.com/Justin-Millheim" target="_blank" rel="noopener noreferrer">
                   <Github size={15} /> GitHub
+                </a>
+                <a className="btn" href="https://suno.com/@jkmillheim" target="_blank" rel="noopener noreferrer">
+                  <Music size={15} /> Suno
                 </a>
                 <a className="btn" href="mailto:jaymillheim@gmail.com">
                   <Mail size={15} /> Email

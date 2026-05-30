@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { MapPin, Github, Linkedin, Mail } from "lucide-react";
 
 export default function Footer() {
@@ -7,7 +6,7 @@ export default function Footer() {
       <div className="wrap">
         <div className="foot-inner">
           <div className="foot-sign serif">
-            Clearer systems, closer teams, better work. Let&rsquo;s build something.
+            Cleaner systems, closer teams, better work. Let&rsquo;s build something.
           </div>
           <div className="foot-links">
             <a className="icon-btn" href="https://www.linkedin.com/in/justin-millheim" aria-label="LinkedIn">
@@ -26,8 +25,7 @@ export default function Footer() {
             <MapPin size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />
             Wasatch Front, UT
           </span>
-          <span>Designed and built by me with Claude Code</span>
-          <Link href="/now">/now</Link>
+          <span>Designed and built by me with Claude Code, caffeine, GitHub, and Vercel</span>
           <span>© {new Date().getFullYear()} Justin Millheim</span>
         </div>
       </div>

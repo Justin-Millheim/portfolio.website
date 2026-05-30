@@ -117,14 +117,14 @@ export const experience: Experience[] = [
     role: "Product Manager",
     org: "Property Management Inc. · Lehi, UT",
     dates: "2016 – 2017",
-    tags: ["Platform & Tooling", "Community & Enablement"],
+    tags: ["Platform & Tooling", "0→1 & Launch", "Community & Enablement"],
     group: "professional",
     logo: "/logos/pmi.png",
     problem:
-      "PMI was scaling its franchise network and needed its proprietary lead-management software, PMI Systems, adopted across hundreds of franchisees.",
+      "PMI was scaling its franchise network and knew franchisees needed better tooling to operate and grow — but no one had defined what that tooling should actually be.",
     did:
-      "Owned the PMI Systems product package, worked directly with developers on improvements, designed onboarding workflows for new franchisees, and led change management converting 200+ existing franchisees onto the system. Produced training materials across 40 courses.",
-    impact: "Lifted software adoption 38% and helped PMI reach Franchise 500 status.",
+      "Ran the discovery to figure out what franchisees actually needed, then researched and custom-built PMI Systems: a CRM and reputation-management product for the franchise base. Designed the onboarding workflows, produced training across 40 courses, and led the change management to roll it out.",
+    impact: "Adopted across 200+ franchisees, lifting software adoption 38% and helping PMI reach Franchise 500 status.",
   },
   {
     id: "byu-library",
@@ -159,14 +159,14 @@ export const experience: Experience[] = [
   },
   {
     id: "lassonde",
-    role: "Get Seeded Chair",
-    org: "Lassonde Entrepreneur Institute · University of Utah",
+    role: "Program Chair",
+    org: "Lassonde Entrepreneur Institute · Get Seeded Program",
     dates: "2025 – 2027",
     tags: ["Community & Enablement"],
     group: "leadership",
     logo: "/logos/utah.png",
     problem:
-      "Get Seeded is Lassonde's microgrant seed-funding program. It only builds momentum if students show up and founders leave energized — the event experience is the product.",
+      "Early student founders had nowhere low-stakes to practice pitching and win the first bit of grant funding that turns an idea into action — exactly what Lassonde's nonprofit mission exists to provide. Get Seeded is the vehicle, but it only delivers if the pitch nights are worth showing up for.",
     did:
       "Stepped up to Chair after a year as Event Coordinator. Plan, coordinate, and host the pitch events where students compete for microgrants, owning the run-of-show and the experience end to end.",
     impact:
