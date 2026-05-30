@@ -288,3 +288,16 @@ a{ color:inherit; text-decoration:none; }
 .modal-success p{ color:var(--muted); margin:0 0 8px; max-width:34ch; }
 .spin{ animation:spin .8s linear infinite; }
 @keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* BLOG CONTENT (images, galleries, embeds) */
+.blog-fig{ margin:30px 0; }
+.blog-fig img{ display:block; width:100%; height:auto; border-radius:14px; border:1px solid var(--line); }
+.blog-fig figcaption{ margin-top:10px; font-family:var(--font-mono), monospace; font-size:12.5px;
+  letter-spacing:.02em; color:var(--muted); text-align:center; }
+.blog-gallery{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:12px; margin:30px 0; }
+.g-cell{ position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+.g-cell img{ transition:transform .4s ease; }
+.g-cell:hover img{ transform:scale(1.04); }
+.suno-embed{ margin:28px 0; }
+.suno-embed iframe{ width:100%; height:240px; border:0; border-radius:14px; }
+.post-body .doc-link{ display:inline-flex; align-items:center; gap:8px; margin:8px 0 4px; }

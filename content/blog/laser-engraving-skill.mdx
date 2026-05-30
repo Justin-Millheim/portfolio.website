@@ -1,17 +1,22 @@
 ---
 title: "A Claude Skill for laser-engraving art"
 date: "2026-05-10"
-excerpt: "I wanted to give better gifts. The bottleneck was never the laser, it was getting clean, engraver-ready art. So I built a skill for it."
+excerpt: "I wanted to give better gifts. The bottleneck was never the laser — it was getting clean, engraver-ready art."
 ---
 
-I have a laser engraver and a habit of wanting to give people something personal. The machine was never the hard part. The hard part was the art.
+I have a soft spot for a good personalized gift. There's something about a custom, one-off thing made specifically for someone that lands differently than anything you can buy, and making laser-engraved gifts for friends has become a default move of mine. It can be as simple as:
 
-A laser does not want a pretty picture. It wants strict black-and-white line work: no gradients, no gray, no fuzzy edges, clean vectors it can actually cut. Getting there by hand, every time, for every gift, was the thing that kept good ideas from ever making it onto a board or a bottle.
+- a custom wooden bookmark with someone's name
+- engraved gift tags
+- someone's photo etched into wood or thick kraft paper
+- custom patches
 
-So I built a Claude Skill that owns that whole workflow. You start with a fuzzy idea for a gift, and it walks through it in stages: brainstorm the concept, define the image, generate the actual SVG line art, then refine it. The output is engraver-ready by default, black-and-white vector art with none of the stuff a laser chokes on.
+The machine was never the hard part. The art was. A laser doesn't want a pretty picture — it wants strict black-and-white line work, no gradients, no gray, no fuzzy edges, clean vectors it can actually cut. Getting there by hand, every single time, for every gift, was the thing that kept good ideas from ever making it onto a board or a bottle.
 
-What I like about it is that it pushed me to encode taste, not just steps. The rules for what makes a clean engrave are baked in, so I am not re-explaining "no grayscale, no soft edges" every single time. The skill remembers what good looks like so I can stay focused on the idea and the person I am making it for.
+I should admit something here. Before I became a Claude power user, I was deep on the ChatGPT bandwagon, and even now I think ChatGPT's image generation and creative instincts beat Claude on a lot of this kind of work. So I don't force one tool to do everything. I split the job.
 
-*[Justin — name a couple of the actual gifts you've made with it (the charcuterie board, the water bottles, a patch) and who they were for. That turns this from a tool description into a story.]*
+I use Claude for the brainstorming and the prompt-craft: what should this design look like, and what's a quality prompt that'll produce a vector-style, black-and-white image that's actually easy to engrave? Claude is great at thinking through the options and shaping the instruction precisely. Then I take that prompt over to ChatGPT to generate the actual artifact. That hand-off is the whole trick, and it's let me make tons of designs — like the ones below.
 
-It is a small thing. But it is a clean example of what I keep coming back to: take a repeatable task with real taste buried in it, and turn it into something you can trigger in a sentence.
+<Fig src="/blog/laser-engraving-skill/1.jpg" w={1440} h={1440} alt="Five wooden coasters laser-engraved with mountain, fish, and landscape scenes, with a gift tag" caption="A set of engraved coasters, start to finish." />
+
+What I like most is that building this as a skill pushed me to encode taste, not just steps. The rules for what makes a clean engrave are baked in, so I'm not re-explaining "no grayscale, no soft edges" every single time. It's a small thing, but it's a clean example of what I keep coming back to: take a repeatable task with real taste buried in it, and turn it into something you can trigger in a sentence.

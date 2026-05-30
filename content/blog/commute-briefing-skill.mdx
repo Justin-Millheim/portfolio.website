@@ -1,19 +1,31 @@
 ---
-title: "Shipped a commute-briefing Claude Skill"
-date: "2026-05-20"
-excerpt: "Wanted my drive to be useful, not dead air. It pulls from a topic bank and outputs a Speechify-ready doc."
+title: "I built a Claude Skill that turns my commute into a classroom"
+date: "2026-03-12"
+excerpt: "I don't like podcasts. I do like learning. So I built a skill that gives me the second thing without the first."
 ---
 
-I have a commute. I also have a long list of things I keep meaning to learn. The two never met, so I built a Claude Skill to introduce them.
+Let me start with the unpopular opinion that kicked this off: I really don't like podcasts. They're too informal for me. Too much rambling, too colloquial, too many minutes between the parts I actually wanted. What I do love is dense, well-spoken material — a good audiobook, a sharp TED talk, the kind of thing that respects my time and tells me something. I also love curated content, things picked specifically for me.
 
-The skill takes a topic from a running bank I keep in Google Drive and turns it into a briefing written for the ear, not the eye. The output drops into a "Speechify Ready" folder, and the drive does the rest.
+So I had a want and a constraint sitting right next to each other. I want to use my commute to learn about things I'm genuinely curious about. I don't want to wade through casual audio to get there. How do I turn that into a workflow?
 
-## The part that mattered
+I started brainstorming it with Claude. I didn't reach for Claude Code on this one — I kept it as a Claude Skill that taps into a few integrations I already have set up. What began as a loose idea turned into a workflow I now use all the time.
 
-The hard problem was not generating text. It was making the text sound like something worth listening to. A briefing read aloud has different rules than one you skim. Short sentences. Clear signposting. No dense clauses that lose you at 70 miles an hour.
+Here's how it works. I keep a sheet in Google Drive with 30-plus pre-approved topics — ideas, angles, and little abstracts for the kind of briefing I'd actually want to hear, all tuned to what I'm into. When I want a new one, the skill first makes sure it understands what I'm really asking for, checks my Google Sheet to see what's been made before to avoid repeats, then outlines a loose flow. If approved, it drafts a full write-up that's written specifically for text-to-speech, not for the page.
 
-So the skill spends most of its effort on structure: a hook, three or four beats, and a close that lands. The voice rules are baked in so every briefing sounds like the same narrator.
+<Fig src="/blog/commute-briefing-skill/1.png" w={1345} h={767} alt="Spreadsheet of commute briefing topics with category, angle, length, and status columns" caption="The topic bank in Google Drive." />
 
-## What I would change
+Two things I baked in that I care a lot about. First, a set of rules to keep the AI speech mannerisms out — the tics and filler cadence that drive me up the wall when something's obviously machine-written. Second, multiple hallucination checks, so the odds of getting confidently fed something false are as low as I can reasonably make them. When I'm learning on the drive, I need to be able to trust what I'm hearing.
 
-Next version pulls the day's topic automatically based on what is on my calendar, so the briefing is relevant to whatever meeting I am driving toward. Build in public means admitting the v1 is manual on purpose. Ship first, automate second.
+It's already taken me through some great rabbit holes:
+
+- The Maya: Rise, Peak, and the Collapse Debate
+- Cenotes: The Geology, Biology, and Sacred Portals of the Yucatan
+- Trout, and what they actually know about the world
+- The Physiology of Scuba Diving and Snorkeling
+- Rainwater Collection Systems: what they are, how they work, is it worth it?
+
+When the briefing's done, the skill drops the doc into a folder wired up to Speechify, and Speechify reads it to me in a celebrity narrator's voice that makes the whole thing a pleasure rather than a chore. By the time I'm parking, I've learned something real.
+
+<Fig src="/blog/commute-briefing-skill/2.png" w={1103} h={792} alt="Speechify library folder named Claude Commutes showing document tiles with play buttons" caption="Each briefing, queued up in Speechify." />
+
+If I'm honest, v1 is manual on purpose — I pick the topic each time. The version in my head pulls the day's topic automatically from whatever's on my calendar, so I show up to a meeting already smarter about whatever it's about. But that's the next pass. Ship first, automate second.
