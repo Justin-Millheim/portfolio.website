@@ -35,23 +35,23 @@ export default function AboutPage() {
           </div>
           <div>
             <p>
-              I am a product manager. I have spent the last several years shipping software at companies
-              like Domo, Visier, and Mity, and right now I am at Adobe while I finish an MBA and an M.S. in
-              Information Systems at the University of Utah.
+              More than anything, I am <span className="hl">a maker</span>. Long before it was a career, I
+              was the one who could not leave a half-built thing alone. I would take it apart to understand
+              it, then put it back together better. That itch has never gone away.
             </p>
             <p>
-              What actually drives me is narrower than &ldquo;product.&rdquo; I like taking a messy,
-              undefined thing and turning it into a{" "}
-              <span className="hl">system that works</span> &mdash; a roadmap, a student club&rsquo;s
-              operating system, or a weekend trip I have over-planned for my friends. If something is vague
-              and a little broken, I have a hard time leaving it alone.
+              These days it shows up as building for the joy of it: AI tools and side projects, trips I plan
+              for friends like they are products, the occasional song, something on the laser bed. I am a
+              serial hobbyist with a soft spot for{" "}
+              <span className="hl">the outdoors and the slightly-too-ambitious adventure</span>, usually
+              with an audiobook going on the way there.
             </p>
             <p>
-              Before any of this I studied{" "}
-              <span className="hl">Mandarin Chinese</span>, which taught me more about sitting with
-              ambiguity than any PM framework has. These days I am usually building something &mdash; a
-              Claude skill, a side project, a gift on a laser bed &mdash; or outside somewhere without much
-              cell service.
+              What ties it together is people. The things I am proudest of are the ones that brought a group
+              together, or left something better for whoever came next. The professional version (product
+              manager, MBA, the Adobe internship) is real and lives on the Work page, but it grows out of
+              the same thing: I love turning a messy idea into something that works, alongside people I care
+              about.
             </p>
             <div className="eyebrow" style={{ marginTop: 30, marginBottom: 12 }}>
               Off the Clock
@@ -74,14 +74,14 @@ export default function AboutPage() {
                 <a className="btn" href="https://www.linkedin.com/in/justin-millheim" target="_blank" rel="noopener noreferrer">
                   <Linkedin size={15} /> LinkedIn
                 </a>
+                <a className="btn" href="mailto:jaymillheim@gmail.com">
+                  <Mail size={15} /> Email
+                </a>
                 <a className="btn" href="https://github.com/Justin-Millheim" target="_blank" rel="noopener noreferrer">
                   <Github size={15} /> GitHub
                 </a>
                 <a className="btn" href="https://suno.com/@jkmillheim" target="_blank" rel="noopener noreferrer">
                   <Music size={15} /> Suno
-                </a>
-                <a className="btn" href="mailto:jaymillheim@gmail.com">
-                  <Mail size={15} /> Email
                 </a>
               </div>
             </div>

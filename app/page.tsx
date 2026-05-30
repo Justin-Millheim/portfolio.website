@@ -22,17 +22,18 @@ export default function Home() {
             Cleaner systems, closer teams, <em>better work.</em>
           </h1>
           <p className="sub rv" style={{ animationDelay: ".3s" }}>
-            I build tools, systems, and communities &mdash; and I&rsquo;m all-in on where AI is taking the work.
+            I build tools, systems, and communities &mdash; and I&rsquo;m all-in<br />
+            on where AI is taking the work.
           </p>
           <div className="now rv" style={{ animationDelay: ".45s" }}>
             <span className="dot" />
             <div>
               <div className="label">Currently</div>
               <p>
-                PM intern at Adobe, building Claude Skills, MCP workflows, and internal tooling &mdash; while finishing my MBA at Utah. President of the Product Management Association, Chair for Lassonde&rsquo;s Get Seeded program, and VP of the MBA Student Association.{" "}
-                <span style={{ color: "var(--muted)" }}>
-                  Off the clock I&rsquo;m usually building something by hand or somewhere with bad cell service.
-                </span>
+                PM intern at Adobe, building Claude Skills, MCP workflows, and internal tooling, while finishing my MBA at Utah. President of the Product Management Association, Chair for Lassonde&rsquo;s Get Seeded program, and VP of the MBA Student Association.
+              </p>
+              <p style={{ color: "var(--muted)", marginTop: 10 }}>
+                Off the clock I&rsquo;m usually building something by hand or somewhere with bad cell service.
               </p>
             </div>
           </div>

@@ -90,6 +90,7 @@ export const experience: Experience[] = [
     dates: "2016 – 2019",
     tags: ["Community & Enablement", "Strategy & Roadmap"],
     group: "professional",
+    logo: "/logos/quarry.jpg",
     problem:
       "A growing climbing gym needed to leverage a strong market share and customer base into profit-maximizing programs and turn one-off visitors into a returning community.",
     did:
@@ -149,7 +150,7 @@ export const experience: Experience[] = [
     dates: "2024 – 2027",
     tags: ["Community & Enablement", "Strategy & Roadmap"],
     group: "leadership",
-    logo: "/logos/utah.png",
+    logo: "/logos/pma.png",
     problem:
       "PMA was already a strong, well-run club. The risk was continuity — every year of momentum, relationships, and know-how lived in people's heads and scattered docs, and reset at handoff.",
     did:
@@ -164,7 +165,7 @@ export const experience: Experience[] = [
     dates: "2025 – 2027",
     tags: ["Community & Enablement"],
     group: "leadership",
-    logo: "/logos/utah.png",
+    logo: "/logos/lassonde.jpg",
     problem:
       "Early student founders had nowhere low-stakes to practice pitching and win the first bit of grant funding that turns an idea into action — exactly what Lassonde's nonprofit mission exists to provide. Get Seeded is the vehicle, but it only delivers if the pitch nights are worth showing up for.",
     did:
