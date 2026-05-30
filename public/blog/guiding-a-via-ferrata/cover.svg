@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Camp, Cast, Climb trip plan cover">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B140E"/>
+      <stop offset="1" stop-color="#0F0C08"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="28" y="28" width="1144" height="574" rx="18" fill="none" stroke="#34291D" stroke-width="2"/>
+  <text x="80" y="120" fill="#C99A52" font-family="Georgia, 'Times New Roman', serif" font-size="22" letter-spacing="6" font-weight="700">TRIP PLAN · SAMPLE</text>
+  <text x="78" y="270" fill="#F1E8DC" font-family="Georgia, 'Times New Roman', serif" font-size="118" font-weight="700" letter-spacing="-2">Camp · Cast · <tspan fill="#E86A33">Climb</tspan></text>
+  <text x="80" y="340" fill="#C8BBA9" font-family="Georgia, 'Times New Roman', serif" font-size="40" font-style="italic">Orem &#8594; Ashley Gorge</text>
+  <text x="80" y="392" fill="#9A8C7C" font-family="'Courier New', monospace" font-size="24" letter-spacing="2">MAY 13&#8211;14, 2026</text>
+  <line x1="80" y1="470" x2="1024" y2="470" stroke="#E86A33" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round"/>
+  <circle cx="80" cy="470" r="9" fill="#E86A33"/>
+  <circle cx="1024" cy="470" r="9" fill="#C99A52"/>
+  <text x="80" y="540" fill="#7E7163" font-family="'Courier New', monospace" font-size="20" letter-spacing="1">Generated with my trip-planning skill</text>
+</svg>
