@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ContactModal from "@/components/ContactModal";
 
 const links: [string, string][] = [
   ["/", "Home"],
@@ -12,6 +14,7 @@ const links: [string, string][] = [
 
 export default function Nav() {
   const path = usePathname();
+  const [contactOpen, setContactOpen] = useState(false);
   return (
     <nav className="nav">
       <div className="nav-inner">
@@ -28,11 +31,12 @@ export default function Nav() {
               {label}
             </Link>
           ))}
-          <Link className="btn-talk" href="/about">
+          <button className="btn-talk" onClick={() => setContactOpen(true)}>
             Connect
-          </Link>
+          </button>
         </div>
       </div>
+      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
     </nav>
   );
 }
