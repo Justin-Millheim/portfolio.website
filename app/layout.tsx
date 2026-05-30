@@ -3,6 +3,7 @@ import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import ContactProvider from "@/components/ContactContext";
 
 const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -33,9 +34,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
       <body>
-        <Nav />
-        <main>{children}</main>
-        <Footer />
+        <ContactProvider>
+          <Nav />
+          <main>{children}</main>
+          <Footer />
+        </ContactProvider>
       </body>
     </html>
   );

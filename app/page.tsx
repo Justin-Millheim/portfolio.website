@@ -3,6 +3,7 @@ import { Boxes, Users, Sparkles, ArrowRight, ArrowUpRight, Mail } from "lucide-r
 import { projects } from "@/content/projects";
 import Reveal from "@/components/Reveal";
 import Testimonials from "@/components/Testimonials";
+import ContactButton from "@/components/ContactButton";
 
 const modes = [
   { icon: Boxes, title: "Builder", line: "Tools, systems, and side projects I can not leave alone, built to make the work better.", href: "/blog/what-builder-means" },
@@ -108,9 +109,9 @@ export default function Home() {
             <h2 className="serif">Got a project in mind?</h2>
             <p>I love a good build. Tell me what you&rsquo;re working on and let&rsquo;s talk shop.</p>
             <div className="cta-btns">
-              <Link className="btn solid" href="/about">
+              <ContactButton className="btn solid">
                 <Mail size={15} /> Start a conversation
-              </Link>
+              </ContactButton>
               <Link className="btn" href="/work">
                 See my work
               </Link>

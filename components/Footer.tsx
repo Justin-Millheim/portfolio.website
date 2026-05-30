@@ -1,4 +1,4 @@
-import { MapPin, Github, Linkedin, Mail } from "lucide-react";
+import { Github, Linkedin, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -21,12 +21,8 @@ export default function Footer() {
           </div>
         </div>
         <div className="foot-meta">
-          <span>
-            <MapPin size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />
-            Wasatch Front, UT
-          </span>
           <span>Designed and built by me with Claude Code, caffeine, GitHub, and Vercel</span>
-          <span>© {new Date().getFullYear()} Justin Millheim</span>
+          <span className="foot-copy">© {new Date().getFullYear()} Justin Millheim</span>
         </div>
       </div>
     </footer>
