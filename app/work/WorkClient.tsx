@@ -55,9 +55,9 @@ export default function WorkClient({
     return (
       <div className="exp" key={e.id}>
         <div className="exp-head" onClick={() => setOpen(isOpen ? null : e.id)}>
-          <div style={{ display: "flex", alignItems: "flex-start" }}>
+          <div className="exp-head-main">
             <Logo e={e} />
-            <div>
+            <div className="exp-head-text">
               <div className="role">{e.role}</div>
               <div className="org">{e.org}</div>
               <div className="exp-tags">
@@ -69,11 +69,9 @@ export default function WorkClient({
               </div>
             </div>
           </div>
-          <div style={{ textAlign: "right" }}>
+          <div className="exp-head-side">
             <div className="dt">{e.dates}</div>
-            <div className="exp-toggle" style={{ marginLeft: "auto", marginTop: 10 }}>
-              {isOpen ? <Minus size={16} /> : <Plus size={16} />}
-            </div>
+            <div className="exp-toggle">{isOpen ? <Minus size={16} /> : <Plus size={16} />}</div>
           </div>
         </div>
         {isOpen && (

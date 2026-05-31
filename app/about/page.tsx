@@ -1,17 +1,10 @@
 import Image from "next/image";
-import { Mountain, Compass, Hammer, Headphones, Music, Github, Linkedin, Mail } from "lucide-react";
+import { Github, Linkedin, Mail, Music } from "lucide-react";
 
 export const metadata = {
   title: "About — Justin Millheim",
   description: "Product manager and builder finishing an MBA at the University of Utah. The story behind the work.",
 };
-
-const offClock = [
-  { icon: Hammer, label: "Serial hobbyist" },
-  { icon: Mountain, label: "Outdoor recreation" },
-  { icon: Compass, label: "Extreme adventure" },
-  { icon: Headphones, label: "Audiobook enthusiast" },
-];
 
 export default function AboutPage() {
   return (
@@ -41,28 +34,17 @@ export default function AboutPage() {
             </p>
             <p>
               These days it shows up as building for the joy of it: AI tools and side projects, trips I plan
-              for friends like they are products, the occasional song, something on the laser bed. I am a
-              serial hobbyist with a soft spot for{" "}
-              <span className="hl">the outdoors and the slightly-too-ambitious adventure</span>, usually
-              with an audiobook going on the way there.
+              for friends, the occasional song, something on the laser bed. I am a{" "}
+              <span className="hl">serial hobbyist</span> with a fondness for outdoor recreation and overly
+              ambitious adventures, usually with an audiobook playing on the way there.
             </p>
             <p>
-              What ties it together is people. The things I am proudest of are the ones that brought a group
-              together, or left something better for whoever came next. The professional version (product
-              manager, MBA, the Adobe internship) is real and lives on the Work page, but it grows out of
-              the same thing: I love turning a messy idea into something that works, alongside people I care
-              about.
+              What truly fills my cup though are <span className="hl">people</span> and{" "}
+              <span className="hl">impact</span>. The things I am proudest of are the times that brought a
+              group together, or left something better for whoever comes next. The professional version of
+              my story is real and lives on the Work page, but it grows out of the same thing: I love
+              turning a messy idea into something that works, for the people I care about.
             </p>
-            <div className="eyebrow" style={{ marginTop: 30, marginBottom: 12 }}>
-              Off the Clock
-            </div>
-            <div className="oc">
-              {offClock.map((o) => (
-                <span className="oc-item" key={o.label}>
-                  <o.icon size={15} /> {o.label}
-                </span>
-              ))}
-            </div>
             <div style={{ marginTop: 34 }}>
               <div className="eyebrow" style={{ marginBottom: 12 }}>
                 Reach me
