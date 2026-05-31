@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Github, Linkedin, Mail, Music } from "lucide-react";
 
 export const metadata = {
@@ -40,10 +41,11 @@ export default function AboutPage() {
             </p>
             <p>
               What truly fills my cup though are <span className="hl">people</span> and{" "}
-              <span className="hl">impact</span>. The things I am proudest of are the times that brought a
-              group together, or left something better for whoever comes next. The professional version of
-              my story is real and lives on the Work page, but it grows out of the same thing: I love
-              turning a messy idea into something that works, for the people I care about.
+              <span className="hl">impact</span>. The things I am proudest of are the times where I brought
+              a group together, or when I left something better for whoever comes next. The professional
+              version of my story can be found on my{" "}
+              <Link href="/work" className="text-link">Work page</Link>, but it grows out of the same
+              principle: I love turning a messy idea into something that works, for the people I care about.
             </p>
             <div style={{ marginTop: 34 }}>
               <div className="eyebrow" style={{ marginBottom: 12 }}>
