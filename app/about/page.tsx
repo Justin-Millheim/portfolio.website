@@ -40,8 +40,7 @@ export default function AboutPage() {
               ambitious adventures, usually with an audiobook playing on the way there.
             </p>
             <p>
-              What truly fills my cup though are <span className="hl">people</span> and{" "}
-              <span className="hl">impact</span>. The things I am proudest of are the times where I brought
+              What truly fills my cup though are people and impact. The things I am proudest of are the times where I brought
               a group together, or when I left something better for whoever comes next. The professional
               version of my story can be found on my{" "}
               <Link href="/work" className="text-link">Work page</Link>, but it grows out of the same
