@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import ContactProvider from "@/components/ContactContext";
+import AdobeAnalytics from "@/components/AdobeAnalytics";
 
 const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -35,6 +37,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
       <body>
         <ContactProvider>
+          {/* Suspense required by useSearchParams inside AdobeAnalytics */}
+          <Suspense fallback={null}>
+            <AdobeAnalytics />
+          </Suspense>
           <Nav />
           <main>{children}</main>
           <Footer />
