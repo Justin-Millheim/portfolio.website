@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { testimonials } from "@/content/testimonials";
+import { track } from "@/lib/analytics";
 
 const ROTATE_MS = 10500;
 
@@ -16,11 +17,13 @@ export default function Testimonials() {
   const n = testimonials.length;
   const touchX = useRef(0);
 
-  const go = (d: number) => {
+  const go = (d: number, action = "arrow") => {
+    track("carousel_nav", { where: "testimonials", action: action === "swipe" ? "swipe" : d > 0 ? "next" : "prev" });
     setDir(d);
     setI((p) => (p + d + n) % n);
   };
   const jump = (to: number) => {
+    track("carousel_nav", { where: "testimonials", action: "dot" });
     setDir(to > i ? 1 : -1);
     setI(to);
   };
@@ -55,7 +58,7 @@ export default function Testimonials() {
           }}
           onTouchEnd={(e) => {
             const dx = e.changedTouches[0].clientX - touchX.current;
-            if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+            if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1, "swipe");
           }}
         >
           <AnimatePresence mode="wait">

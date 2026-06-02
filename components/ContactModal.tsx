@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 // Web3Forms access keys are public by design (used in client-side code; abuse is
 // handled by Web3Forms' spam protection, not key secrecy). The Vercel env var
@@ -25,6 +26,7 @@ export default function ContactModal({
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
   const firstRef = useRef<HTMLInputElement>(null);
+  const started = useRef(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -32,6 +34,7 @@ export default function ContactModal({
     if (!open) return;
     setStatus("idle");
     setError("");
+    started.current = false;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -62,13 +65,16 @@ export default function ContactModal({
       });
       const data = await res.json();
       if (data.success) {
+        track("contact_submit");
         setStatus("success");
         form.reset();
       } else {
+        track("contact_error", { reason: "api" });
         setStatus("error");
         setError(data.message || "Something went wrong. Please try again.");
       }
     } catch {
+      track("contact_error", { reason: "network" });
       setStatus("error");
       setError("Network error. Please try again.");
     }
@@ -116,7 +122,16 @@ export default function ContactModal({
                 <div className="eyebrow">Get in touch</div>
                 <h3 className="serif modal-title">Send me a message</h3>
                 <p className="modal-sub">Tell me what you&rsquo;re working on, or just say hi.</p>
-                <form onSubmit={handleSubmit} className="modal-form">
+                <form
+                  onSubmit={handleSubmit}
+                  className="modal-form"
+                  onFocus={() => {
+                    if (!started.current) {
+                      started.current = true;
+                      track("contact_start");
+                    }
+                  }}
+                >
                   <input ref={firstRef} name="name" required placeholder="Your name" autoComplete="name" />
                   <input name="email" type="email" required placeholder="Your email" autoComplete="email" />
                   <textarea name="message" required placeholder="Your message" rows={4} />

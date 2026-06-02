@@ -38,7 +38,7 @@ export default function Nav() {
               {label}
             </Link>
           ))}
-          <button className="btn-talk" onClick={open}>
+          <button className="btn-talk" onClick={() => open("nav_desktop")}>
             Connect
           </button>
         </div>
@@ -72,7 +72,7 @@ export default function Nav() {
               </>
             )}
           </div>
-          <button className="btn-talk" onClick={open}>
+          <button className="btn-talk" onClick={() => open("nav_mobile")}>
             Connect
           </button>
         </div>

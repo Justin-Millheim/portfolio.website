@@ -7,6 +7,7 @@ import Fig from "@/components/blog/Fig";
 import Gallery from "@/components/blog/Gallery";
 import Carousel from "@/components/blog/Carousel";
 import Suno from "@/components/blog/Suno";
+import ReadTracker from "@/components/blog/ReadTracker";
 
 const mdxComponents = { Fig, Gallery, Carousel, Suno };
 
@@ -27,6 +28,7 @@ export default function LogPost({ params }: { params: { slug: string } }) {
 
   return (
     <LightboxProvider>
+      <ReadTracker slug={params.slug} title={meta.title} />
       <article className="wrap section post">
         <Link className="back" href="/blog">
           ← back to blog

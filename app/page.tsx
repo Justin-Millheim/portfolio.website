@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { Boxes, Users, Sparkles, ArrowRight, ArrowUpRight, Mail } from "lucide-react";
 import { projects } from "@/content/projects";
 import Reveal from "@/components/Reveal";
 import Testimonials from "@/components/Testimonials";
 import ContactButton from "@/components/ContactButton";
+import ContentLink from "@/components/ContentLink";
 
 const modes = [
   { icon: Boxes, title: "Builder", line: "Tools, systems, and side projects I can not leave alone, built to make the work better.", href: "/blog/what-builder-means" },
@@ -52,7 +52,7 @@ export default function Home() {
             </div>
             <div className="modes">
               {modes.map((m) => (
-                <Link key={m.title} className="mode" href={m.href}>
+                <ContentLink key={m.title} className="mode" to={m.href} kind="mode_card" label={m.title}>
                   <div className="ic">
                     <m.icon size={22} />
                   </div>
@@ -61,7 +61,7 @@ export default function Home() {
                   <span className="more">
                     explore <ArrowRight size={13} />
                   </span>
-                </Link>
+                </ContentLink>
               ))}
             </div>
           </Reveal>
@@ -74,20 +74,20 @@ export default function Home() {
             <div className="sec-head">
               <h2 className="serif">What I&rsquo;ve been up to</h2>
               <div className="rule" />
-              <Link className="nav-link" href="/projects">
+              <ContentLink className="nav-link" to="/projects" kind="section_link" label="see_recent_projects">
                 See recent projects →
-              </Link>
+              </ContentLink>
             </div>
             <div className="grid">
               {featured.map((p) => (
-                <Link key={p.id} className="tile" href={p.post ? `/blog/${p.post}` : "/projects"}>
+                <ContentLink key={p.id} className="tile" to={p.post ? `/blog/${p.post}` : "/projects"} kind="featured_tile" label={p.title}>
                   <span className="dom">{p.tags.join(" · ")}</span>
                   <h4>{p.title}</h4>
                   <p>{p.blurb}</p>
                   <span className="go">
                     <ArrowUpRight size={17} />
                   </span>
-                </Link>
+                </ContentLink>
               ))}
             </div>
           </Reveal>
@@ -109,12 +109,12 @@ export default function Home() {
             <h2 className="serif">Got a project in mind?</h2>
             <p>I love a good build. Tell me what you&rsquo;re working on and let&rsquo;s talk shop. Maybe I can help.</p>
             <div className="cta-btns">
-              <ContactButton className="btn solid">
+              <ContactButton className="btn solid" source="home_cta">
                 <Mail size={15} /> Start a conversation
               </ContactButton>
-              <Link className="btn" href="/work">
+              <ContentLink className="btn" to="/work" kind="cta_link" label="see_my_work">
                 See my work
-              </Link>
+              </ContentLink>
             </div>
           </div>
           </Reveal>

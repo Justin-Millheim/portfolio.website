@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/content/projects";
+import { track } from "@/lib/analytics";
 
 type LogItem = { slug: string; title: string; excerpt: string; dateLabel: string };
 
@@ -22,7 +23,16 @@ export default function ProjectsClient({
   const reduce = useReducedMotion();
 
   const toggle = (t: string) =>
-    setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
+    setSelected((s) => {
+      const next = s.includes(t) ? s.filter((x) => x !== t) : [...s, t];
+      track("filter_apply", { where: "projects", value: t, active: !s.includes(t) });
+      return next;
+    });
+
+  const switchView = (v: "shipped" | "blog") => {
+    if (v !== view) track("view_toggle", { value: v });
+    setView(v);
+  };
 
   const shown = selected.length
     ? projects.filter((p) => p.tags.some((t) => selected.includes(t)))
@@ -31,10 +41,10 @@ export default function ProjectsClient({
   return (
     <>
       <div className="toggle">
-        <button className={view === "shipped" ? "on" : ""} onClick={() => setView("shipped")}>
+        <button className={view === "shipped" ? "on" : ""} onClick={() => switchView("shipped")}>
           Shipped
         </button>
-        <button className={view === "blog" ? "on" : ""} onClick={() => setView("blog")}>
+        <button className={view === "blog" ? "on" : ""} onClick={() => switchView("blog")}>
           Blog
         </button>
       </div>
@@ -74,7 +84,12 @@ export default function ProjectsClient({
                   </>
                 );
                 return p.post ? (
-                  <Link key={p.id} className="tile" href={`/blog/${p.post}`}>
+                  <Link
+                    key={p.id}
+                    className="tile"
+                    href={`/blog/${p.post}`}
+                    onClick={() => track("content_click", { to: `/blog/${p.post}`, kind: "project_tile", label: p.title, from: "/projects" })}
+                  >
                     {inner}
                   </Link>
                 ) : (
@@ -89,7 +104,12 @@ export default function ProjectsClient({
       ) : (
         <div className="feed">
           {log.map((l) => (
-            <Link key={l.slug} className="entry" href={`/blog/${l.slug}`}>
+            <Link
+              key={l.slug}
+              className="entry"
+              href={`/blog/${l.slug}`}
+              onClick={() => track("content_click", { to: `/blog/${l.slug}`, kind: "project_log_entry", label: l.title, from: "/projects" })}
+            >
               <div className="d">{l.dateLabel}</div>
               <div className="entry-title serif">{l.title}</div>
               <p>{l.excerpt}</p>

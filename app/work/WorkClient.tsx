@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 import type { Experience } from "@/content/experience";
+import { track } from "@/lib/analytics";
 
 const GROUPS: { key: Experience["group"]; label: string }[] = [
   { key: "professional", label: "Professional Experience" },
@@ -44,7 +45,16 @@ export default function WorkClient({
   const reduce = useReducedMotion();
 
   const toggleFilter = (t: string) =>
-    setFilters((f) => (f.includes(t) ? f.filter((x) => x !== t) : [...f, t]));
+    setFilters((f) => {
+      const next = f.includes(t) ? f.filter((x) => x !== t) : [...f, t];
+      track("filter_apply", { where: "work", value: t, active: !f.includes(t) });
+      return next;
+    });
+
+  const expandRole = (e: Experience, isOpen: boolean) => {
+    if (!isOpen) track("work_expand", { role: e.role, org: e.org });
+    setOpen(isOpen ? null : e.id);
+  };
 
   const shown = filters.length
     ? experience.filter((e) => e.tags.some((t) => filters.includes(t)))
@@ -54,7 +64,7 @@ export default function WorkClient({
     const isOpen = open === e.id;
     return (
       <div className="exp" key={e.id}>
-        <div className="exp-head" onClick={() => setOpen(isOpen ? null : e.id)}>
+        <div className="exp-head" onClick={() => expandRole(e, isOpen)}>
           <div className="exp-head-main">
             <Logo e={e} />
             <div className="exp-head-text">

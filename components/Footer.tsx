@@ -1,4 +1,5 @@
 import { Github, Linkedin, Mail } from "lucide-react";
+import OutboundLink from "@/components/OutboundLink";
 
 export default function Footer() {
   return (
@@ -9,15 +10,15 @@ export default function Footer() {
             Cleaner systems, closer teams, better work. Let&rsquo;s build something.
           </div>
           <div className="foot-links">
-            <a className="icon-btn" href="https://www.linkedin.com/in/justin-millheim" aria-label="LinkedIn">
+            <OutboundLink label="linkedin" className="icon-btn" href="https://www.linkedin.com/in/justin-millheim" aria-label="LinkedIn">
               <Linkedin size={18} />
-            </a>
-            <a className="icon-btn" href="https://github.com/Justin-Millheim" aria-label="GitHub">
+            </OutboundLink>
+            <OutboundLink label="github" className="icon-btn" href="https://github.com/Justin-Millheim" aria-label="GitHub">
               <Github size={18} />
-            </a>
-            <a className="icon-btn" href="mailto:jaymillheim@gmail.com" aria-label="Email">
+            </OutboundLink>
+            <OutboundLink label="email" className="icon-btn" href="mailto:jaymillheim@gmail.com" aria-label="Email">
               <Mail size={18} />
-            </a>
+            </OutboundLink>
           </div>
         </div>
         <div className="foot-meta">

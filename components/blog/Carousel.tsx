@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { galleries } from "@/content/galleries";
 import { useLightbox } from "./Lightbox";
+import { track } from "@/lib/analytics";
 
 export default function Carousel({ slug }: { slug: string }) {
   const { open } = useLightbox();
@@ -47,17 +48,40 @@ export default function Carousel({ slug }: { slug: string }) {
       onMouseLeave={() => (pausedRef.current = false)}
       onTouchStart={() => (pausedRef.current = true)}
     >
-      <button className="carousel-arrow left" aria-label="Previous images" onClick={() => step(-1)}>
+      <button
+        className="carousel-arrow left"
+        aria-label="Previous images"
+        onClick={() => {
+          track("carousel_nav", { where: "blog", action: "prev", slug });
+          step(-1);
+        }}
+      >
         <ChevronLeft size={20} />
       </button>
       <div className="carousel-track" ref={trackRef}>
         {items.map((it, i) => (
-          <button type="button" key={i} className="carousel-item" onClick={() => open(it)} aria-label="Expand image">
+          <button
+            type="button"
+            key={i}
+            className="carousel-item"
+            onClick={() => {
+              track("image_expand", { slug, source: "carousel" });
+              open(it);
+            }}
+            aria-label="Expand image"
+          >
             <Image src={it.src} alt={it.alt || ""} fill sizes="(max-width: 760px) 70vw, 340px" style={{ objectFit: "cover" }} />
           </button>
         ))}
       </div>
-      <button className="carousel-arrow right" aria-label="Next images" onClick={() => step(1)}>
+      <button
+        className="carousel-arrow right"
+        aria-label="Next images"
+        onClick={() => {
+          track("carousel_nav", { where: "blog", action: "next", slug });
+          step(1);
+        }}
+      >
         <ChevronRight size={20} />
       </button>
     </div>

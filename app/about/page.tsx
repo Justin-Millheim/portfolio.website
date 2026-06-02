@@ -1,6 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { Github, Linkedin, Mail, Music } from "lucide-react";
+import OutboundLink from "@/components/OutboundLink";
+import ContentLink from "@/components/ContentLink";
 
 export const metadata = {
   title: "About — Justin Millheim",
@@ -43,7 +44,7 @@ export default function AboutPage() {
               What truly fills my cup though are people and impact. The things I am proudest of are the times where I brought
               a group together, or when I left something better for whoever comes next. The professional
               version of my story can be found on my{" "}
-              <Link href="/work" className="text-link">Work page</Link>, but it grows out of the same
+              <ContentLink to="/work" className="text-link" kind="about_text_link" label="work_page">Work page</ContentLink>, but it grows out of the same
               principle: I love turning a messy idea into something that works, for the people I care about.
             </p>
             <div style={{ marginTop: 34 }}>
@@ -54,18 +55,18 @@ export default function AboutPage() {
                 Always up to talk product, AI tooling, or a project you cannot stop thinking about.
               </p>
               <div className="connect">
-                <a className="btn" href="https://www.linkedin.com/in/justin-millheim" target="_blank" rel="noopener noreferrer">
+                <OutboundLink label="linkedin" className="btn" href="https://www.linkedin.com/in/justin-millheim" target="_blank" rel="noopener noreferrer">
                   <Linkedin size={15} /> LinkedIn
-                </a>
-                <a className="btn" href="mailto:jaymillheim@gmail.com">
+                </OutboundLink>
+                <OutboundLink label="email" className="btn" href="mailto:jaymillheim@gmail.com">
                   <Mail size={15} /> Email
-                </a>
-                <a className="btn" href="https://github.com/Justin-Millheim" target="_blank" rel="noopener noreferrer">
+                </OutboundLink>
+                <OutboundLink label="github" className="btn" href="https://github.com/Justin-Millheim" target="_blank" rel="noopener noreferrer">
                   <Github size={15} /> GitHub
-                </a>
-                <a className="btn" href="https://suno.com/@jkmillheim" target="_blank" rel="noopener noreferrer">
+                </OutboundLink>
+                <OutboundLink label="suno" className="btn" href="https://suno.com/@jkmillheim" target="_blank" rel="noopener noreferrer">
                   <Music size={15} /> Suno
-                </a>
+                </OutboundLink>
               </div>
             </div>
           </div>
