@@ -48,6 +48,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </Script>
         {/* End Google Tag Manager */}
 
+        {/* Adobe Experience Platform Launch */}
+        <Script
+          id="adobe-launch"
+          src="https://assets.adobedtm.com/22bf1a13013f/fa2492cb0f8b/launch-98e2ae7d72ea-development.min.js"
+          strategy="afterInteractive"
+        />
+        {/* End Adobe Experience Platform Launch */}
+
         {/* Adobe Analytics — Experience Cloud ID service + AppMeasurement.
             beforeInteractive guarantees VisitorAPI loads before AppMeasurement. */}
         <Script src="/js/VisitorAPI.js" strategy="beforeInteractive" />
