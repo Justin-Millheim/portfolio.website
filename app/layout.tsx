@@ -47,6 +47,41 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-MSFLT8BM');`}
         </Script>
         {/* End Google Tag Manager */}
+
+        {/* Adobe Analytics — Experience Cloud ID service + AppMeasurement.
+            beforeInteractive guarantees VisitorAPI loads before AppMeasurement. */}
+        <Script src="/js/VisitorAPI.js" strategy="beforeInteractive" />
+        <Script src="/js/AppMeasurement.js" strategy="beforeInteractive" />
+        <Script id="adobe-analytics-init" strategy="afterInteractive">
+          {`(function () {
+  // TODO: replace these with the values from your Adobe Analytics admin.
+  var REPORT_SUITE_ID = "REPLACE_WITH_REPORT_SUITE_ID";
+  var ORG_ID = "REPLACE_WITH_ORG_ID@AdobeOrg";
+  var TRACKING_SERVER = "REPLACE_WITH_TRACKING_SERVER";
+
+  // Don't run until configured (keeps the live site error-free).
+  if (REPORT_SUITE_ID.indexOf("REPLACE_WITH_") === 0 || typeof s_gi !== "function") return;
+
+  try {
+    if (typeof Visitor !== "undefined" && ORG_ID.indexOf("REPLACE_WITH_") !== 0) {
+      window.visitor = Visitor.getInstance(ORG_ID, {
+        trackingServer: TRACKING_SERVER,
+        trackingServerSecure: TRACKING_SERVER
+      });
+    }
+    var s = s_gi(REPORT_SUITE_ID);
+    s.trackingServer = TRACKING_SERVER;
+    s.trackingServerSecure = TRACKING_SERVER;
+    if (window.visitor) s.visitor = window.visitor;
+    s.pageName = document.title;
+    s.t(); // send the page view
+    window.s = s;
+  } catch (e) {
+    /* no-op: never let analytics break the page */
+  }
+})();`}
+        </Script>
+        {/* End Adobe Analytics */}
       </head>
       <body>
         {/* Google Tag Manager (noscript) */}
