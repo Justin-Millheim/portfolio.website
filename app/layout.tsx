@@ -4,10 +4,6 @@ import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
-import ContactProvider from "@/components/ContactContext";
-import PageEngagement from "@/components/PageEngagement";
 
 const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -102,12 +98,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         {/* End Google Tag Manager (noscript) */}
-        <ContactProvider>
-          <Nav />
-          <main>{children}</main>
-          <Footer />
-        </ContactProvider>
-        <PageEngagement />
+        {children}
         <Analytics />
         <SpeedInsights />
       </body>
