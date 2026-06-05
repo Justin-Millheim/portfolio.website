@@ -1,0 +1,155 @@
+/* ============================================================
+   /train theme — "burn mode". Scoped under .train-root so it
+   sits above the portfolio body background + noise overlay and
+   shares nothing with the marketing site.
+   ============================================================ */
+.train-root {
+  --t-bg: #0a0a0a;
+  --t-surface: #111;
+  --t-surface2: #161616;
+  --t-deep: #0d0d0d;
+  --t-line: #1e1e1e;
+  --t-ink: #f0ede6;
+  --t-muted: #888;
+  --t-faint: #555;
+  --t-flame: #ff5a1e;
+  --t-amber: #ff9f1e;
+
+  position: relative;
+  z-index: 5; /* above the portfolio's fixed noise overlay (z-index 1) */
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--t-bg);
+  color: var(--t-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile-first: content column never exceeds a comfy phone width. */
+.train-root .t-wrap {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 16px 120px;
+}
+
+.train-root .t-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.train-root h1, .train-root h2, .train-root h3 { letter-spacing: -0.5px; }
+
+/* Glow accents echoing the prototype. */
+.train-root .t-accent-tr,
+.train-root .t-accent-bl { position: fixed; pointer-events: none; z-index: 0; }
+.train-root .t-accent-tr {
+  top: -100px; right: -100px; width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,80,30,0.12) 0%, transparent 70%);
+}
+.train-root .t-accent-bl {
+  bottom: -80px; left: -80px; width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,180,0,0.07) 0%, transparent 70%);
+}
+
+/* ---- buttons ---- */
+.train-root .t-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 16px; border: none; border-radius: 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: transform 0.08s ease, opacity 0.2s ease;
+}
+.train-root .t-btn:active { transform: scale(0.985); }
+.train-root .t-btn-primary {
+  background: linear-gradient(135deg, var(--t-flame), var(--t-amber)); color: #fff;
+}
+.train-root .t-btn-ghost {
+  background: #1e1e1e; border: 1px solid #333; color: var(--t-ink);
+}
+.train-root .t-btn-quiet {
+  background: #1a1a1a; border: 1px solid #2a2a2a; color: var(--t-faint);
+  text-transform: none; letter-spacing: 0;
+}
+.train-root .t-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- cards ---- */
+.train-root .t-card {
+  background: var(--t-surface); border: 1px solid var(--t-line);
+  border-radius: 16px; padding: 20px;
+}
+
+/* ---- pills / chips (intent choices) ---- */
+.train-root .t-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 10px; border-radius: 12px; cursor: pointer;
+  background: var(--t-surface2); border: 1px solid var(--t-line);
+  color: var(--t-muted); font-size: 13px; font-weight: 700;
+  transition: all 0.15s ease; text-align: center;
+}
+.train-root .t-chip.active {
+  background: linear-gradient(135deg, rgba(255,90,30,0.18), rgba(255,159,30,0.12));
+  border-color: var(--t-flame); color: var(--t-ink);
+}
+
+/* ---- inputs ---- */
+.train-root input[type="number"], .train-root input[type="text"],
+.train-root input[type="email"], .train-root textarea {
+  width: 100%; background: var(--t-deep); border: 1px solid var(--t-line);
+  border-radius: 10px; color: var(--t-ink); padding: 12px 14px;
+  font-size: 16px; /* 16px avoids iOS zoom-on-focus */ font-family: inherit;
+}
+.train-root input:focus, .train-root textarea:focus {
+  outline: none; border-color: var(--t-flame);
+}
+.train-root .t-eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--t-faint);
+}
+
+/* ---- the persistent corner session timer ---- */
+.train-root .t-session-timer {
+  position: fixed; top: 12px; right: 12px; z-index: 60;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(13,13,13,0.92); border: 1px solid var(--t-line);
+  border-radius: 999px; padding: 7px 12px; backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.train-root .t-session-timer .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--t-flame);
+  animation: t-pulse 1.4s ease-in-out infinite;
+}
+.train-root .t-session-timer .t-time {
+  font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
+  color: var(--t-ink); letter-spacing: 1px;
+}
+.train-root .t-session-timer .t-phase {
+  font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1px;
+  color: var(--t-amber); text-transform: uppercase;
+}
+
+@keyframes t-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes t-fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.train-root .t-fadein { animation: t-fadein 0.3s ease both; }
+
+/* ---- scrollbars (subtle) ---- */
+.train-root ::-webkit-scrollbar { width: 8px; height: 8px; }
+.train-root ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 8px; }
+
+/* ---- modal ---- */
+.train-root .t-modal-scrim {
+  position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,0.7);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.train-root .t-modal {
+  width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto;
+  background: var(--t-surface); border: 1px solid var(--t-line);
+  border-radius: 20px 20px 0 0; padding: 22px 20px 32px;
+  animation: t-slideup 0.25s ease both;
+}
+@keyframes t-slideup { from { transform: translateY(100%); } to { transform: none; } }
+
+@media (min-width: 560px) {
+  .train-root .t-modal-scrim { align-items: center; }
+  .train-root .t-modal { border-radius: 20px; }
+}
