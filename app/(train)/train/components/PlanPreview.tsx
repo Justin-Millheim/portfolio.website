@@ -33,9 +33,17 @@ export default function PlanPreview({
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 4px" }}>
         Your <span style={{ color: "var(--t-flame)" }}>{FOCUS_LABEL[plan.focus]}</span> plan
       </h1>
-      <p className="t-mono" style={{ color: "var(--t-muted)", fontSize: 12, margin: "0 0 20px" }}>
+      <p className="t-mono" style={{ color: "var(--t-muted)", fontSize: 12, margin: "0 0 16px" }}>
         ~{plan.durationTarget} MIN · {EQUIPMENT_LABEL[plan.equipment].toUpperCase()} · {plan.items.length} MOVES
       </p>
+
+      <div style={{ background: "var(--t-surface2)", border: "1px solid var(--t-line)", borderRadius: 12, padding: "12px 14px", marginBottom: 20 }}>
+        <p style={{ fontSize: 13, color: "var(--t-muted)", margin: 0, lineHeight: 1.6 }}>
+          Review and approve today&apos;s workout plan. Or tap the{" "}
+          <span aria-hidden style={{ display: "inline-flex", verticalAlign: "middle", width: 22, height: 22, borderRadius: "50%", background: "#1d1d1d", border: "1px solid #333", color: "var(--t-amber)", alignItems: "center", justifyContent: "center", fontSize: 13 }}>⟳</span>{" "}
+          next to an exercise to swap it out.
+        </p>
+      </div>
 
       {PHASE_META.map(({ key, label, icon }) => {
         const items = plan.items.map((it, i) => ({ it, i })).filter(({ it }) => it.phase === key);
@@ -47,32 +55,31 @@ export default function PlanPreview({
               {items.map(({ it, i }) => {
                 const ex = getExercise(it.exerciseId) as Exercise;
                 return (
-                  <div key={i} className="t-card" style={{ padding: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <button
-                        onClick={() => onOpenExercise(ex)}
-                        style={{ background: "none", border: "none", textAlign: "left", color: "var(--t-ink)", cursor: "pointer", flex: 1, display: "flex", alignItems: "center", gap: 12, padding: 0 }}
-                      >
-                        <span style={{ fontSize: 22 }}>{ex.emoji}</span>
-                        <span>
-                          <span style={{ display: "block", fontSize: 14, fontWeight: 700 }}>{ex.name}</span>
-                          <span className="t-mono" style={{ fontSize: 11, color: "var(--t-muted)" }}>
-                            {it.sets > 1 ? `${it.sets} × ` : ""}{it.reps}{ex.loaded ? " · weighted" : ""}
-                          </span>
+                  <div key={i} className="t-card" style={{ padding: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <button
+                      onClick={() => onOpenExercise(ex)}
+                      aria-label={`How to do ${ex.name}`}
+                      style={{ background: "none", border: "none", textAlign: "left", color: "var(--t-ink)", cursor: "pointer", flex: 1, display: "flex", alignItems: "center", gap: 12, padding: 0, minWidth: 0 }}
+                    >
+                      <span style={{ fontSize: 22 }}>{ex.emoji}</span>
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{ display: "block", fontSize: 14, fontWeight: 700 }}>{ex.name}</span>
+                        <span className="t-mono" style={{ fontSize: 11, color: "var(--t-muted)" }}>
+                          {it.sets > 1 ? `${it.sets} × ` : ""}{it.reps}{ex.loaded ? " · weighted" : ""}
                         </span>
-                      </button>
-                      <span className="t-mono" style={{ fontSize: 10, color: "var(--t-faint)" }}>info ›</span>
-                    </div>
+                      </span>
+                    </button>
                     <button
                       onClick={() => onSwap(i)}
-                      className="t-mono"
+                      aria-label={`Swap ${ex.name} for a similar move`}
+                      title="Swap for a similar move"
                       style={{
-                        marginTop: 10, width: "100%", padding: "9px",
-                        background: "#1d1d1d", border: "1px solid #333", borderRadius: 9,
-                        color: "var(--t-amber)", fontSize: 12, cursor: "pointer", letterSpacing: 0.5,
+                        flex: "0 0 auto", width: 38, height: 38, borderRadius: "50%",
+                        background: "#1d1d1d", border: "1px solid #333", color: "var(--t-amber)",
+                        fontSize: 17, cursor: "pointer", lineHeight: 1,
                       }}
                     >
-                      ⟳ Swap for a similar move
+                      ⟳
                     </button>
                   </div>
                 );

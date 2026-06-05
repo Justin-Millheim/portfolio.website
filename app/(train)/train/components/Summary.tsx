@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { WorkoutSession } from "@/lib/train/types";
 import { completedSetCount, formatClock, sessionVolume } from "@/lib/train/format";
+import Celebration from "./Celebration";
 
 export default function Summary({
   session,
@@ -16,6 +17,8 @@ export default function Summary({
   onToggleFavorite: (favorite: boolean) => void;
 }) {
   const [favorite, setFavorite] = useState(!!session.favorite);
+  // Fire the big finale celebration once when the summary mounts.
+  const [finale] = useState(1);
   const vol = sessionVolume(session);
   const sets = completedSetCount(session.logs);
   const pt = session.phaseTimes;
@@ -29,6 +32,7 @@ export default function Summary({
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 44, textAlign: "center" }}>
+      <Celebration id={finale} variant="finale" />
       <div style={{ fontSize: 56 }}>🔥</div>
       <h1 style={{ fontSize: 28, fontWeight: 700, margin: "8px 0 6px" }}>
         Workout <span style={{ color: "var(--t-flame)" }}>complete</span>
@@ -85,7 +89,7 @@ export default function Summary({
         aria-pressed={favorite}
         onClick={() => { const next = !favorite; setFavorite(next); onToggleFavorite(next); }}
       >
-        {favorite ? "★ Saved as favorite" : "☆ Save as favorite"}
+        {favorite ? "⭐ Saved as favorite" : "⭐ Save as favorite"}
       </button>
 
       <button className="t-btn t-btn-primary" onClick={onDone}>Done</button>

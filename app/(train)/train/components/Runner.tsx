@@ -8,6 +8,7 @@ import { getExercise } from "@/lib/train/exercises";
 import { getStore, type ExercisePrefs } from "@/lib/train/storage";
 import { formatTime } from "@/lib/train/format";
 import SessionTimer from "./SessionTimer";
+import Celebration from "./Celebration";
 
 function parseTarget(reps: string): number | null {
   if (/second/i.test(reps)) return null;
@@ -56,6 +57,9 @@ export default function Runner({
   // Per-set input drafts (weight optional, reps optional).
   const [weightDraft, setWeightDraft] = useState<number | null>(null);
   const [repsDraft, setRepsDraft] = useState<number | null>(null);
+
+  // Brief celebration trigger when an exercise is finished.
+  const [cheer, setCheer] = useState(0);
 
   // Master session clock + per-phase buckets.
   const totalRef = useRef(initial?.totalSeconds ?? 0);
@@ -174,6 +178,9 @@ export default function Runner({
       setTimer(item.rest > 0 ? item.rest : null);
       setTimerActive(item.rest > 0);
     } else {
+      // Finished an exercise — cheer (the very last one is celebrated on the
+      // summary screen instead, so it doesn't double up with the finale).
+      if (itemIndex + 1 < items.length) setCheer((c) => c + 1);
       doAdvance();
     }
   }
@@ -237,6 +244,7 @@ export default function Runner({
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 56 }}>
       <SessionTimer seconds={elapsed} phase={item.phase} />
+      <Celebration id={cheer} variant="exercise" />
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <span className="t-eyebrow" style={{ color: "var(--t-amber)" }}>{PHASE_HEADING[item.phase]}</span>
@@ -331,7 +339,7 @@ export default function Runner({
                 color: prefs.preferred.includes(ex.id) ? "var(--t-ink)" : "var(--t-muted)",
               }}
             >
-              {prefs.preferred.includes(ex.id) ? "★ Preferred" : "☆ Prefer this"}
+              {prefs.preferred.includes(ex.id) ? "👍 Liked" : "👍 this exercise"}
             </button>
             <button
               onClick={() => {
@@ -347,7 +355,7 @@ export default function Runner({
                 color: prefs.blocked.includes(ex.id) ? "var(--t-amber)" : "var(--t-muted)",
               }}
             >
-              {prefs.blocked.includes(ex.id) ? "✓ Won't suggest" : "🚫 Don't suggest"}
+              {prefs.blocked.includes(ex.id) ? "👎 Hidden" : "👎 this exercise"}
             </button>
           </div>
         </div>
