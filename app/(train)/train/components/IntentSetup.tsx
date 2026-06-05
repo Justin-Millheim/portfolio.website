@@ -37,6 +37,9 @@ export default function IntentSetup({
   hasHistory,
   onPrevious,
   onHistory,
+  account,
+  onSignIn,
+  onSignOut,
 }: {
   value: Intent;
   onChange: (next: Intent) => void;
@@ -44,6 +47,9 @@ export default function IntentSetup({
   hasHistory: boolean;
   onPrevious: () => void;
   onHistory: () => void;
+  account: { mode: "guest" | "cloud"; email?: string } | null;
+  onSignIn: () => void;
+  onSignOut: () => void;
 }) {
   const set = (patch: Partial<Intent>) => onChange({ ...value, ...patch });
   const toggleConstraint = (c: Constraint) =>
@@ -69,9 +75,25 @@ export default function IntentSetup({
       <h1 style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px", lineHeight: 1.15 }}>
         Today&apos;s <span style={{ color: "var(--t-flame)" }}>Workout</span>
       </h1>
-      <p style={{ color: "var(--t-muted)", fontSize: 14, margin: "0 0 24px" }}>
+      <p style={{ color: "var(--t-muted)", fontSize: 14, margin: "0 0 14px" }}>
         Tell me what you&apos;re feeling — I&apos;ll build the plan.
       </p>
+
+      {account && (
+        <div className="t-mono" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--t-faint)", marginBottom: 22 }}>
+          {account.mode === "cloud" ? (
+            <>
+              <span style={{ color: "var(--t-muted)" }}>☁ {account.email ?? "Signed in"}</span>
+              <button onClick={onSignOut} style={{ background: "none", border: "none", color: "var(--t-amber)", cursor: "pointer", fontFamily: "inherit", fontSize: 11 }}>Sign out</button>
+            </>
+          ) : (
+            <>
+              <span>Guest — saved on this device</span>
+              <button onClick={onSignIn} style={{ background: "none", border: "none", color: "var(--t-amber)", cursor: "pointer", fontFamily: "inherit", fontSize: 11 }}>Sign in to sync →</button>
+            </>
+          )}
+        </div>
+      )}
 
       {hasHistory && (
         <button

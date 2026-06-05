@@ -5,7 +5,7 @@ import type {
   Exercise, ExerciseLog, PhaseTimes, Phase, RunnerSnapshot, StepSnapshot, WorkoutPlan,
 } from "@/lib/train/types";
 import { getExercise } from "@/lib/train/exercises";
-import { getStore, loadPrefs, toggleBlocked, togglePreferred, type ExercisePrefs } from "@/lib/train/storage";
+import { getStore, type ExercisePrefs } from "@/lib/train/storage";
 import { formatTime } from "@/lib/train/format";
 import SessionTimer from "./SessionTimer";
 
@@ -31,14 +31,17 @@ const PHASE_HEADING: Record<Phase, string> = {
 };
 
 export default function Runner({
-  plan, initial, onComplete, onExit, onOpenExercise, onPersist,
+  plan, initial, prefs, onComplete, onExit, onOpenExercise, onPersist, onTogglePreferred, onToggleBlocked,
 }: {
   plan: WorkoutPlan;
   initial?: RunnerSnapshot | null;
+  prefs: ExercisePrefs;
   onComplete: (logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) => void;
   onExit: () => void;
   onOpenExercise: (ex: Exercise) => void;
   onPersist: (snap: RunnerSnapshot) => void;
+  onTogglePreferred: (id: string) => void;
+  onToggleBlocked: (id: string) => void;
 }) {
   const items = plan.items;
   const [itemIndex, setItemIndex] = useState(initial?.itemIndex ?? 0);
@@ -53,10 +56,6 @@ export default function Runner({
   // Per-set input drafts (weight optional, reps optional).
   const [weightDraft, setWeightDraft] = useState<number | null>(null);
   const [repsDraft, setRepsDraft] = useState<number | null>(null);
-
-  // Exercise preferences (prefer / don't-suggest) — affect future plans.
-  const [prefs, setPrefs] = useState<ExercisePrefs>({ preferred: [], blocked: [] });
-  useEffect(() => { setPrefs(loadPrefs()); }, []);
 
   // Master session clock + per-phase buckets.
   const totalRef = useRef(initial?.totalSeconds ?? 0);
@@ -322,7 +321,7 @@ export default function Runner({
           {/* Personalize: bias future plans toward / away from this move. */}
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <button
-              onClick={() => setPrefs(togglePreferred(ex.id))}
+              onClick={() => onTogglePreferred(ex.id)}
               aria-pressed={prefs.preferred.includes(ex.id)}
               className="t-mono"
               style={{
@@ -336,8 +335,8 @@ export default function Runner({
             </button>
             <button
               onClick={() => {
-                if (prefs.blocked.includes(ex.id)) { setPrefs(toggleBlocked(ex.id)); return; }
-                if (confirm("Stop suggesting this exercise in future workouts?")) setPrefs(toggleBlocked(ex.id));
+                if (prefs.blocked.includes(ex.id)) { onToggleBlocked(ex.id); return; }
+                if (confirm("Stop suggesting this exercise in future workouts?")) onToggleBlocked(ex.id);
               }}
               aria-pressed={prefs.blocked.includes(ex.id)}
               className="t-mono"

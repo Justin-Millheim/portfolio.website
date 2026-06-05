@@ -1,16 +1,16 @@
-# /train — Supabase wiring (Phase 4)
+# /train — Supabase cloud sync (Phase 4)
 
-The app ships running on an **on-device (localStorage)** store so it works the
-moment it deploys. To turn on **multi-user cloud sync** (history that follows you
-across devices, login, secure isolation), follow these steps. None of this can be
-done from a Claude Code *web* session — it needs your local terminal and your
-Supabase credentials.
+Cloud sync is **fully coded and wired** — it just needs two activation steps you
+run yourself (they can't run from a Claude Code *web* session): applying the
+schema and adding your Supabase keys. Until those are set, the tool runs in
+**guest** mode (on-device localStorage) and the auth gate offers "Continue as
+guest" only.
 
 Project ref: `jfnclmolpwtdfzmlukue`
 
 ## 1. Apply the schema
-Either run `supabase/schema.sql` in the Supabase dashboard SQL editor, or, after
-adding the Supabase MCP server locally:
+Run `supabase/schema.sql` in the Supabase dashboard SQL editor, or, after adding
+the Supabase MCP server locally:
 
 ```
 claude mcp add --scope project --transport http supabase \
@@ -30,19 +30,27 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<your anon public key>
 ```
 
 Only the public *anon* key reaches the browser — that's safe **because** RLS (in
-`schema.sql`) gates every row. Never expose the `service_role` key.
+`schema.sql`) gates every row. Never expose the `service_role` key. Redeploy
+after adding them in Vercel.
 
-## 3. Flip the store
-Install the client and implement the adapter:
+## 3. (Optional) turn off email confirmation for easy testing
+Auth is **email + password**. By default Supabase requires email confirmation
+before the first sign-in. For quick solo testing, go to
+**Authentication → Providers → Email** and disable "Confirm email" — then
+sign-up logs you straight in. Leave it on for real use.
 
-```
-npm install @supabase/supabase-js @supabase/ssr
-```
+## That's it
+With keys present, the gate shows **Sign in / Create account / Continue as
+guest**. On your first sign-in, any workouts and preferences you created as a
+guest on that device are **migrated up to the cloud automatically**
+(`migrateGuestDataToCloud`). From then on, history, favorites, and your
+Prefer/Don't-suggest settings sync across every device you sign in on.
 
-Then add a `SupabaseStore` implementing the `WorkoutStore` interface in
-`lib/train/storage.ts`, and in `getStore()` return it when the env vars are
-present and a user is signed in (fall back to `LocalStore` otherwise). Because
-all UI talks only to `WorkoutStore`, no screen code changes.
-
-A one-time **import** button (already in the History screen) lets you push your
-existing on-device history up to the cloud after signing in.
+### How it's wired (for reference)
+- `lib/train/supabase.ts` — browser client (null when env is unset → guest mode).
+- `lib/train/supabase-store.ts` — `SupabaseStore` implements the same
+  `WorkoutStore` interface as `LocalStore`, plus the guest→cloud migration.
+- `lib/train/storage.ts` — `getStore()` / `setActiveStore()` swap adapters; the
+  UI only ever talks to the interface, so no screen code is Supabase-aware.
+- Data model: `workouts` (full session as jsonb + queryable date/favorite) and
+  `prefs` (preferred/blocked arrays), both locked by RLS to `auth.uid()`.

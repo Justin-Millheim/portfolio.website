@@ -1,7 +1,7 @@
 import type { ActiveSession, WorkoutSession } from "./types";
 
 // Single interface every backend implements. The UI only ever talks to this,
-// so swapping localStorage -> Supabase later is an isolated change.
+// so the localStorage (guest) and Supabase (cloud) adapters are interchangeable.
 export interface WorkoutStore {
   list(): Promise<WorkoutSession[]>;
   get(id: string): Promise<WorkoutSession | null>;
@@ -10,6 +10,9 @@ export interface WorkoutStore {
   setFavorite(id: string, favorite: boolean): Promise<void>;
   // Last weight a user used for a given exercise, to pre-fill the runner.
   lastWeight(exerciseId: string): Promise<number | null>;
+  // Exercise preferences (preferred / blocked) that bias future plans.
+  getPrefs(): Promise<ExercisePrefs>;
+  savePrefs(prefs: ExercisePrefs): Promise<void>;
 }
 
 const KEY = "train.sessions.v1";
@@ -35,34 +38,23 @@ export function loadPrefs(): ExercisePrefs {
   }
 }
 
-function savePrefs(p: ExercisePrefs) {
+function writePrefs(p: ExercisePrefs) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(PREFS_KEY, JSON.stringify(p));
 }
 
-// Marking an exercise preferred clears any block on it, and vice versa.
-export function togglePreferred(id: string): ExercisePrefs {
-  const p = loadPrefs();
-  if (p.preferred.includes(id)) {
-    p.preferred = p.preferred.filter((x) => x !== id);
-  } else {
-    p.preferred.push(id);
-    p.blocked = p.blocked.filter((x) => x !== id);
-  }
-  savePrefs(p);
-  return p;
+// Pure toggles (no IO) — marking preferred clears any block on it, and vice
+// versa. Callers persist the result through the active store so it syncs.
+export function applyTogglePreferred(p: ExercisePrefs, id: string): ExercisePrefs {
+  return p.preferred.includes(id)
+    ? { ...p, preferred: p.preferred.filter((x) => x !== id) }
+    : { preferred: [...p.preferred, id], blocked: p.blocked.filter((x) => x !== id) };
 }
 
-export function toggleBlocked(id: string): ExercisePrefs {
-  const p = loadPrefs();
-  if (p.blocked.includes(id)) {
-    p.blocked = p.blocked.filter((x) => x !== id);
-  } else {
-    p.blocked.push(id);
-    p.preferred = p.preferred.filter((x) => x !== id);
-  }
-  savePrefs(p);
-  return p;
+export function applyToggleBlocked(p: ExercisePrefs, id: string): ExercisePrefs {
+  return p.blocked.includes(id)
+    ? { ...p, blocked: p.blocked.filter((x) => x !== id) }
+    : { blocked: [...p.blocked, id], preferred: p.preferred.filter((x) => x !== id) };
 }
 
 function readAll(): WorkoutSession[] {
@@ -107,27 +99,49 @@ export class LocalStore implements WorkoutStore {
     }
   }
   async lastWeight(exerciseId: string): Promise<number | null> {
-    const sessions = await this.list(); // newest first
-    for (const s of sessions) {
-      const log = s.logs.find((l) => l.exerciseId === exerciseId);
-      if (log) {
-        for (let i = log.sets.length - 1; i >= 0; i--) {
-          const w = log.sets[i].weight;
-          if (w != null) return w;
-        }
-      }
-    }
-    return null;
+    return lastWeightFrom(await this.list(), exerciseId);
+  }
+  async getPrefs(): Promise<ExercisePrefs> {
+    return loadPrefs();
+  }
+  async savePrefs(prefs: ExercisePrefs): Promise<void> {
+    writePrefs(prefs);
   }
 }
 
-// Factory. When Supabase is wired (env keys present + user signed in), return a
-// SupabaseStore here instead; everything upstream is unchanged. See
-// supabase/schema.sql and lib/train/supabase-adapter.md for the migration path.
-let _store: WorkoutStore | null = null;
+// Shared helper: newest-first sessions -> most recent logged weight for a move.
+export function lastWeightFrom(sessions: WorkoutSession[], exerciseId: string): number | null {
+  for (const s of sessions) {
+    const log = s.logs.find((l) => l.exerciseId === exerciseId);
+    if (log) {
+      for (let i = log.sets.length - 1; i >= 0; i--) {
+        const w = log.sets[i].weight;
+        if (w != null) return w;
+      }
+    }
+  }
+  return null;
+}
+
+// Active store. Defaults to on-device; TrainApp swaps in a SupabaseStore after
+// a successful sign-in, and back to LocalStore on guest/sign-out.
+let _store: WorkoutStore = new LocalStore();
 export function getStore(): WorkoutStore {
-  if (!_store) _store = new LocalStore();
   return _store;
+}
+export function setActiveStore(store: WorkoutStore): void {
+  _store = store;
+}
+export function useLocalStore(): void {
+  _store = new LocalStore();
+}
+
+// Raw on-device reads, used to migrate guest data up to the cloud on first login.
+export function readLocalSessions(): WorkoutSession[] {
+  return readAll();
+}
+export function readLocalPrefs(): ExercisePrefs {
+  return loadPrefs();
 }
 
 // ---- In-progress workout cache (resume where you left off) ----
