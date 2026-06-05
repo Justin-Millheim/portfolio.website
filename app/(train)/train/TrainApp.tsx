@@ -6,7 +6,7 @@ import type {
   WorkoutPlan, WorkoutSession,
 } from "@/lib/train/types";
 import { generatePlan, swapItem } from "@/lib/train/generator";
-import { clearActive, getStore, loadActive, saveActive } from "@/lib/train/storage";
+import { clearActive, getStore, loadActive, loadPrefs, saveActive } from "@/lib/train/storage";
 import IntentSetup, { type Intent } from "./components/IntentSetup";
 import PlanPreview from "./components/PlanPreview";
 import CheckIn from "./components/CheckIn";
@@ -60,7 +60,8 @@ export default function TrainApp() {
   // ---- home ----
   function handleGenerate() {
     setRunnerInitial(null);
-    setPlan(generatePlan({ ...intent }));
+    const prefs = loadPrefs();
+    setPlan(generatePlan({ ...intent, preferred: prefs.preferred, blocked: prefs.blocked }));
     setScreen("preview");
   }
   function handleRepeat(s: WorkoutSession) {
@@ -80,12 +81,13 @@ export default function TrainApp() {
   // ---- preview ----
   function handleReroll() {
     if (!plan) return;
-    setPlan(generatePlan({ ...intent, seed: Math.floor(Math.random() * 1e9) }));
+    const prefs = loadPrefs();
+    setPlan(generatePlan({ ...intent, seed: Math.floor(Math.random() * 1e9), preferred: prefs.preferred, blocked: prefs.blocked }));
   }
   function handleSwap(index: number) {
     if (!plan) return;
     const before = plan.items[index]?.exerciseId;
-    const next = swapItem(plan, index);
+    const next = swapItem(plan, index, loadPrefs().blocked);
     if (next.items[index]?.exerciseId === before) {
       alert("No similar alternative is available for that slot — try Reroll for a fresh plan.");
       return;

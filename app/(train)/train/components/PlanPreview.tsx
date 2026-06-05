@@ -46,7 +46,6 @@ export default function PlanPreview({
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {items.map(({ it, i }) => {
                 const ex = getExercise(it.exerciseId) as Exercise;
-                const canSwap = key !== "warmup";
                 return (
                   <div key={i} className="t-card" style={{ padding: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -64,19 +63,17 @@ export default function PlanPreview({
                       </button>
                       <span className="t-mono" style={{ fontSize: 10, color: "var(--t-faint)" }}>info ›</span>
                     </div>
-                    {canSwap && (
-                      <button
-                        onClick={() => onSwap(i)}
-                        className="t-mono"
-                        style={{
-                          marginTop: 10, width: "100%", padding: "9px",
-                          background: "#1d1d1d", border: "1px solid #333", borderRadius: 9,
-                          color: "var(--t-amber)", fontSize: 12, cursor: "pointer", letterSpacing: 0.5,
-                        }}
-                      >
-                        ⟳ Swap for a similar move
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onSwap(i)}
+                      className="t-mono"
+                      style={{
+                        marginTop: 10, width: "100%", padding: "9px",
+                        background: "#1d1d1d", border: "1px solid #333", borderRadius: 9,
+                        color: "var(--t-amber)", fontSize: 12, cursor: "pointer", letterSpacing: 0.5,
+                      }}
+                    >
+                      ⟳ Swap for a similar move
+                    </button>
                   </div>
                 );
               })}

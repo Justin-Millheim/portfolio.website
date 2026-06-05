@@ -5,7 +5,7 @@ import type {
   Exercise, ExerciseLog, PhaseTimes, Phase, RunnerSnapshot, StepSnapshot, WorkoutPlan,
 } from "@/lib/train/types";
 import { getExercise } from "@/lib/train/exercises";
-import { getStore } from "@/lib/train/storage";
+import { getStore, loadPrefs, toggleBlocked, togglePreferred, type ExercisePrefs } from "@/lib/train/storage";
 import { formatTime } from "@/lib/train/format";
 import SessionTimer from "./SessionTimer";
 
@@ -27,7 +27,7 @@ function emptyLogs(plan: WorkoutPlan): ExerciseLog[] {
 }
 
 const PHASE_HEADING: Record<Phase, string> = {
-  warmup: "Warm Up", circuit: "Circuit", cooldown: "Cool Down",
+  warmup: "🔥 Warm Up", circuit: "⚡ Circuit", cooldown: "🧘 Cool Down",
 };
 
 export default function Runner({
@@ -53,6 +53,10 @@ export default function Runner({
   // Per-set input drafts (weight optional, reps optional).
   const [weightDraft, setWeightDraft] = useState<number | null>(null);
   const [repsDraft, setRepsDraft] = useState<number | null>(null);
+
+  // Exercise preferences (prefer / don't-suggest) — affect future plans.
+  const [prefs, setPrefs] = useState<ExercisePrefs>({ preferred: [], blocked: [] });
+  useEffect(() => { setPrefs(loadPrefs()); }, []);
 
   // Master session clock + per-phase buckets.
   const totalRef = useRef(initial?.totalSeconds ?? 0);
@@ -213,16 +217,14 @@ export default function Runner({
 
   // Previous = step back through the actual experience (set 2 -> rest -> set 1 -> …).
   function prev() {
-    setStepHistory((h) => {
-      if (h.length === 0) return h;
-      const last = h[h.length - 1];
-      setItemIndex(last.itemIndex);
-      setCurrentSet(last.currentSet);
-      setSubMode(last.subMode);
-      setTimer(last.timer);
-      setTimerActive(false); // don't auto-resume a countdown on back-step
-      return h.slice(0, -1);
-    });
+    if (stepHistory.length === 0) return;
+    const last = stepHistory[stepHistory.length - 1];
+    setStepHistory(stepHistory.slice(0, -1));
+    setItemIndex(last.itemIndex);
+    setCurrentSet(last.currentSet);
+    setSubMode(last.subMode);
+    setTimer(last.timer);
+    setTimerActive(false); // don't auto-resume a countdown on back-step
   }
 
   function addTime(sec: number) {
@@ -316,6 +318,39 @@ export default function Runner({
           ) : (
             <button className="t-btn t-btn-quiet" onClick={completeSet}>Mark done →</button>
           )}
+
+          {/* Personalize: bias future plans toward / away from this move. */}
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button
+              onClick={() => setPrefs(togglePreferred(ex.id))}
+              aria-pressed={prefs.preferred.includes(ex.id)}
+              className="t-mono"
+              style={{
+                flex: 1, padding: "10px 8px", borderRadius: 9, cursor: "pointer", fontSize: 11.5, fontWeight: 700,
+                background: prefs.preferred.includes(ex.id) ? "linear-gradient(135deg,rgba(255,106,50,0.2),rgba(255,174,61,0.12))" : "#161616",
+                border: `1px solid ${prefs.preferred.includes(ex.id) ? "var(--t-flame)" : "#2a2a2a"}`,
+                color: prefs.preferred.includes(ex.id) ? "var(--t-ink)" : "var(--t-muted)",
+              }}
+            >
+              {prefs.preferred.includes(ex.id) ? "★ Preferred" : "☆ Prefer this"}
+            </button>
+            <button
+              onClick={() => {
+                if (prefs.blocked.includes(ex.id)) { setPrefs(toggleBlocked(ex.id)); return; }
+                if (confirm("Stop suggesting this exercise in future workouts?")) setPrefs(toggleBlocked(ex.id));
+              }}
+              aria-pressed={prefs.blocked.includes(ex.id)}
+              className="t-mono"
+              style={{
+                flex: 1, padding: "10px 8px", borderRadius: 9, cursor: "pointer", fontSize: 11.5, fontWeight: 700,
+                background: prefs.blocked.includes(ex.id) ? "#2a1410" : "#161616",
+                border: `1px solid ${prefs.blocked.includes(ex.id) ? "var(--t-flame)" : "#2a2a2a"}`,
+                color: prefs.blocked.includes(ex.id) ? "var(--t-amber)" : "var(--t-muted)",
+              }}
+            >
+              {prefs.blocked.includes(ex.id) ? "✓ Won't suggest" : "🚫 Don't suggest"}
+            </button>
+          </div>
         </div>
       )}
 

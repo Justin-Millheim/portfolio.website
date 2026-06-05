@@ -71,6 +71,8 @@ export interface GenerateInput {
   constraints?: Constraint[];
   difficulty?: Difficulty;
   seed?: number;
+  preferred?: string[]; // exercise ids weighted to appear more often
+  blocked?: string[];   // exercise ids never suggested
 }
 
 // Builds a warmup -> circuit -> cooldown plan that targets the requested minutes.
@@ -86,7 +88,11 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
   const coolBudget = Math.round(totalSec * 0.13);
   const circuitBudget = totalSec - warmBudget - coolBudget;
 
-  const pool = EXERCISES.filter((e) => isValid(e, input.focus, allowed, constraints));
+  const blocked = new Set(input.blocked ?? []);
+  const preferredIds = new Set(input.preferred ?? []);
+  const pool = EXERCISES.filter(
+    (e) => isValid(e, input.focus, allowed, constraints) && !blocked.has(e.id)
+  );
 
   // -------- Warmup --------
   const warmPool = shuffle(pool.filter((e) => e.type === "warmup"), rnd);
@@ -126,33 +132,61 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
   const sets = difficulty === "beginner" ? 3 : 4;
   const circuit: PlanItem[] = [];
   const usedMuscles = new Set<string>();
+  const used = new Set<string>();
   let circUsed = 0;
+  let generalCount = 0;
 
-  // Pass 1: prioritise unique primary muscle coverage (great for full body).
   const ordered = [
     ...circuitPool.filter((e) => (isCardio ? e.type === "cardio" : e.type === "strength")),
     ...circuitPool.filter((e) => (isCardio ? e.type === "strength" : e.type === "cardio")),
   ];
 
-  for (const ex of ordered) {
-    if (circUsed >= circuitBudget) break;
-    const primary = ex.muscles[0];
-    // For full body, skip if we've already hit this muscle and still have fresh options.
-    if (input.focus === "full" && usedMuscles.has(primary) && usedMuscles.size < 6) continue;
-    const exSets = ex.type === "cardio" && !ex.defaultDuration ? sets : (ex.defaultDuration ? Math.min(sets, ex.defaultSets) : sets);
-    const cost = itemSeconds(ex, exSets);
-    if (circUsed + cost > circuitBudget + 45) continue; // allow slight overflow tolerance
-    circuit.push(toItem(ex, "circuit", exSets));
-    usedMuscles.add(primary);
-    circUsed += cost;
-    if (circuit.length >= 8) break;
+  // Two banks: preferred (user-favored) vs the general/primary library.
+  const preferredBank = ordered.filter((e) => preferredIds.has(e.id));
+  const generalBank = ordered.filter((e) => !preferredIds.has(e.id));
+
+  function exSetsFor(ex: Exercise): number {
+    if (ex.type === "cardio" && !ex.defaultDuration) return sets;
+    return ex.defaultDuration ? Math.min(sets, ex.defaultSets) : sets;
   }
 
-  // Pass 2: if we under-filled (short workout / small pool), top up allowing repeats of muscle.
+  // Pull the next bank candidate that fits muscle-variety + time-budget rules.
+  function nextFrom(bank: Exercise[]): { ex: Exercise; exSets: number; cost: number } | null {
+    for (const ex of bank) {
+      if (used.has(ex.id)) continue;
+      const primary = ex.muscles[0];
+      if (input.focus === "full" && usedMuscles.has(primary) && usedMuscles.size < 6) continue;
+      const exSets = exSetsFor(ex);
+      const cost = itemSeconds(ex, exSets);
+      if (circUsed + cost > circuitBudget + 45) continue;
+      return { ex, exSets, cost };
+    }
+    return null;
+  }
+
+  // Fill the circuit. When the user has preferred moves, keep ~30-40% of the
+  // circuit from the general/primary bank (a soft 60/40 split), the rest preferred.
+  while (circUsed < circuitBudget && circuit.length < 8) {
+    const total = circuit.length;
+    const genShare = total === 0 ? 0 : generalCount / total;
+    const wantGeneral = preferredBank.length === 0 || (generalBank.length > 0 && genShare < 0.35);
+    let pick = nextFrom(wantGeneral ? generalBank : preferredBank);
+    let pickedGeneral = wantGeneral;
+    if (!pick) { pick = nextFrom(wantGeneral ? preferredBank : generalBank); pickedGeneral = !wantGeneral; }
+    if (!pick) break;
+    used.add(pick.ex.id);
+    usedMuscles.add(pick.ex.muscles[0]);
+    if (pickedGeneral) generalCount += 1;
+    circuit.push(toItem(pick.ex, "circuit", pick.exSets));
+    circUsed += pick.cost;
+  }
+
+  // Top up if we under-filled (short workout / small pool), allowing muscle repeats.
   if (circuit.length < 3) {
     for (const ex of ordered) {
-      if (circuit.find((c) => c.exerciseId === ex.id)) continue;
+      if (used.has(ex.id)) continue;
       circuit.push(toItem(ex, "circuit", sets));
+      used.add(ex.id);
       if (circuit.length >= 4) break;
     }
   }
@@ -172,18 +206,21 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
   };
 }
 
-// Swap a single circuit item for another valid alternative not already in the plan.
-export function swapItem(plan: WorkoutPlan, index: number): WorkoutPlan {
+// Swap a single plan item (warmup, circuit, or cooldown) for another valid,
+// not-already-used, non-blocked alternative of the same phase type.
+export function swapItem(plan: WorkoutPlan, index: number, blocked: string[] = []): WorkoutPlan {
   const target = plan.items[index];
-  if (!target || target.phase === "warmup") return plan;
+  if (!target) return plan;
   const allowed = allowedTiers(plan.equipment);
   const used = new Set(plan.items.map((i) => i.exerciseId));
+  const blockedSet = new Set(blocked);
   const rnd = rng(plan.seed + index + Date.now());
 
   const candidates = shuffle(
     EXERCISES.filter((e) => {
-      if (used.has(e.id)) return false;
+      if (used.has(e.id) || blockedSet.has(e.id)) return false;
       if (!isValid(e, plan.focus, allowed, plan.constraints)) return false;
+      if (target.phase === "warmup") return e.type === "warmup";
       if (target.phase === "cooldown") return e.type === "cooldown";
       return e.type === "strength" || e.type === "cardio";
     }),

@@ -14,6 +14,56 @@ export interface WorkoutStore {
 
 const KEY = "train.sessions.v1";
 const ACTIVE_KEY = "train.active.v1";
+const PREFS_KEY = "train.prefs.v1";
+
+// Exercise preferences that bias future plan generation.
+//   preferred — weighted to appear more often when relevant to the focus.
+//   blocked   — never suggested again.
+export interface ExercisePrefs {
+  preferred: string[];
+  blocked: string[];
+}
+
+export function loadPrefs(): ExercisePrefs {
+  if (typeof window === "undefined") return { preferred: [], blocked: [] };
+  try {
+    const raw = window.localStorage.getItem(PREFS_KEY);
+    const p = raw ? (JSON.parse(raw) as Partial<ExercisePrefs>) : {};
+    return { preferred: p.preferred ?? [], blocked: p.blocked ?? [] };
+  } catch {
+    return { preferred: [], blocked: [] };
+  }
+}
+
+function savePrefs(p: ExercisePrefs) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PREFS_KEY, JSON.stringify(p));
+}
+
+// Marking an exercise preferred clears any block on it, and vice versa.
+export function togglePreferred(id: string): ExercisePrefs {
+  const p = loadPrefs();
+  if (p.preferred.includes(id)) {
+    p.preferred = p.preferred.filter((x) => x !== id);
+  } else {
+    p.preferred.push(id);
+    p.blocked = p.blocked.filter((x) => x !== id);
+  }
+  savePrefs(p);
+  return p;
+}
+
+export function toggleBlocked(id: string): ExercisePrefs {
+  const p = loadPrefs();
+  if (p.blocked.includes(id)) {
+    p.blocked = p.blocked.filter((x) => x !== id);
+  } else {
+    p.blocked.push(id);
+    p.preferred = p.preferred.filter((x) => x !== id);
+  }
+  savePrefs(p);
+  return p;
+}
 
 function readAll(): WorkoutSession[] {
   if (typeof window === "undefined") return [];
