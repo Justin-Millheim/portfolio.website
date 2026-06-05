@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Exercise, ExerciseLog, PhaseTimes, Phase, WorkoutPlan } from "@/lib/train/types";
+import type {
+  Exercise, ExerciseLog, PhaseTimes, Phase, RunnerSnapshot, StepSnapshot, WorkoutPlan,
+} from "@/lib/train/types";
 import { getExercise } from "@/lib/train/exercises";
 import { getStore } from "@/lib/train/storage";
 import { formatTime } from "@/lib/train/format";
 import SessionTimer from "./SessionTimer";
 
 function parseTarget(reps: string): number | null {
-  const m = reps.match(/\d+/);
-  if (!m) return null;
-  // Timed prescriptions ("30 seconds") aren't a rep target.
   if (/second/i.test(reps)) return null;
-  return parseInt(m[0], 10);
+  const m = reps.match(/\d+/);
+  return m ? parseInt(m[0], 10) : null;
 }
 
 function emptyLogs(plan: WorkoutPlan): ExerciseLog[] {
@@ -21,79 +21,91 @@ function emptyLogs(plan: WorkoutPlan): ExerciseLog[] {
     phase: it.phase,
     skipped: false,
     sets: Array.from({ length: it.sets }, (_, i) => ({
-      setNumber: i + 1,
-      weight: null,
-      reps: null,
-      rpe: null,
-      completed: false,
+      setNumber: i + 1, weight: null, reps: null, rpe: null, completed: false,
     })),
   }));
 }
 
 const PHASE_HEADING: Record<Phase, string> = {
-  warmup: "Warm Up",
-  circuit: "Circuit",
-  cooldown: "Cool Down",
+  warmup: "Warm Up", circuit: "Circuit", cooldown: "Cool Down",
 };
 
 export default function Runner({
-  plan,
-  onComplete,
-  onExit,
-  onOpenExercise,
+  plan, initial, onComplete, onExit, onOpenExercise, onPersist,
 }: {
   plan: WorkoutPlan;
+  initial?: RunnerSnapshot | null;
   onComplete: (logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) => void;
   onExit: () => void;
   onOpenExercise: (ex: Exercise) => void;
+  onPersist: (snap: RunnerSnapshot) => void;
 }) {
   const items = plan.items;
-  const [itemIndex, setItemIndex] = useState(0);
-  const [currentSet, setCurrentSet] = useState(1);
-  const [subMode, setSubMode] = useState<"work" | "rest">("work");
-  const [timer, setTimer] = useState<number | null>(items[0]?.duration ?? null);
-  const [timerActive, setTimerActive] = useState(false);
+  const [itemIndex, setItemIndex] = useState(initial?.itemIndex ?? 0);
+  const [currentSet, setCurrentSet] = useState(initial?.currentSet ?? 1);
+  const [subMode, setSubMode] = useState<"work" | "rest">(initial?.subMode ?? "work");
+  const [timer, setTimer] = useState<number | null>(initial?.timer ?? items[0]?.duration ?? null);
+  const [timerActive, setTimerActive] = useState(initial?.timerActive ?? false);
   const [paused, setPaused] = useState(false);
-  const [logs, setLogs] = useState<ExerciseLog[]>(() => emptyLogs(plan));
+  const [logs, setLogs] = useState<ExerciseLog[]>(() => initial?.logs ?? emptyLogs(plan));
+  const [stepHistory, setStepHistory] = useState<StepSnapshot[]>(initial?.stepHistory ?? []);
 
-  // Per-set input drafts.
+  // Per-set input drafts (weight optional, reps optional).
   const [weightDraft, setWeightDraft] = useState<number | null>(null);
   const [repsDraft, setRepsDraft] = useState<number | null>(null);
-  const [rpeDraft, setRpeDraft] = useState<number | null>(null);
 
-  // Master session clock + per-phase buckets (drive the corner widget & splits).
-  const totalRef = useRef(0);
-  const bucketRef = useRef<PhaseTimes>({ warmup: 0, circuit: 0, cooldown: 0 });
-  const phaseRef = useRef<Phase>(items[0]?.phase ?? "circuit");
-  const [elapsed, setElapsed] = useState(0);
+  // Master session clock + per-phase buckets.
+  const totalRef = useRef(initial?.totalSeconds ?? 0);
+  const bucketRef = useRef<PhaseTimes>(initial?.phaseTimes ?? { warmup: 0, circuit: 0, cooldown: 0 });
+  const phaseRef = useRef<Phase>(items[initial?.itemIndex ?? 0]?.phase ?? "circuit");
+  const [elapsed, setElapsed] = useState(initial?.totalSeconds ?? 0);
 
   const item = items[itemIndex];
   const ex = getExercise(item.exerciseId) as Exercise;
   const isTimed = item.duration != null;
-  const isLoaded = ex.loaded;
 
-  // Keep the phase bucket pointer in sync with the current item.
-  useEffect(() => {
-    phaseRef.current = item.phase;
-  }, [itemIndex, item.phase]);
+  useEffect(() => { phaseRef.current = item.phase; }, [itemIndex, item.phase]);
 
-  // Load drafts (incl. last-used weight pre-fill) whenever we move to a new item.
+  // Keep the device awake during the workout (iOS 16.4+, Android, desktop).
   useEffect(() => {
+    let lock: { release: () => Promise<void> } | null = null;
+    const wakeLock = (navigator as unknown as { wakeLock?: { request: (t: string) => Promise<{ release: () => Promise<void> }> } }).wakeLock;
+    const request = async () => {
+      try {
+        if (wakeLock) lock = await wakeLock.request("screen");
+      } catch { /* user agent may reject; non-fatal */ }
+    };
+    request();
+    const onVis = () => { if (document.visibilityState === "visible") request(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      try { lock?.release(); } catch { /* noop */ }
+    };
+  }, []);
+
+  // Load drafts when we move between sets/exercises (also on back-navigation).
+  useEffect(() => {
+    const log = logs[itemIndex];
+    const s = log?.sets[currentSet - 1];
+    if (s && (s.completed || s.weight != null || s.reps != null)) {
+      setWeightDraft(s.weight);
+      setRepsDraft(s.reps ?? parseTarget(item.reps));
+      return;
+    }
     setRepsDraft(parseTarget(item.reps));
-    setRpeDraft(null);
+    const inItem = lastWeightInItem(itemIndex, currentSet);
+    if (inItem != null) { setWeightDraft(inItem); return; }
     if (ex.loaded) {
       let alive = true;
-      getStore().lastWeight(ex.id).then((w) => {
-        if (alive) setWeightDraft(w);
-      });
-      return () => {
-        alive = false;
-      };
+      getStore().lastWeight(ex.id).then((w) => { if (alive) setWeightDraft(w); });
+      return () => { alive = false; };
     }
     setWeightDraft(null);
-  }, [itemIndex, item.reps, ex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemIndex, currentSet]);
 
-  // Master clock: ticks continuously while not paused.
+  // Master clock — ticks continuously unless paused.
   useEffect(() => {
     if (paused) return;
     const id = setInterval(() => {
@@ -104,12 +116,9 @@ export default function Runner({
     return () => clearInterval(id);
   }, [paused]);
 
-  // Countdown for timed work / rest. A ref handler avoids stale closures.
+  // Countdown for timed work / rest.
   const onZeroRef = useRef<() => void>(() => {});
-  onZeroRef.current = () => {
-    if (subMode === "rest") finishRest();
-    else completeSet();
-  };
+  onZeroRef.current = () => { if (subMode === "rest") finishRest(); else completeSet(); };
   useEffect(() => {
     if (paused || !timerActive || timer === null) return;
     if (timer > 0) {
@@ -120,36 +129,57 @@ export default function Runner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer, timerActive, paused]);
 
+  // Persist a resume snapshot whenever anything meaningful changes (incl. clock).
+  useEffect(() => {
+    onPersist({
+      itemIndex, currentSet, subMode, timer, timerActive,
+      logs, stepHistory, totalSeconds: totalRef.current, phaseTimes: { ...bucketRef.current },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemIndex, currentSet, subMode, timer, timerActive, logs, stepHistory, elapsed]);
+
+  function lastWeightInItem(idx: number, set: number): number | null {
+    const log = logs[idx];
+    if (!log) return null;
+    for (let i = set - 2; i >= 0; i--) {
+      if (log.sets[i]?.weight != null) return log.sets[i].weight;
+    }
+    return null;
+  }
+
+  function pushStep() {
+    setStepHistory((h) => [...h, { itemIndex, currentSet, subMode, timer, timerActive }]);
+  }
+
   function recordSet(completed: boolean) {
     setLogs((prev) => {
       const next = prev.map((l) => ({ ...l, sets: l.sets.map((s) => ({ ...s })) }));
-      const set = next[itemIndex].sets[currentSet - 1];
-      set.completed = completed;
-      set.reps = repsDraft;
-      set.rpe = rpeDraft;
-      set.weight = isLoaded ? weightDraft : null;
+      const s = next[itemIndex].sets[currentSet - 1];
+      s.completed = completed;
+      s.weight = weightDraft;
+      s.reps = repsDraft;
       return next;
     });
   }
 
   function completeSet() {
     recordSet(true);
+    pushStep();
     if (currentSet < item.sets) {
       setCurrentSet((s) => s + 1);
       setSubMode("rest");
       setTimer(item.rest > 0 ? item.rest : null);
       setTimerActive(item.rest > 0);
     } else {
-      advance(false);
+      doAdvance();
     }
   }
 
   function finishRest() {
+    pushStep();
     setSubMode("work");
     setTimer(item.duration ?? null);
     setTimerActive(false);
-    setRpeDraft(null);
-    setRepsDraft(parseTarget(item.reps));
   }
 
   function resetForItem(idx: number) {
@@ -159,56 +189,62 @@ export default function Runner({
     setTimerActive(false);
   }
 
-  function advance(skip: boolean) {
-    if (skip) {
-      setLogs((prev) => {
-        const next = prev.map((l) => ({ ...l, sets: l.sets.map((s) => ({ ...s })) }));
-        const anyDone = next[itemIndex].sets.some((s) => s.completed);
-        if (!anyDone) next[itemIndex].skipped = true;
-        return next;
-      });
-    }
+  function doAdvance() {
     const nextIdx = itemIndex + 1;
-    if (nextIdx < items.length) {
-      setItemIndex(nextIdx);
-      resetForItem(nextIdx);
-    } else {
-      finish();
-    }
+    if (nextIdx < items.length) { setItemIndex(nextIdx); resetForItem(nextIdx); }
+    else onComplete(logs, totalRef.current, { ...bucketRef.current });
   }
 
+  function skipExercise() {
+    setLogs((prev) => {
+      const next = prev.map((l) => ({ ...l, sets: l.sets.map((s) => ({ ...s })) }));
+      if (!next[itemIndex].sets.some((s) => s.completed)) next[itemIndex].skipped = true;
+      return next;
+    });
+    pushStep();
+    doAdvance();
+  }
+
+  function jumpTo(idx: number) {
+    pushStep();
+    setItemIndex(idx);
+    resetForItem(idx);
+  }
+
+  // Previous = step back through the actual experience (set 2 -> rest -> set 1 -> …).
   function prev() {
-    if (itemIndex === 0) return;
-    const p = itemIndex - 1;
-    setItemIndex(p);
-    resetForItem(p);
+    setStepHistory((h) => {
+      if (h.length === 0) return h;
+      const last = h[h.length - 1];
+      setItemIndex(last.itemIndex);
+      setCurrentSet(last.currentSet);
+      setSubMode(last.subMode);
+      setTimer(last.timer);
+      setTimerActive(false); // don't auto-resume a countdown on back-step
+      return h.slice(0, -1);
+    });
   }
 
-  function finish() {
-    onComplete(logs, totalRef.current, { ...bucketRef.current });
+  function addTime(sec: number) {
+    setTimer((t) => (t ?? 0) + sec);
+    setTimerActive(true);
   }
 
-  // ---- progress across the whole plan ----
   const overallPct = Math.round((itemIndex / items.length) * 100);
+  const canPrev = stepHistory.length > 0;
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 56 }}>
       <SessionTimer seconds={elapsed} phase={item.phase} />
 
-      {/* phase + overall progress */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span className="t-eyebrow" style={{ color: "var(--t-amber)" }}>
-          {PHASE_HEADING[item.phase]}
-        </span>
-        <span className="t-mono" style={{ fontSize: 11, color: "var(--t-faint)" }}>
-          {itemIndex + 1} / {items.length}
-        </span>
+        <span className="t-eyebrow" style={{ color: "var(--t-amber)" }}>{PHASE_HEADING[item.phase]}</span>
+        <span className="t-mono" style={{ fontSize: 11, color: "var(--t-faint)" }}>{itemIndex + 1} / {items.length}</span>
       </div>
-      <div style={{ height: 3, background: "#1a1a1a", borderRadius: 2, marginBottom: 18 }}>
+      <div style={{ height: 3, background: "#262626", borderRadius: 2, marginBottom: 18 }}>
         <div style={{ height: "100%", width: `${overallPct}%`, background: "linear-gradient(90deg,var(--t-flame),var(--t-amber))", borderRadius: 2, transition: "width 0.4s" }} />
       </div>
 
-      {/* ===== REST ===== */}
       {subMode === "rest" ? (
         <div className="t-card" style={{ textAlign: "center", borderRadius: 20, padding: 28 }}>
           <div style={{ fontSize: 36, marginBottom: 8 }}>😮‍💨</div>
@@ -216,131 +252,99 @@ export default function Runner({
           <p className="t-mono" style={{ color: "var(--t-muted)", fontSize: 12, margin: "0 0 18px" }}>
             Set {currentSet} of {item.sets} next
           </p>
-          <Ring value={timer} active={!paused} amber />
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Ring value={timer} active={!paused} amber />
+          </div>
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-            <button className="t-btn t-btn-ghost" onClick={() => setPaused((p) => !p)}>
-              {paused ? "▶ Resume" : "⏸ Pause"}
-            </button>
-            <button className="t-btn t-btn-primary" onClick={finishRest}>Skip Rest →</button>
+            <button className="t-btn t-btn-ghost" onClick={() => addTime(15)}>＋15s</button>
+            <button className="t-btn t-btn-primary" onClick={finishRest}>Skip rest →</button>
           </div>
         </div>
       ) : (
-        /* ===== WORK ===== */
         <div className="t-card t-fadein" style={{ borderRadius: 20, padding: 24 }} key={`${itemIndex}-${currentSet}`}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div>
               <div className="t-eyebrow" style={{ marginBottom: 4 }}>{ex.muscleLabel}</div>
-              <h2 style={{ fontSize: 23, margin: 0 }}>
-                {ex.emoji} {ex.name}
-              </h2>
+              <h2 style={{ fontSize: 23, margin: 0 }}>{ex.emoji} {ex.name}</h2>
             </div>
-            <button
-              onClick={() => onOpenExercise(ex)}
-              aria-label="How to"
-              className="t-mono"
-              style={{ background: "#161616", border: "1px solid #2a2a2a", color: "var(--t-amber)", borderRadius: 10, padding: "8px 10px", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}
-            >
+            <button onClick={() => onOpenExercise(ex)} aria-label="How to do this exercise" className="t-mono"
+              style={{ background: "#1d1d1d", border: "1px solid #333", color: "var(--t-amber)", borderRadius: 10, padding: "8px 11px", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
               ? How-to
             </button>
           </div>
 
-          {/* set dots */}
           {item.sets > 1 && (
             <div style={{ display: "flex", gap: 5, marginBottom: 14 }}>
               {Array.from({ length: item.sets }, (_, i) => i + 1).map((s) => (
-                <div key={s} style={{
-                  width: 9, height: 9, borderRadius: "50%",
-                  background: s < currentSet ? "var(--t-flame)" : s === currentSet ? "var(--t-amber)" : "#2a2a2a",
-                }} />
+                <div key={s} style={{ width: 9, height: 9, borderRadius: "50%", background: s < currentSet ? "var(--t-flame)" : s === currentSet ? "var(--t-amber)" : "#3a3a3a" }} />
               ))}
             </div>
           )}
 
-          {/* targets */}
           <div style={{ background: "#0d0d0d", borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 22 }}>
             <Stat label="SET" value={`${currentSet}/${item.sets}`} amber />
             <Stat label="TARGET" value={item.reps} />
             {item.rest > 0 && <Stat label="REST" value={`${item.rest}s`} muted />}
           </div>
 
-          {/* timed hold OR weight logging */}
           {isTimed ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 16 }}>
               <Ring value={timer} active={timerActive && !paused} />
-              {!timerActive ? (
-                <button className="t-btn t-btn-primary" style={{ marginTop: 16 }} onClick={() => setTimerActive(true)}>
-                  ▶ Start {item.duration}s
-                </button>
-              ) : (
-                <button className="t-btn t-btn-ghost" style={{ marginTop: 16 }} onClick={() => setPaused((p) => !p)}>
-                  {paused ? "▶ Resume" : "⏸ Pause"}
-                </button>
-              )}
+              <div style={{ display: "flex", gap: 10, marginTop: 16, width: "100%" }}>
+                {!timerActive ? (
+                  <button className="t-btn t-btn-primary" onClick={() => setTimerActive(true)}>▶ Start {item.duration}s</button>
+                ) : (
+                  <button className="t-btn t-btn-ghost" onClick={() => setPaused((p) => !p)}>{paused ? "▶ Resume" : "⏸ Pause"}</button>
+                )}
+                <button className="t-btn t-btn-ghost" onClick={() => addTime(30)} style={{ maxWidth: 120 }}>＋30s</button>
+              </div>
             </div>
           ) : (
-            isLoaded && (
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <Field label="Weight (lb)" >
-                    <input
-                      type="number" inputMode="decimal" placeholder="—"
-                      value={weightDraft ?? ""}
-                      onChange={(e) => setWeightDraft(e.target.value === "" ? null : Number(e.target.value))}
-                    />
-                  </Field>
-                  <Field label="Reps done">
-                    <input
-                      type="number" inputMode="numeric" placeholder="—"
-                      value={repsDraft ?? ""}
-                      onChange={(e) => setRepsDraft(e.target.value === "" ? null : Number(e.target.value))}
-                    />
-                  </Field>
-                </div>
-                <RpePicker value={rpeDraft} onChange={setRpeDraft} />
+            <div className="t-entry" style={{ marginBottom: 14 }}>
+              <div className="t-entry-label">Log your set <span style={{ textTransform: "none", color: "var(--t-faint)" }}>· optional</span></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <Stepper label="Weight (lb)" value={weightDraft} step={5} min={0} placeholder="—" onChange={setWeightDraft} />
+                <Stepper label="Reps done" value={repsDraft} step={1} min={0} placeholder="—" onChange={setRepsDraft} />
               </div>
-            )
+            </div>
           )}
 
-          {/* primary action */}
-          {!isTimed && (
+          {!isTimed ? (
             <button className="t-btn t-btn-primary" onClick={completeSet}>
               {currentSet < item.sets ? `✓ Set ${currentSet} done → rest` : "✓ Final set done →"}
             </button>
-          )}
-          {isTimed && (
-            <button className="t-btn t-btn-quiet" style={{ marginTop: 4 }} onClick={completeSet}>
-              Mark done →
-            </button>
+          ) : (
+            <button className="t-btn t-btn-quiet" onClick={completeSet}>Mark done →</button>
           )}
         </div>
       )}
 
-      {/* nav controls */}
       <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-        <button className="t-btn t-btn-quiet" onClick={prev} disabled={itemIndex === 0}>◀ Prev</button>
-        <button className="t-btn t-btn-quiet" onClick={() => advance(true)}>Skip ▶</button>
+        <button className="t-btn t-btn-quiet" onClick={prev} disabled={!canPrev}>◀ Previous</button>
+        <button className="t-btn t-btn-quiet" onClick={skipExercise}>Skip ▶</button>
       </div>
 
-      {/* up next */}
       {itemIndex + 1 < items.length && (
-        <div style={{ marginTop: 14, background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 12, padding: "12px 14px" }}>
-          <div className="t-eyebrow" style={{ marginBottom: 8 }}>Up Next</div>
+        <div style={{ marginTop: 14, background: "#0d0d0d", border: "1px solid #242424", borderRadius: 12, padding: "12px 14px" }}>
+          <div className="t-eyebrow" style={{ marginBottom: 8 }}>Up Next · tap to skip ahead</div>
           {items.slice(itemIndex + 1, itemIndex + 4).map((it, i) => {
             const e = getExercise(it.exerciseId);
+            const globalIdx = itemIndex + 1 + i;
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
-                <span style={{ opacity: 0.5 }}>{e?.emoji}</span>
-                <span style={{ fontSize: 13, color: "#777" }}>{e?.name}</span>
-                <span className="t-mono" style={{ fontSize: 11, color: "#444", marginLeft: "auto" }}>{it.reps}</span>
-              </div>
+              <button key={globalIdx} onClick={() => {
+                if (confirm("Are you sure you want to skip exercises in your workout?")) jumpTo(globalIdx);
+              }}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", width: "100%", background: "none", border: "none", borderBottom: i < 2 ? "1px solid #1c1c1c" : "none", color: "var(--t-ink)", cursor: "pointer", textAlign: "left" }}>
+                <span style={{ opacity: 0.7 }}>{e?.emoji}</span>
+                <span style={{ fontSize: 13, color: "var(--t-muted)" }}>{e?.name}</span>
+                <span className="t-mono" style={{ fontSize: 11, color: "var(--t-faint)", marginLeft: "auto" }}>{it.reps}</span>
+              </button>
             );
           })}
         </div>
       )}
 
-      <button className="t-btn t-btn-quiet" style={{ marginTop: 20 }} onClick={onExit}>
-        Exit workout
-      </button>
+      <button className="t-btn t-btn-quiet" style={{ marginTop: 20 }} onClick={onExit}>Exit workout</button>
     </div>
   );
 }
@@ -350,10 +354,10 @@ function Ring({ value, active, amber }: { value: number | null; active: boolean;
   return (
     <div style={{
       width: 120, height: 120, borderRadius: "50%",
-      border: `4px solid ${active ? color : "#222"}`,
+      border: `4px solid ${active ? color : "#2a2a2a"}`,
       display: "flex", alignItems: "center", justifyContent: "center",
       background: "#0d0d0d", transition: "border-color 0.3s",
-      boxShadow: active ? `0 0 20px ${amber ? "rgba(255,159,30,0.25)" : "rgba(255,90,30,0.3)"}` : "none",
+      boxShadow: active ? `0 0 20px ${amber ? "rgba(255,174,61,0.25)" : "rgba(255,106,50,0.3)"}` : "none",
     }}>
       <span className="t-mono" style={{ fontSize: 30, fontWeight: 700, color: active ? color : "var(--t-ink)" }}>
         {value !== null ? formatTime(value) : "--"}
@@ -371,36 +375,23 @@ function Stat({ label, value, amber, muted }: { label: string; value: string; am
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Stepper({ label, value, step, min, placeholder, onChange }: {
+  label: string; value: number | null; step: number; min: number; placeholder: string;
+  onChange: (v: number | null) => void;
+}) {
+  const dec = () => onChange(Math.max(min, (value ?? 0) - step));
+  const inc = () => onChange((value ?? 0) + step);
   return (
-    <label style={{ display: "block" }}>
-      <div className="t-eyebrow" style={{ marginBottom: 5 }}>{label}</div>
-      {children}
-    </label>
-  );
-}
-
-function RpePicker({ value, onChange }: { value: number | null; onChange: (v: number) => void }) {
-  return (
-    <div style={{ marginTop: 12 }}>
-      <div className="t-eyebrow" style={{ marginBottom: 6 }}>How hard? (RPE)</div>
-      <div style={{ display: "flex", gap: 5 }}>
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-          <button
-            key={n}
-            onClick={() => onChange(n)}
-            className="t-mono"
-            style={{
-              flex: 1, padding: "8px 0", borderRadius: 7, cursor: "pointer",
-              fontSize: 12, fontWeight: 700,
-              background: value === n ? "linear-gradient(135deg,var(--t-flame),var(--t-amber))" : "#161616",
-              border: `1px solid ${value === n ? "var(--t-flame)" : "#222"}`,
-              color: value === n ? "#fff" : "#777",
-            }}
-          >
-            {n}
-          </button>
-        ))}
+    <div>
+      <div className="t-entry-label" style={{ color: "var(--t-faint)" }}>{label}</div>
+      <div className="t-stepper">
+        <button type="button" aria-label={`Decrease ${label}`} onClick={dec}>−</button>
+        <input
+          type="number" inputMode="decimal" placeholder={placeholder}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+        />
+        <button type="button" aria-label={`Increase ${label}`} onClick={inc}>＋</button>
       </div>
     </div>
   );

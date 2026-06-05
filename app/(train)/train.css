@@ -9,11 +9,12 @@
   --t-surface2: #161616;
   --t-deep: #0d0d0d;
   --t-line: #1e1e1e;
-  --t-ink: #f0ede6;
-  --t-muted: #888;
-  --t-faint: #555;
-  --t-flame: #ff5a1e;
-  --t-amber: #ff9f1e;
+  --t-ink: #f4f1ea;
+  /* Contrast-tuned against #0a0a0a for WCAG AA on normal text. */
+  --t-muted: #b4aca0;   /* secondary text — ~7:1 */
+  --t-faint: #968d80;   /* tertiary labels/eyebrows — ~4.7:1 */
+  --t-flame: #ff6a32;   /* brighter flame for AA on dark */
+  --t-amber: #ffae3d;
 
   position: relative;
   z-index: 5; /* above the portfolio's fixed noise overlay (z-index 1) */
@@ -152,4 +153,71 @@
 @media (min-width: 560px) {
   .train-root .t-modal-scrim { align-items: center; }
   .train-root .t-modal { border-radius: 20px; }
+}
+
+/* ---- per-set log entry box ---- */
+.train-root .t-entry {
+  background: var(--t-deep); border: 1px solid var(--t-line);
+  border-radius: 14px; padding: 16px;
+}
+.train-root .t-entry-label {
+  font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--t-faint); margin-bottom: 6px;
+}
+.train-root .t-stepper {
+  display: flex; align-items: stretch; gap: 0;
+  border: 1px solid var(--t-line); border-radius: 10px; overflow: hidden;
+}
+.train-root .t-stepper button {
+  width: 44px; background: #161616; border: none; color: var(--t-ink);
+  font-size: 20px; cursor: pointer;
+}
+.train-root .t-stepper button:active { background: #222; }
+.train-root .t-stepper input {
+  flex: 1; border: none; border-radius: 0; text-align: center; background: var(--t-deep);
+}
+
+/* ---- favorite / save toggle ---- */
+.train-root .t-fav {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px; border-radius: 12px; cursor: pointer;
+  font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.5px; transition: all 0.15s ease;
+  background: #161616; border: 1px solid var(--t-line); color: var(--t-muted);
+}
+.train-root .t-fav.on {
+  background: linear-gradient(135deg, rgba(255,106,50,0.18), rgba(255,174,61,0.12));
+  border-color: var(--t-flame); color: var(--t-ink);
+}
+
+/* ---- collapsible drawer (previous workouts modal) ---- */
+.train-root .t-drawer-head {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--t-surface2); border: 1px solid var(--t-line); border-radius: 12px;
+  padding: 13px 14px; cursor: pointer; color: var(--t-ink);
+  font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.train-root .t-drawer-count {
+  margin-left: auto; color: var(--t-faint); font-size: 11px;
+}
+.train-root .t-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--t-surface); border: 1px solid var(--t-line);
+  border-radius: 12px; padding: 11px 13px;
+}
+
+/* ---- resume banner ---- */
+.train-root .t-resume {
+  background: linear-gradient(135deg, rgba(255,106,50,0.16), rgba(255,174,61,0.1));
+  border: 1px solid var(--t-flame); border-radius: 14px; padding: 16px;
+  margin-bottom: 20px;
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .train-root *, .train-root *::before, .train-root *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

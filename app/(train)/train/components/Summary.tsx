@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { WorkoutSession } from "@/lib/train/types";
 import { completedSetCount, formatClock, sessionVolume } from "@/lib/train/format";
 
@@ -7,11 +8,14 @@ export default function Summary({
   session,
   onDone,
   onHistory,
+  onToggleFavorite,
 }: {
   session: WorkoutSession;
   onDone: () => void;
   onHistory: () => void;
+  onToggleFavorite: (favorite: boolean) => void;
 }) {
+  const [favorite, setFavorite] = useState(!!session.favorite);
   const vol = sessionVolume(session);
   const sets = completedSetCount(session.logs);
   const pt = session.phaseTimes;
@@ -75,8 +79,20 @@ export default function Summary({
         </div>
       )}
 
+      <button
+        className={`t-fav${favorite ? " on" : ""}`}
+        style={{ marginBottom: 12 }}
+        aria-pressed={favorite}
+        onClick={() => { const next = !favorite; setFavorite(next); onToggleFavorite(next); }}
+      >
+        {favorite ? "★ Saved as favorite" : "☆ Save as favorite"}
+      </button>
+
       <button className="t-btn t-btn-primary" onClick={onDone}>Done</button>
       <button className="t-btn t-btn-quiet" style={{ marginTop: 10 }} onClick={onHistory}>View history →</button>
+      <p className="t-mono" style={{ textAlign: "center", color: "var(--t-faint)", fontSize: 11, marginTop: 12 }}>
+        Favorites show up first under “Do a previous workout”.
+      </p>
     </div>
   );
 }

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type {
-  CheckIn as CheckInType, Exercise, ExerciseLog, PhaseTimes, WorkoutPlan, WorkoutSession,
+  CheckIn as CheckInType, Exercise, ExerciseLog, PhaseTimes, RunnerSnapshot,
+  WorkoutPlan, WorkoutSession,
 } from "@/lib/train/types";
 import { generatePlan, swapItem } from "@/lib/train/generator";
-import { getStore } from "@/lib/train/storage";
+import { clearActive, getStore, loadActive, saveActive } from "@/lib/train/storage";
 import IntentSetup, { type Intent } from "./components/IntentSetup";
 import PlanPreview from "./components/PlanPreview";
 import CheckIn from "./components/CheckIn";
@@ -13,6 +14,7 @@ import Runner from "./components/Runner";
 import Summary from "./components/Summary";
 import History from "./components/History";
 import ExerciseModal from "./components/ExerciseModal";
+import PreviousWorkoutsModal from "./components/PreviousWorkoutsModal";
 
 type Screen = "home" | "preview" | "precheck" | "run" | "postcheck" | "summary" | "history";
 
@@ -29,15 +31,25 @@ export default function TrainApp() {
   const [intent, setIntent] = useState<Intent>(DEFAULT_INTENT);
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [pre, setPre] = useState<CheckInType | null>(null);
+  const [runnerInitial, setRunnerInitial] = useState<RunnerSnapshot | null>(null);
   const [runResult, setRunResult] = useState<{ logs: ExerciseLog[]; totalSeconds: number; phaseTimes: PhaseTimes } | null>(null);
   const [session, setSession] = useState<WorkoutSession | null>(null);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [modalExercise, setModalExercise] = useState<Exercise | null>(null);
+  const [showPrevModal, setShowPrevModal] = useState(false);
 
   const store = getStore();
 
+  // Load history + auto-resume any in-progress workout exactly where it left off.
   useEffect(() => {
     store.list().then(setSessions);
+    const active = loadActive();
+    if (active?.plan && active.snapshot) {
+      setPlan(active.plan);
+      setPre(active.pre ?? null);
+      setRunnerInitial(active.snapshot);
+      setScreen("run");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -47,10 +59,13 @@ export default function TrainApp() {
 
   // ---- home ----
   function handleGenerate() {
+    setRunnerInitial(null);
     setPlan(generatePlan({ ...intent }));
     setScreen("preview");
   }
   function handleRepeat(s: WorkoutSession) {
+    setShowPrevModal(false);
+    setRunnerInitial(null);
     setIntent({
       focus: s.focus,
       minutes: s.durationTarget,
@@ -69,9 +84,16 @@ export default function TrainApp() {
   }
   function handleSwap(index: number) {
     if (!plan) return;
-    setPlan(swapItem(plan, index));
+    const before = plan.items[index]?.exerciseId;
+    const next = swapItem(plan, index);
+    if (next.items[index]?.exerciseId === before) {
+      alert("No similar alternative is available for that slot — try Reroll for a fresh plan.");
+      return;
+    }
+    setPlan(next);
   }
   function handleApprove() {
+    setRunnerInitial(null);
     setScreen("precheck");
   }
 
@@ -80,7 +102,13 @@ export default function TrainApp() {
     setPre(c);
     setScreen("run");
   }
+  function handlePersist(snapshot: RunnerSnapshot) {
+    if (!plan) return;
+    saveActive({ plan, pre: pre ?? undefined, snapshot, savedAt: new Date().toISOString() });
+  }
   function handleRunComplete(logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) {
+    clearActive();
+    setRunnerInitial(null);
     setRunResult({ logs, totalSeconds, phaseTimes });
     setScreen("postcheck");
   }
@@ -110,16 +138,27 @@ export default function TrainApp() {
     setScreen("summary");
   }
 
+  async function handleToggleFavorite(favorite: boolean) {
+    if (!session) return;
+    await store.setFavorite(session.id, favorite);
+    setSession({ ...session, favorite });
+    refresh();
+  }
+
   function resetToHome() {
     setPlan(null);
     setPre(null);
     setRunResult(null);
+    setRunnerInitial(null);
     setSession(null);
     setScreen("home");
   }
 
   function exitRun() {
-    if (confirm("Exit this workout? Progress won't be saved.")) resetToHome();
+    if (confirm("Exit this workout? Your progress so far won't be saved.")) {
+      clearActive();
+      resetToHome();
+    }
   }
 
   return (
@@ -129,8 +168,8 @@ export default function TrainApp() {
           value={intent}
           onChange={setIntent}
           onGenerate={handleGenerate}
-          recent={sessions}
-          onRepeat={handleRepeat}
+          hasHistory={sessions.length > 0}
+          onPrevious={() => setShowPrevModal(true)}
           onHistory={() => setScreen("history")}
         />
       )}
@@ -150,17 +189,25 @@ export default function TrainApp() {
 
       {screen === "run" && plan && (
         <Runner
+          key={plan.id}
           plan={plan}
+          initial={runnerInitial}
           onComplete={handleRunComplete}
           onExit={exitRun}
           onOpenExercise={setModalExercise}
+          onPersist={handlePersist}
         />
       )}
 
       {screen === "postcheck" && <CheckIn variant="post" onSubmit={handlePost} />}
 
       {screen === "summary" && session && (
-        <Summary session={session} onDone={resetToHome} onHistory={() => setScreen("history")} />
+        <Summary
+          session={session}
+          onDone={resetToHome}
+          onHistory={() => setScreen("history")}
+          onToggleFavorite={handleToggleFavorite}
+        />
       )}
 
       {screen === "history" && (
@@ -168,7 +215,14 @@ export default function TrainApp() {
           sessions={sessions}
           onBack={() => setScreen(session ? "summary" : "home")}
           onDelete={async (id) => { await store.remove(id); refresh(); }}
-          onImported={refresh}
+        />
+      )}
+
+      {showPrevModal && (
+        <PreviousWorkoutsModal
+          sessions={sessions}
+          onStart={handleRepeat}
+          onClose={() => setShowPrevModal(false)}
         />
       )}
 

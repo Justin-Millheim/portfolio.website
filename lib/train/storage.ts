@@ -1,4 +1,4 @@
-import type { WorkoutSession } from "./types";
+import type { ActiveSession, WorkoutSession } from "./types";
 
 // Single interface every backend implements. The UI only ever talks to this,
 // so swapping localStorage -> Supabase later is an isolated change.
@@ -7,11 +7,13 @@ export interface WorkoutStore {
   get(id: string): Promise<WorkoutSession | null>;
   save(session: WorkoutSession): Promise<void>;
   remove(id: string): Promise<void>;
+  setFavorite(id: string, favorite: boolean): Promise<void>;
   // Last weight a user used for a given exercise, to pre-fill the runner.
   lastWeight(exerciseId: string): Promise<number | null>;
 }
 
 const KEY = "train.sessions.v1";
+const ACTIVE_KEY = "train.active.v1";
 
 function readAll(): WorkoutSession[] {
   if (typeof window === "undefined") return [];
@@ -46,6 +48,14 @@ export class LocalStore implements WorkoutStore {
   async remove(id: string): Promise<void> {
     writeAll(readAll().filter((s) => s.id !== id));
   }
+  async setFavorite(id: string, favorite: boolean): Promise<void> {
+    const all = readAll();
+    const s = all.find((x) => x.id === id);
+    if (s) {
+      s.favorite = favorite;
+      writeAll(all);
+    }
+  }
   async lastWeight(exerciseId: string): Promise<number | null> {
     const sessions = await this.list(); // newest first
     for (const s of sessions) {
@@ -68,6 +78,31 @@ let _store: WorkoutStore | null = null;
 export function getStore(): WorkoutStore {
   if (!_store) _store = new LocalStore();
   return _store;
+}
+
+// ---- In-progress workout cache (resume where you left off) ----
+// Survives reloads, accidental navigation, or the phone locking. Cleared when
+// the workout is completed or abandoned.
+export function saveActive(active: ActiveSession): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+export function loadActive(): ActiveSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_KEY);
+    return raw ? (JSON.parse(raw) as ActiveSession) : null;
+  } catch {
+    return null;
+  }
+}
+export function clearActive(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(ACTIVE_KEY);
 }
 
 // JSON export/import so on-device history can be backed up or moved between

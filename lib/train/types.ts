@@ -120,4 +120,29 @@ export interface WorkoutSession {
   totalSeconds: number;
   phaseTimes: PhaseTimes;
   completedAt?: string;
+  favorite?: boolean;           // user-saved favorite workout
+}
+
+// Serializable runner position so an interrupted workout can resume exactly.
+export interface StepSnapshot {
+  itemIndex: number;
+  currentSet: number;
+  subMode: "work" | "rest";
+  timer: number | null;
+  timerActive: boolean;
+}
+
+export interface RunnerSnapshot extends StepSnapshot {
+  logs: ExerciseLog[];
+  stepHistory: StepSnapshot[];
+  totalSeconds: number;
+  phaseTimes: PhaseTimes;
+}
+
+// Cached in-progress workout (plan + pre check-in + runner position).
+export interface ActiveSession {
+  plan: WorkoutPlan;
+  pre?: CheckIn;
+  snapshot: RunnerSnapshot;
+  savedAt: string;
 }

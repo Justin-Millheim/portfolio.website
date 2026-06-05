@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { WorkoutSession } from "@/lib/train/types";
 import { getExercise } from "@/lib/train/exercises";
-import { exportSessions, importSessions } from "@/lib/train/storage";
 import { FOCUS_LABEL, formatClock, sessionVolume } from "@/lib/train/format";
 
 interface Trend {
@@ -45,44 +44,15 @@ export default function History({
   sessions,
   onBack,
   onDelete,
-  onImported,
 }: {
   sessions: WorkoutSession[];
   onBack: () => void;
   onDelete: (id: string) => void;
-  onImported: () => void;
 }) {
   const trends = useMemo(() => buildTrends(sessions), [sessions]);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const totalWorkouts = sessions.length;
   const streak = computeStreak(sessions);
-
-  function doExport() {
-    const blob = new Blob([exportSessions()], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `train-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function doImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        importSessions(String(reader.result));
-        onImported();
-      } catch {
-        alert("That doesn't look like a valid backup file.");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 36 }}>
@@ -149,19 +119,6 @@ export default function History({
             </button>
           </div>
         ))}
-      </div>
-
-      {/* BACKUP */}
-      <div style={{ marginTop: 28 }}>
-        <div className="t-eyebrow" style={{ marginBottom: 10 }}>Backup</div>
-        <p style={{ color: "var(--t-faint)", fontSize: 12, margin: "0 0 12px", lineHeight: 1.5 }}>
-          History is saved on this device. Export a backup to keep it safe or move it to another device.
-        </p>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="t-btn t-btn-ghost" onClick={doExport}>⬇ Export</button>
-          <button className="t-btn t-btn-ghost" onClick={() => fileRef.current?.click()}>⬆ Import</button>
-          <input ref={fileRef} type="file" accept="application/json" onChange={doImport} style={{ display: "none" }} />
-        </div>
       </div>
     </div>
   );
