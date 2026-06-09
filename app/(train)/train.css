@@ -15,6 +15,10 @@
   --t-faint: #968d80;   /* tertiary labels/eyebrows — ~4.7:1 */
   --t-flame: #ff6a32;   /* brighter flame for AA on dark */
   --t-amber: #ffae3d;
+  /* Cool teal — the complement of the flame, for celebratory banners so they
+     pop against the warm UI instead of blending into it. White text reads AA. */
+  --t-cheer-a: #0f766e;
+  --t-cheer-b: #14b8a6;
 
   position: relative;
   z-index: 5; /* above the portfolio's fixed noise overlay (z-index 1) */
@@ -238,7 +242,7 @@
   position: absolute; left: 50%; top: 26px;
   display: flex; align-items: center; gap: 12px;
   padding: 10px 20px 10px 14px;
-  background: linear-gradient(135deg, var(--t-flame), var(--t-amber));
+  background: linear-gradient(135deg, var(--t-cheer-a), var(--t-cheer-b));
   border-radius: 999px;
   box-shadow: 0 12px 34px rgba(0,0,0,0.55);
   white-space: nowrap; will-change: transform;
@@ -260,14 +264,19 @@
 }
 .train-root .t-streak { animation: t-streak 2.8s ease-in-out forwards; }
 
-/* finale: big centered banner + a parade of critters */
+/* finale: a solid centered banner that pops in (matching the per-exercise cheer
+   treatment so the text stays readable over the parade of critters behind it). */
 .train-root .t-finale-banner {
-  position: absolute; top: 18%; left: 50%; transform: translateX(-50%);
+  position: absolute; top: 16%; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 16px 28px; border-radius: 18px;
+  background: linear-gradient(135deg, var(--t-cheer-a), var(--t-cheer-b));
+  box-shadow: 0 16px 42px rgba(0,0,0,0.6);
   text-align: center; animation: t-pop 0.5s cubic-bezier(.2,1.4,.4,1) both;
 }
 .train-root .t-finale-banner .big {
-  font-size: 26px; font-weight: 800; color: var(--t-ink);
-  text-shadow: 0 2px 12px rgba(255,106,50,0.5);
+  font-size: 26px; font-weight: 800; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 @keyframes t-pop {
   0% { transform: translateX(-50%) scale(0.4); opacity: 0; }
