@@ -20,7 +20,6 @@ interface ParadeMember { critter: string; hat: string; top: number; delay: numbe
 interface Confetto { hat: string; left: number; delay: number }
 interface Shown {
   key: number;
-  top: number;
   critter: string;
   hat: string;
   msg: string;
@@ -39,7 +38,6 @@ export default function Celebration({ id, variant }: { id: number; variant: "exe
     // Freeze all positions/emoji/messages now so re-renders can't disturb them.
     setShown({
       key: id,
-      top: 30 + Math.random() * 35, // vary vertical position, once
       critter: pick(CRITTERS),
       hat: pick(HATS),
       msg: pick(EXERCISE_MSGS),
@@ -51,10 +49,10 @@ export default function Celebration({ id, variant }: { id: number; variant: "exe
         hat: pick(HATS), left: (i / 14) * 100, delay: Math.random() * 0.6,
       })),
     });
-    // Keep these in sync with the animation durations in train.css. The
-    // exercise cheer slides in, holds long enough to actually read the
-    // message, then drifts off; the finale parade is a slow victory lap.
-    const t = setTimeout(() => setShown(null), variant === "finale" ? 5600 : 4200);
+    // Keep these in sync with the animation durations in train.css. The exercise
+    // cheer slides into the center, pauses briefly, then exits; the finale parade
+    // is a slow victory lap.
+    const t = setTimeout(() => setShown(null), variant === "finale" ? 5600 : 3000);
     return () => clearTimeout(t);
   }, [id, variant]);
 
@@ -63,12 +61,12 @@ export default function Celebration({ id, variant }: { id: number; variant: "exe
   if (variant === "exercise") {
     return (
       <div className="t-cheer" aria-hidden>
-        <div className="t-critter t-streak" style={{ top: `${shown.top}%`, left: 0 }}>
+        <div className="t-cheer-banner t-streak">
           <span className="emoji">
             {shown.critter}
             <span className="hat">{shown.hat}</span>
           </span>
-          <span className="t-bubble">{shown.msg}</span>
+          <span className="t-cheer-msg">{shown.msg}</span>
         </div>
       </div>
     );
