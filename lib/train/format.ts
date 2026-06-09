@@ -47,7 +47,7 @@ export const FOCUS_LABEL: Record<string, string> = {
 export const EQUIPMENT_LABEL: Record<string, string> = {
   bodyweight: "Bodyweight",
   dumbbell: "Dumbbells",
-  bands: "Dumbbells + Bands",
+  bands: "Resistance Bands",
   full: "Full Gym",
 };
 

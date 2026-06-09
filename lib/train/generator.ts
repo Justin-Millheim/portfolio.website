@@ -1,7 +1,7 @@
 import type {
-  Constraint, Difficulty, Equipment, Exercise, Focus, PlanItem, WorkoutPlan,
+  Constraint, Difficulty, Equipment, Exercise, Focus, MuscleGroup, PlanItem, WorkoutPlan,
 } from "./types";
-import { EXERCISES } from "./exercises";
+import { EXERCISES, getExercise } from "./exercises";
 
 // ---- Seeded RNG (mulberry32) so reroll/repeat is reproducible from a seed ----
 function rng(seed: number) {
@@ -24,6 +24,8 @@ function shuffle<T>(arr: T[], rnd: () => number): T[] {
 }
 
 // What a user's chosen equipment unlocks. Bodyweight is always available.
+// "full" (a real gym) is the only tier that unlocks barbell / machine / cable /
+// pull-up / kettlebell movements (the exercises tagged with the "full" tier).
 function allowedTiers(equipment: Equipment): Equipment[] {
   switch (equipment) {
     case "bodyweight": return ["bodyweight"];
@@ -33,12 +35,33 @@ function allowedTiers(equipment: Equipment): Equipment[] {
   }
 }
 
+// Full validity for a circuit (work) movement: it must serve the focus, be
+// doable with the available equipment, and clear any active constraints.
 function isValid(ex: Exercise, focus: Focus, allowed: Equipment[], constraints: Constraint[]): boolean {
   if (!ex.focus.includes(focus)) return false;
   if (!ex.equipment.some((t) => allowed.includes(t))) return false;
   if (ex.excludedBy && ex.excludedBy.some((c) => constraints.includes(c))) return false;
   return true;
 }
+
+// Warmups/cooldowns are matched to the muscles actually trained (below), not to
+// the focus tag, so they only need to clear equipment + constraints here.
+function equipConstraintOk(ex: Exercise, allowed: Equipment[], constraints: Constraint[]): boolean {
+  if (!ex.equipment.some((t) => allowed.includes(t))) return false;
+  if (ex.excludedBy && ex.excludedBy.some((c) => constraints.includes(c))) return false;
+  return true;
+}
+
+// The muscle groups a focus is "about". Combined with the circuit's own muscles,
+// this lets us pick warmups/cooldowns that prep/relax what you just worked
+// (e.g. an arms day cools down with triceps/shoulder stretches, not hamstrings).
+const FOCUS_MUSCLES: Record<Focus, MuscleGroup[]> = {
+  full: ["quads", "glutes", "hamstrings", "chest", "back", "shoulders", "core"],
+  legs: ["quads", "glutes", "hamstrings", "calves"],
+  arms: ["biceps", "triceps", "shoulders", "chest", "back"],
+  core: ["core"],
+  cardio: ["cardio", "fullbody"],
+};
 
 // Rough seconds one working set takes, for time budgeting.
 function setWorkSecondsFromReps(ex: Exercise): number {
@@ -94,29 +117,7 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
     (e) => isValid(e, input.focus, allowed, constraints) && !blocked.has(e.id)
   );
 
-  // -------- Warmup --------
-  const warmPool = shuffle(pool.filter((e) => e.type === "warmup"), rnd);
-  const warm: PlanItem[] = [];
-  let warmUsed = 0;
-  for (const ex of warmPool) {
-    if (warmUsed >= warmBudget && warm.length >= 2) break;
-    warm.push(toItem(ex, "warmup", 1));
-    warmUsed += (ex.defaultDuration ?? 40) + 6;
-    if (warm.length >= 4) break;
-  }
-
-  // -------- Cooldown --------
-  const coolPool = shuffle(pool.filter((e) => e.type === "cooldown"), rnd);
-  const cool: PlanItem[] = [];
-  let coolUsed = 0;
-  for (const ex of coolPool) {
-    if (coolUsed >= coolBudget && cool.length >= 2) break;
-    cool.push(toItem(ex, "cooldown", 1));
-    coolUsed += (ex.defaultDuration ?? 30) + 6;
-    if (cool.length >= 4) break;
-  }
-
-  // -------- Circuit --------
+  // -------- Circuit (built first so warmups/cooldowns can target it) --------
   // Strength + cardio movements that match the focus. For "cardio" we lean on
   // cardio-type moves; otherwise strength-led with optional cardio finisher.
   const isCardio = input.focus === "cardio";
@@ -128,7 +129,6 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
     rnd
   );
 
-  // Prefer the focus's primary movements first, then variety by muscle group.
   const sets = difficulty === "beginner" ? 3 : 4;
   const circuit: PlanItem[] = [];
   const usedMuscles = new Set<string>();
@@ -191,6 +191,37 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
     }
   }
 
+  // -------- Warmup & cooldown: matched to what the circuit trains --------
+  const trained = new Set<MuscleGroup>(FOCUS_MUSCLES[input.focus]);
+  for (const it of circuit) {
+    const ex = getExercise(it.exerciseId);
+    if (ex) ex.muscles.forEach((m) => trained.add(m));
+  }
+  // Higher score = more relevant. General movers (mobility/cardio/full-body)
+  // get a small floor so there's always something to round out the phase.
+  function relevance(ex: Exercise): number {
+    let score = ex.muscles.reduce((n, m) => n + (trained.has(m) ? 1 : 0), 0);
+    if (ex.muscles.some((m) => m === "mobility" || m === "cardio" || m === "fullbody")) score += 0.5;
+    return score;
+  }
+  function pickPhase(phase: "warmup" | "cooldown", budget: number, fallbackDur: number, maxCount: number): PlanItem[] {
+    const ranked = shuffle(
+      EXERCISES.filter((e) => e.type === phase && equipConstraintOk(e, allowed, constraints) && !blocked.has(e.id)),
+      rnd
+    ).sort((a, b) => relevance(b) - relevance(a));
+    const out: PlanItem[] = [];
+    let spent = 0;
+    for (const ex of ranked) {
+      if (spent >= budget && out.length >= 2) break;
+      out.push(toItem(ex, phase, 1));
+      spent += (ex.defaultDuration ?? fallbackDur) + 6;
+      if (out.length >= maxCount) break;
+    }
+    return out;
+  }
+  const warm = pickPhase("warmup", warmBudget, 40, 4);
+  const cool = pickPhase("cooldown", coolBudget, 30, 4);
+
   const items = [...warm, ...circuit, ...cool];
 
   return {
@@ -207,7 +238,9 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
 }
 
 // Swap a single plan item (warmup, circuit, or cooldown) for another valid,
-// not-already-used, non-blocked alternative of the same phase type.
+// not-already-used, non-blocked alternative of the same phase type. Warmups and
+// cooldowns swap within the muscle-agnostic mobility pool (focus is ignored for
+// them, mirroring how they're generated).
 export function swapItem(plan: WorkoutPlan, index: number, blocked: string[] = []): WorkoutPlan {
   const target = plan.items[index];
   if (!target) return plan;
@@ -219,9 +252,9 @@ export function swapItem(plan: WorkoutPlan, index: number, blocked: string[] = [
   const candidates = shuffle(
     EXERCISES.filter((e) => {
       if (used.has(e.id) || blockedSet.has(e.id)) return false;
+      if (target.phase === "warmup") return e.type === "warmup" && equipConstraintOk(e, allowed, plan.constraints);
+      if (target.phase === "cooldown") return e.type === "cooldown" && equipConstraintOk(e, allowed, plan.constraints);
       if (!isValid(e, plan.focus, allowed, plan.constraints)) return false;
-      if (target.phase === "warmup") return e.type === "warmup";
-      if (target.phase === "cooldown") return e.type === "cooldown";
       return e.type === "strength" || e.type === "cardio";
     }),
     rnd

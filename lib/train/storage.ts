@@ -123,6 +123,41 @@ export function lastWeightFrom(sessions: WorkoutSession[], exerciseId: string): 
   return null;
 }
 
+// ---- Basic progressive overload ----------------------------------------
+// Look at the most recent session where this loaded exercise was actually done
+// and decide what to suggest today. If every completed set met/beat the target
+// reps last time, nudge the weight up one step; otherwise repeat the same weight
+// so the user can nail their reps first. Returns the suggested starting weight to
+// pre-fill plus a short human hint (or nulls when there's no usable history).
+export interface ProgressionSuggestion {
+  lastWeight: number | null;
+  suggested: number | null;
+  hint: string | null;
+}
+
+export function suggestNextWeight(
+  sessions: WorkoutSession[],
+  exerciseId: string,
+  targetReps: number | null,
+): ProgressionSuggestion {
+  for (const s of sessions) {
+    const log = s.logs.find((l) => l.exerciseId === exerciseId);
+    if (!log) continue;
+    const done = log.sets.filter((x) => x.completed && x.weight != null);
+    if (done.length === 0) continue;
+    const lastWeight = done[done.length - 1].weight as number;
+    // Earned the bump only if reps were tracked and hit on every completed set.
+    const hitTarget =
+      targetReps != null && done.every((x) => x.reps != null && (x.reps as number) >= targetReps);
+    if (hitTarget) {
+      const suggested = lastWeight + 5; // matches the runner's 5 lb weight stepper
+      return { lastWeight, suggested, hint: `Last time ${lastWeight} lb · try ${suggested} ↑` };
+    }
+    return { lastWeight, suggested: lastWeight, hint: `Last time ${lastWeight} lb · match or beat your reps` };
+  }
+  return { lastWeight: null, suggested: null, hint: null };
+}
+
 // Active store. Defaults to on-device; TrainApp swaps in a SupabaseStore after
 // a successful sign-in, and back to LocalStore on guest/sign-out.
 let _store: WorkoutStore = new LocalStore();

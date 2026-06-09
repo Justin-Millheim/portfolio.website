@@ -5,7 +5,7 @@ import type {
   Exercise, ExerciseLog, PhaseTimes, Phase, RunnerSnapshot, StepSnapshot, WorkoutPlan,
 } from "@/lib/train/types";
 import { getExercise } from "@/lib/train/exercises";
-import { getStore, type ExercisePrefs } from "@/lib/train/storage";
+import { getStore, suggestNextWeight, type ExercisePrefs } from "@/lib/train/storage";
 import { formatTime } from "@/lib/train/format";
 import SessionTimer from "./SessionTimer";
 import Celebration from "./Celebration";
@@ -57,6 +57,8 @@ export default function Runner({
   // Per-set input drafts (weight optional, reps optional).
   const [weightDraft, setWeightDraft] = useState<number | null>(null);
   const [repsDraft, setRepsDraft] = useState<number | null>(null);
+  // Progressive-overload hint for loaded moves ("Last time 25 lb · try 30 ↑").
+  const [progressHint, setProgressHint] = useState<string | null>(null);
 
   // Brief celebration trigger when an exercise is finished.
   const [cheer, setCheer] = useState(0);
@@ -93,6 +95,7 @@ export default function Runner({
 
   // Load drafts when we move between sets/exercises (also on back-navigation).
   useEffect(() => {
+    setProgressHint(null);
     const log = logs[itemIndex];
     const s = log?.sets[currentSet - 1];
     if (s && (s.completed || s.weight != null || s.reps != null)) {
@@ -105,7 +108,13 @@ export default function Runner({
     if (inItem != null) { setWeightDraft(inItem); return; }
     if (ex.loaded) {
       let alive = true;
-      getStore().lastWeight(ex.id).then((w) => { if (alive) setWeightDraft(w); });
+      // Suggest progressive overload from history (and pre-fill that weight).
+      getStore().list().then((sessions) => {
+        if (!alive) return;
+        const sug = suggestNextWeight(sessions, ex.id, parseTarget(item.reps));
+        setWeightDraft(sug.suggested ?? sug.lastWeight);
+        setProgressHint(sug.hint);
+      });
       return () => { alive = false; };
     }
     setWeightDraft(null);
@@ -315,6 +324,11 @@ export default function Runner({
                 <Stepper label="Weight (lb)" value={weightDraft} step={5} min={0} placeholder="—" onChange={setWeightDraft} />
                 <Stepper label="Reps done" value={repsDraft} step={1} min={0} placeholder="—" onChange={setRepsDraft} />
               </div>
+              {progressHint && (
+                <div className="t-mono" style={{ marginTop: 10, fontSize: 11, color: "var(--t-amber)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span aria-hidden>📈</span> {progressHint}
+                </div>
+              )}
             </div>
           )}
 
