@@ -1,12 +1,22 @@
 // Single source of truth for custom analytics events.
 //
-// Today this forwards events to Vercel Web Analytics. When GA4 is added later,
-// teach ONLY this function to also call `window.gtag("event", name, props)` —
-// every call site below stays untouched. That's the whole point of the seam.
+// Forwards every event to TWO destinations from ONE place (the seam):
+//   1. Vercel Web Analytics (direct)
+//   2. The GTM dataLayer — so Google Tag Manager (GTM-MSFLT8BM) can route the
+//      event on to GA4 (or any other tag) via a Custom Event trigger named
+//      exactly after the event (e.g. trigger event name "contact_open").
+// Every call site stays untouched. That's the whole point of the seam.
 //
-// Keep event names snake_case and stable; renaming them resets their history.
+// Keep event names snake_case and stable; renaming them resets their history
+// AND breaks the matching GTM trigger.
 
 import { track as vercelTrack } from "@vercel/analytics";
+
+declare global {
+  interface Window {
+    dataLayer?: Record<string, unknown>[];
+  }
+}
 
 export type EventName =
   | "contact_open" // contact modal opened (top of the outreach funnel)
@@ -30,8 +40,10 @@ export function track(name: EventName, props?: Props) {
   // Vercel Web Analytics — no-op in dev / when the script isn't loaded.
   vercelTrack(name, props);
 
-  // --- GA4 goes here later (one place) ---
-  // if (typeof window !== "undefined" && typeof window.gtag === "function") {
-  //   window.gtag("event", name, props ?? {});
-  // }
+  // GTM dataLayer — GTM picks up { event: name, ... } and any Custom Event
+  // trigger whose name matches `name` fires, routing the event to GA4 etc.
+  if (typeof window !== "undefined") {
+    window.dataLayer = window.dataLayer ?? [];
+    window.dataLayer.push({ event: name, ...props });
+  }
 }
