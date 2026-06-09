@@ -230,27 +230,35 @@
 .train-root .t-critter .hat {
   position: absolute; top: -14px; right: -8px; font-size: 26px; transform: rotate(12deg);
 }
-.train-root .t-bubble {
-  background: #fff; color: #111; font-family: "JetBrains Mono", monospace; font-weight: 700;
-  font-size: 14px; padding: 7px 12px; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+/* Per-exercise cheer: a solid banner (critter + message) pinned near the top of
+   the screen. It slides in from the left, pauses dead-center for a beat so the
+   message reads, then slides off to the right. Centered with left:50% plus a
+   -50% translate baked into every keyframe; the vw term carries it across. */
+.train-root .t-cheer-banner {
+  position: absolute; left: 50%; top: 26px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px 10px 14px;
+  background: linear-gradient(135deg, var(--t-flame), var(--t-amber));
+  border-radius: 999px;
+  box-shadow: 0 12px 34px rgba(0,0,0,0.55);
+  white-space: nowrap; will-change: transform;
 }
-.train-root .t-bubble::after {
-  content: ""; position: absolute; left: 56px; bottom: -6px;
-  border: 7px solid transparent; border-top-color: #fff; border-bottom: 0;
+.train-root .t-cheer-banner .emoji { font-size: 38px; position: relative; line-height: 1; }
+.train-root .t-cheer-banner .hat {
+  position: absolute; top: -12px; right: -8px; font-size: 20px; transform: rotate(12deg);
 }
-/* One critter ambles in from the left, settles in a readable spot, holds long
-   enough for the message bubble to be read, then strolls off to the right.
-   Deliberately slow — the old version flew across in 1.5s and read as a glitch. */
+.train-root .t-cheer-msg {
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 800;
+  font-size: 16px; letter-spacing: 0.3px; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
 @keyframes t-streak {
-  0%   { transform: translateX(-72vw) translateY(0) rotate(-4deg); opacity: 0; }
-  12%  { opacity: 1; }
-  22%  { transform: translateX(6vw) translateY(-6px) rotate(2deg); }
-  30%  { transform: translateX(3vw) translateY(0) rotate(0deg); }
-  78%  { transform: translateX(3vw) translateY(0) rotate(0deg); opacity: 1; } /* hold — read the message */
-  90%  { opacity: 1; }
-  100% { transform: translateX(120vw) translateY(0) rotate(-2deg); opacity: 0; }
+  0%   { transform: translate(calc(-50% - 85vw), 0) rotate(-3deg); opacity: 0; }
+  20%  { transform: translate(-50%, 0) rotate(0deg); opacity: 1; } /* settle dead-center */
+  60%  { transform: translate(-50%, 0) rotate(0deg); opacity: 1; } /* brief pause */
+  100% { transform: translate(calc(-50% + 95vw), 0) rotate(3deg); opacity: 0; }
 }
-.train-root .t-streak { animation: t-streak 4s ease-in-out forwards; }
+.train-root .t-streak { animation: t-streak 2.8s ease-in-out forwards; }
 
 /* finale: big centered banner + a parade of critters */
 .train-root .t-finale-banner {
