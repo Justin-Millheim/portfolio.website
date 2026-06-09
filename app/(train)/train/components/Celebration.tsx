@@ -20,7 +20,10 @@ export default function Celebration({ id, variant }: { id: number; variant: "exe
   useEffect(() => {
     if (!id) return;
     setShown({ key: id });
-    const t = setTimeout(() => setShown(null), variant === "finale" ? 2600 : 1600);
+    // Keep these in sync with the animation durations in train.css. The
+    // exercise cheer now slides in, holds long enough to actually read the
+    // message, then drifts off; the finale parade is a slow victory lap.
+    const t = setTimeout(() => setShown(null), variant === "finale" ? 5600 : 4200);
     return () => clearTimeout(t);
   }, [id, variant]);
 
@@ -55,7 +58,7 @@ export default function Celebration({ id, variant }: { id: number; variant: "exe
         <div
           key={i}
           className="t-critter t-streak-fast"
-          style={{ top: `${20 + i * 9}%`, left: 0, animationDelay: `${i * 0.18}s` }}
+          style={{ top: `${20 + i * 9}%`, left: 0, animationDelay: `${i * 0.12}s` }}
         >
           <span className="emoji">
             {pick(CRITTERS)}

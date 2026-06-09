@@ -97,6 +97,14 @@ export default function TrainApp() {
     await finishEnter({ mode: "cloud", email: user.email ?? undefined });
   }
 
+  // Each "screen" is a client-side swap, so the browser keeps the previous
+  // scroll position. Approving a long plan (or any step-to-step move) would
+  // otherwise drop you partway down the next screen, past its intro prompt.
+  // Snap back to the top on every transition so each step starts where it reads.
+  useEffect(() => {
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
+  }, [screen, entered]);
+
   function refresh() { getStore().list().then(setSessions); }
 
   // ---- account ----

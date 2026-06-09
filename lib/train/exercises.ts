@@ -227,7 +227,7 @@ export const EXERCISES: Exercise[] = [
     },
   },
   {
-    id: "triceps-kickback", name: "Triceps Kickback", emoji: "🦵", type: "strength",
+    id: "triceps-kickback", name: "Triceps Kickback", emoji: "🦾", type: "strength",
     focus: ["arms"], muscles: ["triceps"],
     muscleLabel: "Triceps", equipment: ["dumbbell"], loaded: true,
     defaultSets: 3, defaultReps: "12 reps", defaultRest: 30,

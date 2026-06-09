@@ -238,15 +238,19 @@
   content: ""; position: absolute; left: 56px; bottom: -6px;
   border: 7px solid transparent; border-top-color: #fff; border-bottom: 0;
 }
-/* one critter streaking across the screen */
+/* One critter ambles in from the left, settles in a readable spot, holds long
+   enough for the message bubble to be read, then strolls off to the right.
+   Deliberately slow — the old version flew across in 1.5s and read as a glitch. */
 @keyframes t-streak {
-  0%   { transform: translateX(-60vw) translateY(0) rotate(-4deg); opacity: 0; }
+  0%   { transform: translateX(-72vw) translateY(0) rotate(-4deg); opacity: 0; }
   12%  { opacity: 1; }
-  50%  { transform: translateX(20vw) translateY(-10px) rotate(3deg); }
-  88%  { opacity: 1; }
+  22%  { transform: translateX(6vw) translateY(-6px) rotate(2deg); }
+  30%  { transform: translateX(3vw) translateY(0) rotate(0deg); }
+  78%  { transform: translateX(3vw) translateY(0) rotate(0deg); opacity: 1; } /* hold — read the message */
+  90%  { opacity: 1; }
   100% { transform: translateX(120vw) translateY(0) rotate(-2deg); opacity: 0; }
 }
-.train-root .t-streak { animation: t-streak 1.5s ease-in-out forwards; }
+.train-root .t-streak { animation: t-streak 4s ease-in-out forwards; }
 
 /* finale: big centered banner + a parade of critters */
 .train-root .t-finale-banner {
@@ -264,14 +268,16 @@
 @keyframes t-streak-fast {
   0%   { transform: translateX(-50vw) rotate(-6deg); opacity: 0; }
   15%  { opacity: 1; }
+  55%  { transform: translateX(45vw) rotate(0deg); opacity: 1; } /* lingers mid-screen */
+  88%  { opacity: 1; }
   100% { transform: translateX(120vw) rotate(6deg); opacity: 0; }
 }
-.train-root .t-streak-fast { animation: t-streak-fast 2.2s ease-in forwards; }
+.train-root .t-streak-fast { animation: t-streak-fast 4.5s ease-in-out forwards; }
 @keyframes t-confetti {
   0% { transform: translateY(-10vh) rotate(0); opacity: 1; }
   100% { transform: translateY(110vh) rotate(360deg); opacity: 0.2; }
 }
-.train-root .t-confetti { position: absolute; font-size: 18px; animation: t-confetti 2.4s linear forwards; }
+.train-root .t-confetti { position: absolute; font-size: 18px; animation: t-confetti 4.5s linear forwards; }
 
 /* Respect reduced-motion preferences. */
 @media (prefers-reduced-motion: reduce) {
