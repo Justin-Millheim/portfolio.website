@@ -12,16 +12,47 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// Everything random about a celebration is decided ONCE, when it triggers, and
+// frozen in state. The parent (Runner) re-renders every second as its clock
+// ticks; if we rolled Math.random() in the render body the critter would
+// teleport to a new vertical position — and swap emoji/message — mid-animation.
+interface ParadeMember { critter: string; hat: string; top: number; delay: number }
+interface Confetto { hat: string; left: number; delay: number }
+interface Shown {
+  key: number;
+  top: number;
+  critter: string;
+  hat: string;
+  msg: string;
+  finaleMsg: string;
+  parade: ParadeMember[];
+  confetti: Confetto[];
+}
+
 // `id` is a monotonically increasing trigger; when it changes (and is > 0) the
 // celebration plays once and auto-dismisses. Purely visual; pointer-events none.
 export default function Celebration({ id, variant }: { id: number; variant: "exercise" | "finale" }) {
-  const [shown, setShown] = useState<{ key: number } | null>(null);
+  const [shown, setShown] = useState<Shown | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    setShown({ key: id });
+    // Freeze all positions/emoji/messages now so re-renders can't disturb them.
+    setShown({
+      key: id,
+      top: 30 + Math.random() * 35, // vary vertical position, once
+      critter: pick(CRITTERS),
+      hat: pick(HATS),
+      msg: pick(EXERCISE_MSGS),
+      finaleMsg: pick(FINALE_MSGS),
+      parade: Array.from({ length: 7 }, (_, i) => ({
+        critter: pick(CRITTERS), hat: pick(HATS), top: 20 + i * 9, delay: i * 0.12,
+      })),
+      confetti: Array.from({ length: 14 }, (_, i) => ({
+        hat: pick(HATS), left: (i / 14) * 100, delay: Math.random() * 0.6,
+      })),
+    });
     // Keep these in sync with the animation durations in train.css. The
-    // exercise cheer now slides in, holds long enough to actually read the
+    // exercise cheer slides in, holds long enough to actually read the
     // message, then drifts off; the finale parade is a slow victory lap.
     const t = setTimeout(() => setShown(null), variant === "finale" ? 5600 : 4200);
     return () => clearTimeout(t);
@@ -30,45 +61,42 @@ export default function Celebration({ id, variant }: { id: number; variant: "exe
   if (!shown) return null;
 
   if (variant === "exercise") {
-    const top = 30 + Math.random() * 35; // vary vertical position
     return (
       <div className="t-cheer" aria-hidden>
-        <div className="t-critter t-streak" style={{ top: `${top}%`, left: 0 }}>
+        <div className="t-critter t-streak" style={{ top: `${shown.top}%`, left: 0 }}>
           <span className="emoji">
-            {pick(CRITTERS)}
-            <span className="hat">{pick(HATS)}</span>
+            {shown.critter}
+            <span className="hat">{shown.hat}</span>
           </span>
-          <span className="t-bubble">{pick(EXERCISE_MSGS)}</span>
+          <span className="t-bubble">{shown.msg}</span>
         </div>
       </div>
     );
   }
 
   // finale: a parade of critters + a centered banner + confetti
-  const parade = Array.from({ length: 7 }, (_, i) => i);
-  const confetti = Array.from({ length: 14 }, (_, i) => i);
   return (
     <div className="t-cheer" aria-hidden>
-      {confetti.map((i) => (
-        <span key={`c${i}`} className="t-confetti" style={{ left: `${(i / 14) * 100}%`, animationDelay: `${Math.random() * 0.6}s` }}>
-          {pick(HATS)}
+      {shown.confetti.map((c, i) => (
+        <span key={`c${i}`} className="t-confetti" style={{ left: `${c.left}%`, animationDelay: `${c.delay}s` }}>
+          {c.hat}
         </span>
       ))}
-      {parade.map((i) => (
+      {shown.parade.map((p, i) => (
         <div
           key={i}
           className="t-critter t-streak-fast"
-          style={{ top: `${20 + i * 9}%`, left: 0, animationDelay: `${i * 0.12}s` }}
+          style={{ top: `${p.top}%`, left: 0, animationDelay: `${p.delay}s` }}
         >
           <span className="emoji">
-            {pick(CRITTERS)}
-            <span className="hat">{pick(HATS)}</span>
+            {p.critter}
+            <span className="hat">{p.hat}</span>
           </span>
         </div>
       ))}
       <div className="t-finale-banner">
         <div style={{ fontSize: 40 }}>🎉</div>
-        <div className="big">{pick(FINALE_MSGS)}</div>
+        <div className="big">{shown.finaleMsg}</div>
       </div>
     </div>
   );
