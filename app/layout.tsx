@@ -5,7 +5,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import ContactProvider from "@/components/ContactContext";
-import AdobeAnalytics from "@/components/AdobeAnalytics";
+import GoogleTagManager from "@/components/GoogleTagManager";
 
 const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ContactProvider>
           {/* Suspense required by useSearchParams inside AdobeAnalytics */}
           <Suspense fallback={null}>
-            <AdobeAnalytics />
+            <GoogleTagManager />
           </Suspense>
           <Nav />
           <main>{children}</main>

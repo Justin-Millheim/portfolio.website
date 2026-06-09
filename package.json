@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@adobe/alloy": "^2.34.0",
     "framer-motion": "^11.18.2",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.408.0",
