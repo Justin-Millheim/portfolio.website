@@ -116,8 +116,9 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
     if (!step) return;
     const clue = puzzle.clues[step.by];
     const region =
-      clue.kind === "count" || clue.kind === "parity" ? clue.region
+      clue.kind === "count" || clue.kind === "parity" || clue.kind === "share" || clue.kind === "connected" ? clue.region
       : clue.kind === "compare" ? [...clue.regionA, ...clue.regionB]
+      : clue.kind === "most" ? [clue.who]
       : [clue.speaker];
     setHint({ level: 1, speaker: clue.speaker, region, target: step.index });
     setHintsUsed((h) => h + 1);

@@ -29,6 +29,12 @@ export type Clue =
   | { kind: "count"; speaker: number; region: number[]; label: string; op: CountOp; k: number }
   // the number of criminals in a region is even / odd
   | { kind: "parity"; speaker: number; region: number[]; label: string; even: boolean }
+  // a and b share an even / odd number of criminal common-neighbours
+  | { kind: "share"; speaker: number; a: number; b: number; region: number[]; even: boolean }
+  // the criminals within a row/column region are orthogonally contiguous
+  | { kind: "connected"; speaker: number; region: number[]; label: string }
+  // `who` uniquely has the most criminal neighbours on the board
+  | { kind: "most"; speaker: number; who: number }
   // strictly more criminals in regionA than regionB (flavour: never load-bearing)
   | { kind: "compare"; speaker: number; regionA: number[]; labelA: string; regionB: number[]; labelB: string };
 

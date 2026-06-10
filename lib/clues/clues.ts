@@ -6,8 +6,20 @@
 // it propagates nothing.)
 
 import type { Clue, Status, CountOp, Suspect } from "./types";
+import { neighbors } from "./grid";
 
 export const opp = (s: Status): Status => (s === "criminal" ? "innocent" : "criminal");
+
+// #criminal neighbours of p under a (possibly partial) assignment, plus how many
+// of p's neighbours are still unknown — the bounds the "most" rules reason over.
+function neighbourCrimBounds(p: number, values: (Status | null)[]) {
+  let lo = 0; let unknown = 0;
+  for (const n of neighbors(p)) {
+    if (values[n] === "criminal") lo++;
+    else if (values[n] === null) unknown++;
+  }
+  return { lo, hi: lo + unknown };
+}
 
 export function statusPhrase(s: Status): string {
   return s === "criminal" ? "a criminal" : "innocent";
@@ -57,6 +69,18 @@ export function renderClue(clue: Clue, suspects: Suspect[]): string {
       return countPhrase(clue.op, clue.k, clue.label, clue.region.length);
     case "parity":
       return `An ${clue.even ? "even" : "odd"} number of ${clue.label} are criminals.`;
+    case "share": {
+      const n = clue.even ? "even" : "odd";
+      return clue.a === clue.speaker
+        ? `${name(clue.b)} and I share an ${n} number of criminal neighbours.`
+        : `${name(clue.a)} and ${name(clue.b)} share an ${n} number of criminal neighbours.`;
+    }
+    case "connected":
+      return `The criminals in ${clue.label} are connected.`;
+    case "most":
+      return clue.who === clue.speaker
+        ? `I have the most criminal neighbours.`
+        : `${name(clue.who)} has the most criminal neighbours.`;
     case "compare":
       return `There are more criminals among ${clue.labelA} than ${clue.labelB}.`;
   }
@@ -82,6 +106,23 @@ export function evalClue(clue: Clue, solution: Status[]): boolean {
     }
     case "parity":
       return crim(clue.region) % 2 === (clue.even ? 0 : 1);
+    case "share":
+      return crim(clue.region) % 2 === (clue.even ? 0 : 1);
+    case "connected": {
+      // criminals must occupy a contiguous run within the ordered region
+      const pos = clue.region.map((i) => solution[i] === "criminal");
+      const first = pos.indexOf(true);
+      if (first === -1) return true; // no criminals -> connected
+      const last = pos.lastIndexOf(true);
+      for (let p = first; p <= last; p++) if (!pos[p]) return false;
+      return true;
+    }
+    case "most": {
+      const f = (p: number) => solution[p] === undefined ? 0 : neighbourCrimBounds(p, solution).lo;
+      const mine = f(clue.who);
+      for (let q = 0; q < solution.length; q++) if (q !== clue.who && f(q) >= mine) return false;
+      return true;
+    }
     case "compare":
       return crim(clue.regionA) > crim(clue.regionB);
   }
@@ -124,11 +165,42 @@ export function propagate(clue: Clue, known: (Status | null)[]): { index: number
       }
       break;
     }
-    case "parity": {
+    case "parity":
+    case "share": {
       const { criminals, unknown } = crimCount(clue.region, known);
       if (unknown.length !== 1) break; // parity only pins the very last unknown
       const targetParity = clue.even ? 0 : 1;
       out.push({ index: unknown[0], status: criminals % 2 === targetParity ? "innocent" : "criminal" });
+      break;
+    }
+    case "connected": {
+      // any unknown cell strictly between two known criminals must be criminal
+      const r = clue.region;
+      let first = -1; let last = -1;
+      for (let p = 0; p < r.length; p++) if (known[r[p]] === "criminal") { if (first < 0) first = p; last = p; }
+      if (first >= 0) {
+        for (let p = first + 1; p < last; p++) if (known[r[p]] === null) out.push({ index: r[p], status: "criminal" });
+      }
+      break;
+    }
+    case "most": {
+      // f(who) > f(q) for all q. Bounds: f(p) in [lo(p), hi(p)].
+      const who = clue.who;
+      const whoB = neighbourCrimBounds(who, known);
+      for (let q = 0; q < known.length; q++) {
+        if (q === who) continue;
+        const qB = neighbourCrimBounds(q, known);
+        // Rule 1: a rival's floor ties who's ceiling -> who must max out (all
+        // unknown neighbours criminal) to stay strictly ahead.
+        if (qB.lo + 1 === whoB.hi) {
+          for (const n of neighbors(who)) if (known[n] === null) out.push({ index: n, status: "criminal" });
+        }
+        // Rule 2: a rival pinned at who's ceiling-minus-one can rise no further
+        // (its unknown neighbours must all be innocent).
+        if (qB.lo === whoB.hi - 1) {
+          for (const n of neighbors(q)) if (known[n] === null) out.push({ index: n, status: "innocent" });
+        }
+      }
       break;
     }
     case "compare":

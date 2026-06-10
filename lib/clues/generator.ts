@@ -11,7 +11,7 @@ import {
   SIZE, rowMembers, colMembers, neighbors, rowMembersByR, colMembersByC,
   colLetter, CORNERS, EDGE, between, commonNeighbors, rowOf, colOf,
 } from "./grid";
-import { propagate } from "./clues";
+import { propagate, evalClue } from "./clues";
 import { solve, solutionCount } from "./solver";
 import { NAME_POOL, PROFESSIONS } from "./suspects";
 
@@ -114,6 +114,57 @@ function regionsFor(
   return out;
 }
 
+const criminalNeighbours = (p: number, solution: Status[]) =>
+  neighbors(p).filter((i) => solution[i] === "criminal").length;
+
+// The suspect who *uniquely* has the most criminal neighbours, or -1 on a tie.
+function topNeighbourCrook(solution: Status[]): number {
+  let best = -1; let who = -1; let tie = false;
+  for (let p = 0; p < SIZE; p++) {
+    const f = criminalNeighbours(p, solution);
+    if (f > best) { best = f; who = p; tie = false; }
+    else if (f === best) tie = true;
+  }
+  return tie || best < 1 ? -1 : who;
+}
+
+// Showpiece clues (share / connected / the-most), built only when true under the
+// solution. Placed first in the hard/tricky order so they become load-bearing
+// whenever the board state lets them force a deduction.
+function specialCandidates(
+  speaker: number, solution: Status[], known: (Status | null)[], rand: () => number,
+): Clue[] {
+  const out: Clue[] = [];
+  const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
+
+  // SHARE — parity of criminal common-neighbours with an already-known suspect
+  const others = shuffle(
+    known.map((v, i) => (v !== null && i !== speaker ? i : -1)).filter((i) => i >= 0), rand,
+  ).slice(0, 4);
+  for (const b of others) {
+    const region = commonNeighbors(speaker, b);
+    if (region.length >= 2) out.push({ kind: "share", speaker, a: speaker, b, region, even: crim(region) % 2 === 0 });
+  }
+
+  // CONNECTED — a row/column whose criminals are contiguous (>= 2 of them)
+  const lines: { region: number[]; label: string }[] = [
+    { region: rowMembers(speaker), label: "my row" },
+    { region: colMembers(speaker), label: "my column" },
+  ];
+  for (const r of shuffle([0, 1, 2, 3, 4], rand).slice(0, 2)) lines.push({ region: rowMembersByR(r), label: `row ${r + 1}` });
+  for (const c of shuffle([0, 1, 2, 3], rand).slice(0, 2)) lines.push({ region: colMembersByC(c), label: `column ${colLetter(c)}` });
+  for (const ln of lines) {
+    const cl: Clue = { kind: "connected", speaker, region: ln.region, label: ln.label };
+    if (crim(ln.region) >= 2 && evalClue(cl, solution)) out.push(cl);
+  }
+
+  // THE MOST — whoever uniquely tops the board on criminal neighbours
+  const who = topNeighbourCrook(solution);
+  if (who >= 0) out.push({ kind: "most", speaker, who });
+
+  return shuffle(out, rand);
+}
+
 // Ordered candidate clues for a known speaker. Earlier = preferred for this
 // tier; the caller takes the first one that forces new progress.
 function candidateClues(
@@ -148,11 +199,14 @@ function candidateClues(
   });
   const direct: Clue[] = unknown.map((t) => ({ kind: "direct", speaker, target: t, status: solution[t] }));
 
+  const special = difficulty === "hard" || difficulty === "tricky"
+    ? specialCandidates(speaker, solution, known, rand) : [];
+
   switch (difficulty) {
     case "easy":   return [...countExact, ...relation, ...direct];
     case "medium": return [...countExact, ...cond, ...relation, ...direct];
-    case "hard":   return [...parity, ...countBounds, ...cond, ...countExact, ...relation, ...direct];
-    case "tricky": return [...parity, ...cond, ...countBounds, ...countExact, ...relation, ...direct];
+    case "hard":   return [...special, ...parity, ...countBounds, ...cond, ...countExact, ...relation, ...direct];
+    case "tricky": return [...special, ...parity, ...cond, ...countBounds, ...countExact, ...relation, ...direct];
   }
 }
 
@@ -172,6 +226,28 @@ function flavourClue(
   groups: Map<string, number[]>, difficulty: Difficulty, rand: () => number,
 ): Clue {
   const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
+
+  // hard/tricky: sometimes show off a connected / most / share clue
+  if ((difficulty === "hard" || difficulty === "tricky") && rand() < 0.55) {
+    const specials: Clue[] = [];
+    const who = topNeighbourCrook(solution);
+    if (who >= 0) specials.push({ kind: "most", speaker, who });
+    for (const ln of [
+      { region: rowMembers(speaker), label: "my row" },
+      { region: colMembers(speaker), label: "my column" },
+    ]) {
+      const cl: Clue = { kind: "connected", speaker, region: ln.region, label: ln.label };
+      if (crim(ln.region) >= 2 && evalClue(cl, solution)) specials.push(cl);
+    }
+    const partner = shuffle(Array.from({ length: SIZE }, (_, i) => i).filter((i) => i !== speaker), rand)
+      .find((i) => commonNeighbors(speaker, i).length >= 2);
+    if (partner !== undefined) {
+      const region = commonNeighbors(speaker, partner);
+      specials.push({ kind: "share", speaker, a: speaker, b: partner, region, even: crim(region) % 2 === 0 });
+    }
+    if (specials.length) return shuffle(specials, rand)[0];
+  }
+
   if (difficulty !== "easy" && rand() < 0.5) {
     // a "more criminals in A than B" comparison, if we can find a true one
     const regs = regionsFor(speaker, new Array(SIZE).fill("innocent"), suspects, groups, difficulty, rand);

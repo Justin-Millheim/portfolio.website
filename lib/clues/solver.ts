@@ -5,7 +5,7 @@
 // in-game hint system.
 
 import type { Clue, Status } from "./types";
-import { SIZE } from "./grid";
+import { SIZE, neighbors } from "./grid";
 import { propagate } from "./clues";
 
 export interface SolveResult {
@@ -96,8 +96,29 @@ function stillSatisfiable(clues: Clue[], assign: (Status | null)[]): boolean {
         if (c.op === "atmost" && cc > c.k) return false;
         break;
       }
-      case "parity": {
+      case "parity":
+      case "share": {
         if (unk(c.region) === 0 && crim(c.region) % 2 !== (c.even ? 0 : 1)) return false;
+        break;
+      }
+      case "connected": {
+        // a known-innocent flanked by known-criminals on both sides is impossible
+        const r = c.region;
+        let first = -1; let last = -1;
+        for (let p = 0; p < r.length; p++) if (assign[r[p]] === "criminal") { if (first < 0) first = p; last = p; }
+        if (first >= 0) {
+          for (let p = first + 1; p < last; p++) if (assign[r[p]] === "innocent") return false;
+        }
+        break;
+      }
+      case "most": {
+        const bounds = (p: number) => {
+          let lo = 0; let u = 0;
+          for (const n of neighbors(p)) { if (assign[n] === "criminal") lo++; else if (assign[n] === null) u++; }
+          return { lo, hi: lo + u };
+        };
+        const whoHi = bounds(c.who).hi;
+        for (let q = 0; q < SIZE; q++) { if (q !== c.who && bounds(q).lo >= whoHi) return false; }
         break;
       }
       case "compare": {
