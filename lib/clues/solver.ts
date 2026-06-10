@@ -121,6 +121,11 @@ function stillSatisfiable(clues: Clue[], assign: (Status | null)[]): boolean {
         for (let q = 0; q < SIZE; q++) { if (q !== c.who && bounds(q).lo >= whoHi) return false; }
         break;
       }
+      case "nbmore": {
+        const xb = (p: number) => { let lo = 0, u = 0; for (const n of neighbors(p)) { if (assign[n] === "criminal") lo++; else if (assign[n] === null) u++; } return { lo, hi: lo + u }; };
+        if (xb(c.y).lo >= xb(c.x).hi) return false; // y already ties/beats x's max
+        break;
+      }
       case "compare": {
         const maxA = crim(c.regionA) + unk(c.regionA); const minB = crim(c.regionB);
         if (maxA <= minB) return false;

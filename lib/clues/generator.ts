@@ -117,17 +117,6 @@ function regionsFor(
 const criminalNeighbours = (p: number, solution: Status[]) =>
   neighbors(p).filter((i) => solution[i] === "criminal").length;
 
-// The suspect who *uniquely* has the most criminal neighbours, or -1 on a tie.
-function topNeighbourCrook(solution: Status[]): number {
-  let best = -1; let who = -1; let tie = false;
-  for (let p = 0; p < SIZE; p++) {
-    const f = criminalNeighbours(p, solution);
-    if (f > best) { best = f; who = p; tie = false; }
-    else if (f === best) tie = true;
-  }
-  return tie || best < 1 ? -1 : who;
-}
-
 // Showpiece clues (share / connected / the-most), built only when true under the
 // solution. Placed first in the hard/tricky order so they become load-bearing
 // whenever the board state lets them force a deduction.
@@ -158,11 +147,41 @@ function specialCandidates(
     if (crim(ln.region) >= 2 && evalClue(cl, solution)) out.push(cl);
   }
 
-  // THE MOST — whoever uniquely tops the board on criminal neighbours
-  const who = topNeighbourCrook(solution);
-  if (who >= 0) out.push({ kind: "most", speaker, who });
+  // MORE-NEIGHBOURS — pairwise: x has strictly more criminal neighbours than y
+  const cand = shuffle(Array.from({ length: SIZE }, (_, i) => i), rand);
+  let added = 0;
+  for (const x of cand) {
+    for (const y of cand) {
+      if (x !== y && criminalNeighbours(x, solution) > criminalNeighbours(y, solution)) {
+        out.push({ kind: "nbmore", speaker, x, y }); added++; break;
+      }
+    }
+    if (added >= 3) break;
+  }
 
   return shuffle(out, rand);
+}
+
+// A true pairwise "more criminal neighbours" clue, or null if none differs.
+function nbmoreClue(speaker: number, solution: Status[], rand: () => number): Clue | null {
+  const cand = shuffle(Array.from({ length: SIZE }, (_, i) => i), rand);
+  for (const x of cand) for (const y of cand) {
+    if (x !== y && criminalNeighbours(x, solution) > criminalNeighbours(y, solution)) {
+      return { kind: "nbmore", speaker, x, y };
+    }
+  }
+  return null;
+}
+
+// A non-trivial conditional between two OTHER suspects (never the speaker), so it
+// only pays off once one side is deduced via another clue — exactly the
+// "in conjunction with another clue" case. True under the solution.
+function conditionalClue(speaker: number, solution: Status[], rand: () => number): Clue | null {
+  const others = shuffle(Array.from({ length: SIZE }, (_, i) => i).filter((i) => i !== speaker), rand);
+  for (const a of others) for (const b of others) {
+    if (a !== b) return { kind: "cond", speaker, a, aStatus: solution[a], b, bStatus: solution[b] };
+  }
+  return null;
 }
 
 // Ordered candidate clues for a known speaker. Earlier = preferred for this
@@ -175,9 +194,15 @@ function candidateClues(
   const unknown = shuffle(known.map((v, i) => (v === null ? i : -1)).filter((i) => i >= 0), rand);
   const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
 
-  // exact counts, but never "all"/"none" of a region — those are giveaways
+  // exact counts; "all"/"none" of a region are giveaways, kept separate as a
+  // last-resort bootstrap opener (capped to one per board downstream).
   const countExact: Clue[] = regions
     .filter((rg) => { const k = crim(rg.region); return k > 0 && k < rg.region.length; })
+    .map((rg) => ({
+      kind: "count" as const, speaker, region: rg.region, label: rg.label, op: "exactly" as const, k: crim(rg.region),
+    }));
+  const countSat: Clue[] = regions
+    .filter((rg) => { const k = crim(rg.region); return rg.region.length >= 2 && (k === 0 || k === rg.region.length); })
     .map((rg) => ({
       kind: "count" as const, speaker, region: rg.region, label: rg.label, op: "exactly" as const, k: crim(rg.region),
     }));
@@ -191,33 +216,27 @@ function candidateClues(
   const parity: Clue[] = regions
     .filter((rg) => rg.region.length >= 2)
     .map((rg) => ({ kind: "parity", speaker, region: rg.region, label: rg.label, even: crim(rg.region) % 2 === 0 }));
-  const relation: Clue[] = unknown.map((t) => ({
-    kind: "relation", speaker, a: speaker, b: t, same: solution[speaker] === solution[t],
-  }));
-  // conditionals NEVER anchor on the speaker (an always-true antecedent is a
-  // direct tell, e.g. "if I am innocent, then X is innocent"); they link two
-  // OTHER suspects, so using one needs real reasoning.
-  const cond: Clue[] = unknown.flatMap((t) => {
-    const anchors = known
-      .map((v, i) => (v !== null && i !== t && i !== speaker ? i : -1))
-      .filter((i) => i >= 0).slice(0, 3);
-    return anchors.map((a) => ({
-      kind: "cond" as const, speaker, a, aStatus: solution[a], b: t, bStatus: solution[t],
-    }));
-  });
-  const direct: Clue[] = unknown.map((t) => ({ kind: "direct", speaker, target: t, status: solution[t] }));
+  // same/opposite verdict and direct reveal: easy/medium only, and capped to one
+  // each per board downstream. Never offered on hard/tricky.
+  const softTells = difficulty === "easy" || difficulty === "medium";
+  const relation: Clue[] = softTells ? unknown.map((t) => ({
+    kind: "relation" as const, speaker, a: speaker, b: t, same: solution[speaker] === solution[t],
+  })) : [];
+  const direct: Clue[] = softTells ? unknown.map((t) => ({
+    kind: "direct" as const, speaker, target: t, status: solution[t],
+  })) : [];
 
   const special = difficulty === "hard" || difficulty === "tricky"
     ? specialCandidates(speaker, solution, known, rand) : [];
 
-  // indirect clues (counts, parity, specials, cross-suspect conditionals) first;
-  // speaker-relation and direct are bootstrap-only last resorts that the
-  // minimiser then strips back out.
+  // Indirect clues (counts, parity, specials) carry the spine; conditionals are
+  // never spine clues (they're injected as flavour). relation/direct/saturated
+  // counts are bootstrap-only last resorts the minimiser then strips back out.
   switch (difficulty) {
-    case "easy":   return [...countExact, ...parity, ...cond, ...relation, ...direct];
-    case "medium": return [...countExact, ...cond, ...parity, ...relation, ...direct];
-    case "hard":   return [...special, ...parity, ...countBounds, ...cond, ...countExact, ...relation, ...direct];
-    case "tricky": return [...special, ...parity, ...cond, ...countBounds, ...countExact, ...relation, ...direct];
+    case "easy":   return [...countExact, ...parity, ...countBounds, ...relation, ...direct, ...countSat];
+    case "medium": return [...countExact, ...parity, ...countBounds, ...relation, ...direct, ...countSat];
+    case "hard":   return [...special, ...parity, ...countBounds, ...countExact, ...countSat];
+    case "tricky": return [...special, ...parity, ...countBounds, ...countExact, ...countSat];
   }
 }
 
@@ -238,11 +257,11 @@ function flavourClue(
 ): Clue {
   const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
 
-  // hard/tricky: sometimes show off a connected / most / share clue
-  if ((difficulty === "hard" || difficulty === "tricky") && rand() < 0.55) {
+  // hard/tricky: sometimes show off a connected / more-neighbours / share clue
+  if ((difficulty === "hard" || difficulty === "tricky") && rand() < 0.6) {
     const specials: Clue[] = [];
-    const who = topNeighbourCrook(solution);
-    if (who >= 0) specials.push({ kind: "most", speaker, who });
+    const nb = nbmoreClue(speaker, solution, rand);
+    if (nb) specials.push(nb);
     for (const ln of [
       { region: rowMembers(speaker), label: "my row" },
       { region: colMembers(speaker), label: "my column" },
@@ -276,8 +295,20 @@ function flavourClue(
       }
     }
   }
-  const region = rand() < 0.5 ? rowMembers(speaker) : colMembers(speaker);
-  return { kind: "count", speaker, region, label: rand() < 0.5 ? "my row" : "my column", op: "exactly", k: crim(region) };
+  // a true count, but never saturated (all/none) — pick the row/column whose
+  // criminal count is interior, else fall back to a loose "at least" bound.
+  for (const [region, label] of shuffle([
+    [rowMembers(speaker), "my row"], [colMembers(speaker), "my column"],
+  ] as [number[], string][], rand)) {
+    const k = crim(region);
+    if (k > 0 && k < region.length) return { kind: "count", speaker, region, label, op: "exactly", k };
+  }
+  const region = rowMembers(speaker);
+  const n = region.length;
+  const k = crim(region);
+  return k === 0
+    ? { kind: "count", speaker, region, label: "my row", op: "atmost", k: 1 }
+    : { kind: "count", speaker, region, label: "my row", op: "atleast", k: Math.min(k, n - 1) };
 }
 
 function build(seed: number, difficulty: Difficulty): Puzzle {
@@ -297,10 +328,23 @@ function build(seed: number, difficulty: Difficulty): Puzzle {
     );
     if (speakers.length === 0) break;
 
+    // keep the base within the approved clue policy as it grows, so the
+    // minimiser and the final gate rarely have to reject it.
+    const tellCap = difficulty === "easy" || difficulty === "medium" ? 1 : 0;
+    const has = (pred: (c: Clue) => boolean) => clues.filter((c) => c !== undefined && pred(c)).length;
+    const withinBudget = (c: Clue) => {
+      if (c.kind === "direct") return has((x) => x.kind === "direct") < tellCap;
+      if (c.kind === "relation") return has((x) => x.kind === "relation") < tellCap;
+      if (c.kind === "count" && (c.k === 0 || c.k === c.region.length)) {
+        return has((x) => x.kind === "count" && (x.k === 0 || x.k === x.region.length)) < 1;
+      }
+      return true;
+    };
+
     let assigned = false;
     for (const s of speakers) {
       const pick = candidateClues(s, solution, known, suspects, groups, difficulty, rand)
-        .find((c) => forcesProgress(c, known));
+        .find((c) => withinBudget(c) && forcesProgress(c, known));
       if (!pick) continue;
       clues[s] = pick;
       const res = solve(clues, withStart(start, solution[start]));
@@ -357,6 +401,10 @@ function looseFlavours(speaker: number, solution: Status[], rand: () => number):
   const r2 = shuffled[1];
   const k2 = crim(r2.region);
   if (k2 >= 1) out.push({ kind: "count", speaker, region: r2.region, label: r2.label, op: "atleast", k: k2 });
+  const nb = nbmoreClue(speaker, solution, rand);
+  if (nb) out.push(nb);
+  const cnd = conditionalClue(speaker, solution, rand);
+  if (cnd) out.push(cnd);
   return shuffle(out, rand);
 }
 
@@ -413,13 +461,31 @@ function tellCount(clues: Clue[]): number {
 const profOK = (perDepth: number[], spec: Spec) =>
   perDepth[1] + perDepth[2] >= spec.need1 && perDepth[2] >= spec.need2;
 
+// The approved clue policy: direct reveals and same/opposite relations are
+// easy/medium-only and capped at one each; conditionals at most two; saturated
+// "all/none" counts at most one (a bootstrap opener); "the most" never appears.
+function policyOK(clues: Clue[], difficulty: Difficulty): boolean {
+  let direct = 0, relation = 0, cond = 0, sat = 0;
+  for (const c of clues) {
+    if (c === undefined) continue;
+    if (c.kind === "direct") direct++;
+    else if (c.kind === "relation") relation++;
+    else if (c.kind === "cond") cond++;
+    else if (c.kind === "most") return false;
+    else if (c.kind === "count" && (c.k === 0 || c.k === c.region.length)) sat++;
+  }
+  const tellCap = difficulty === "easy" || difficulty === "medium" ? 1 : 0;
+  return direct <= tellCap && relation <= tellCap && cond <= 2 && sat <= 1;
+}
+
 // Greedily replace each clue with the loosest variant that keeps the board
 // globally unique and solvable within the tier's depth — stopping as soon as the
 // tier's reasoning bar is met. The accept-check uses a single-depth solve (cheap);
 // the full profile is only recomputed after an accepted weakening (for early
 // stop). Honours `deadline` so generation latency stays bounded.
 function minimize(
-  clues: Clue[], solution: Status[], start: number, spec: Spec, rand: () => number, deadline: number,
+  clues: Clue[], solution: Status[], start: number, spec: Spec, difficulty: Difficulty,
+  rand: () => number, deadline: number,
 ): { clues: Clue[]; perDepth: number[] } {
   const cur = clues.slice();
   const ss = solution[start];
@@ -431,6 +497,7 @@ function minimize(
     const opts = [...looseFlavours(s, solution, rand), ...weakenings(cur[s], solution)];
     for (const w of opts) {
       const trial = cur.slice(); trial[s] = w;
+      if (!policyOK(trial, difficulty)) continue;            // keep within the approved clue mix
       if (solutionCount(trial, 2) !== 1) continue;
       if (!solveAtDepth(trial, start, ss, spec.cap).solved) continue; // stays within tier depth
       cur[s] = w;
@@ -459,8 +526,8 @@ export function generatePuzzle(seed: number, difficulty: Difficulty = "medium"):
     const res = solve(base.clues, withStart(base.start, base.solution[base.start]));
     if (!res.solvedAll || res.contradiction || solutionCount(base.clues, 2) !== 1) continue;
 
-    const { clues, perDepth } = minimize(base.clues, base.solution, base.start, spec, rand, deadline);
-    if (solutionCount(clues, 2) !== 1) continue;
+    const { clues, perDepth } = minimize(base.clues, base.solution, base.start, spec, difficulty, rand, deadline);
+    if (solutionCount(clues, 2) !== 1 || !policyOK(clues, difficulty)) continue;
 
     const tells = tellCount(clues);
     if (profOK(perDepth, spec) && tells <= spec.maxTells) return { ...base, clues, seed };

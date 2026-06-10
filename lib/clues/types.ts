@@ -35,6 +35,8 @@ export type Clue =
   | { kind: "connected"; speaker: number; region: number[]; label: string }
   // `who` uniquely has the most criminal neighbours on the board
   | { kind: "most"; speaker: number; who: number }
+  // x has strictly more criminal neighbours than y (pairwise)
+  | { kind: "nbmore"; speaker: number; x: number; y: number }
   // strictly more criminals in regionA than regionB (flavour: never load-bearing)
   | { kind: "compare"; speaker: number; regionA: number[]; labelA: string; regionB: number[]; labelB: string };
 
