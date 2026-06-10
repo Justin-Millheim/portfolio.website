@@ -81,6 +81,8 @@ export function renderClue(clue: Clue, suspects: Suspect[]): string {
       return clue.who === clue.speaker
         ? `I have the most criminal neighbours.`
         : `${name(clue.who)} has the most criminal neighbours.`;
+    case "nbmore":
+      return `${clue.x === clue.speaker ? "I have" : `${name(clue.x)} has`} more criminal neighbours than ${name(clue.y)}.`;
     case "compare":
       return `More criminals in ${clue.labelA} than ${clue.labelB}.`;
   }
@@ -98,6 +100,7 @@ export function clueCells(clue: Clue): number[] {
     case "connected": return clue.region;
     case "share": return [clue.a, clue.b, ...clue.region];
     case "most": return [clue.who, ...neighbors(clue.who)];
+    case "nbmore": return [clue.x, ...neighbors(clue.x), clue.y, ...neighbors(clue.y)];
     case "compare": return [...clue.regionA, ...clue.regionB];
   }
 }
@@ -114,6 +117,8 @@ export function clueMentions(clue: Clue, index: number): boolean {
     case "connected": return clue.region.includes(index);
     case "share": return clue.a === index || clue.b === index || clue.region.includes(index);
     case "most": return clue.who === index || neighbors(clue.who).includes(index);
+    case "nbmore":
+      return clue.x === index || clue.y === index || neighbors(clue.x).includes(index) || neighbors(clue.y).includes(index);
     case "compare": return clue.regionA.includes(index) || clue.regionB.includes(index);
   }
 }
@@ -155,6 +160,8 @@ export function evalClue(clue: Clue, solution: Status[]): boolean {
       for (let q = 0; q < solution.length; q++) if (q !== clue.who && f(q) >= mine) return false;
       return true;
     }
+    case "nbmore":
+      return neighbourCrimBounds(clue.x, solution).lo > neighbourCrimBounds(clue.y, solution).lo;
     case "compare":
       return crim(clue.regionA) > crim(clue.regionB);
   }
@@ -232,6 +239,17 @@ export function propagate(clue: Clue, known: (Status | null)[]): { index: number
         if (qB.lo === whoB.hi - 1) {
           for (const n of neighbors(q)) if (known[n] === null) out.push({ index: n, status: "innocent" });
         }
+      }
+      break;
+    }
+    case "nbmore": {
+      // f(x) > f(y). When y's floor ties x's ceiling, both are pinned: x's
+      // remaining neighbours must be criminal and y's must be innocent.
+      const xB = neighbourCrimBounds(clue.x, known);
+      const yB = neighbourCrimBounds(clue.y, known);
+      if (yB.lo + 1 === xB.hi) {
+        for (const n of neighbors(clue.x)) if (known[n] === null) out.push({ index: n, status: "criminal" });
+        for (const n of neighbors(clue.y)) if (known[n] === null) out.push({ index: n, status: "innocent" });
       }
       break;
     }
