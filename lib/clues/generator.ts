@@ -12,7 +12,7 @@ import {
   colLetter, CORNERS, EDGE, between, commonNeighbors, rowOf, colOf,
 } from "./grid";
 import { propagate, evalClue } from "./clues";
-import { solve, solutionCount, solveAtDepth, requiredDepth } from "./solver";
+import { solve, solutionCount, solveAtDepth, solveProfile } from "./solver";
 import { NAME_POOL, PROFESSIONS } from "./suspects";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "tricky"];
@@ -175,9 +175,12 @@ function candidateClues(
   const unknown = shuffle(known.map((v, i) => (v === null ? i : -1)).filter((i) => i >= 0), rand);
   const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
 
-  const countExact: Clue[] = regions.map((rg) => ({
-    kind: "count", speaker, region: rg.region, label: rg.label, op: "exactly", k: crim(rg.region),
-  }));
+  // exact counts, but never "all"/"none" of a region — those are giveaways
+  const countExact: Clue[] = regions
+    .filter((rg) => { const k = crim(rg.region); return k > 0 && k < rg.region.length; })
+    .map((rg) => ({
+      kind: "count" as const, speaker, region: rg.region, label: rg.label, op: "exactly" as const, k: crim(rg.region),
+    }));
   const countBounds: Clue[] = regions.flatMap((rg) => {
     const k = crim(rg.region);
     const cl: Clue[] = [];
@@ -191,8 +194,13 @@ function candidateClues(
   const relation: Clue[] = unknown.map((t) => ({
     kind: "relation", speaker, a: speaker, b: t, same: solution[speaker] === solution[t],
   }));
+  // conditionals NEVER anchor on the speaker (an always-true antecedent is a
+  // direct tell, e.g. "if I am innocent, then X is innocent"); they link two
+  // OTHER suspects, so using one needs real reasoning.
   const cond: Clue[] = unknown.flatMap((t) => {
-    const anchors = [speaker, ...known.map((v, i) => (v !== null ? i : -1)).filter((i) => i >= 0 && i !== t)].slice(0, 3);
+    const anchors = known
+      .map((v, i) => (v !== null && i !== t && i !== speaker ? i : -1))
+      .filter((i) => i >= 0).slice(0, 3);
     return anchors.map((a) => ({
       kind: "cond" as const, speaker, a, aStatus: solution[a], b: t, bStatus: solution[t],
     }));
@@ -202,9 +210,12 @@ function candidateClues(
   const special = difficulty === "hard" || difficulty === "tricky"
     ? specialCandidates(speaker, solution, known, rand) : [];
 
+  // indirect clues (counts, parity, specials, cross-suspect conditionals) first;
+  // speaker-relation and direct are bootstrap-only last resorts that the
+  // minimiser then strips back out.
   switch (difficulty) {
-    case "easy":   return [...countExact, ...relation, ...direct];
-    case "medium": return [...countExact, ...cond, ...relation, ...direct];
+    case "easy":   return [...countExact, ...parity, ...cond, ...relation, ...direct];
+    case "medium": return [...countExact, ...cond, ...parity, ...relation, ...direct];
     case "hard":   return [...special, ...parity, ...countBounds, ...cond, ...countExact, ...relation, ...direct];
     case "tricky": return [...special, ...parity, ...cond, ...countBounds, ...countExact, ...relation, ...direct];
   }
@@ -322,24 +333,31 @@ function buildFallback(seed: number, difficulty: Difficulty): Puzzle {
   return { suspects, solution, clues, start: order[0], seed, difficulty };
 }
 
-// A true, low-information clue used to strip a board's spoon-feeding: a "more
-// criminals in A than B" comparison (rarely pins a cell by itself, but bites
-// under contradiction reasoning), falling back to a parity over a big region.
-function looseFlavour(speaker: number, solution: Status[], rand: () => number): Clue {
+// A spread of true, low-information clues used to strip a board's spoon-feeding.
+// Returns several flavours (comparison, parity, a loose bound) so a minimised
+// board doesn't end up wall-to-wall "more criminals in A than B".
+function looseFlavours(speaker: number, solution: Status[], rand: () => number): Clue[] {
   const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
   const regs: { region: number[]; label: string }[] = [];
   for (let r = 0; r < 5; r++) regs.push({ region: rowMembersByR(r), label: `the people in row ${r + 1}` });
   for (let c = 0; c < 4; c++) regs.push({ region: colMembersByC(c), label: `the people in column ${colLetter(c)}` });
   regs.push({ region: EDGE.slice(), label: "the people on the edge" });
+  regs.push({ region: CORNERS.slice(), label: "the four corners" });
   const shuffled = shuffle(regs, rand);
+  const out: Clue[] = [];
+
   for (const A of shuffled) for (const B of shuffled) {
-    if (A === B) continue;
-    if (crim(A.region) > crim(B.region)) {
-      return { kind: "compare", speaker, regionA: A.region, labelA: A.label, regionB: B.region, labelB: B.label };
+    if (A !== B && crim(A.region) > crim(B.region)) {
+      out.push({ kind: "compare", speaker, regionA: A.region, labelA: A.label, regionB: B.region, labelB: B.label });
+      break;
     }
   }
-  const big = shuffled[0];
-  return { kind: "parity", speaker, region: big.region, label: big.label, even: crim(big.region) % 2 === 0 };
+  const r1 = shuffled[0];
+  out.push({ kind: "parity", speaker, region: r1.region, label: r1.label, even: crim(r1.region) % 2 === 0 });
+  const r2 = shuffled[1];
+  const k2 = crim(r2.region);
+  if (k2 >= 1) out.push({ kind: "count", speaker, region: r2.region, label: r2.label, op: "atleast", k: k2 });
+  return shuffle(out, rand);
 }
 
 // Strictly weaker, still-true variants of a clue (looser bounds, one-directional
@@ -360,85 +378,94 @@ function weakenings(clue: Clue, solution: Status[]): Clue[] {
       out.push({ kind: "parity", speaker: sp, region: clue.region, label: clue.label, even: k % 2 === 0 });
       break;
     }
-    case "relation": {
-      const aS = solution[clue.a]; const bS = solution[clue.b];
-      out.push({ kind: "cond", speaker: sp, a: clue.a, aStatus: aS, b: clue.b, bStatus: bS });
-      out.push({ kind: "cond", speaker: sp, a: clue.b, aStatus: bS, b: clue.a, bStatus: aS });
-      break;
-    }
-    case "direct":
-      out.push({ kind: "cond", speaker: sp, a: clue.target, aStatus: clue.status, b: clue.target, bStatus: clue.status });
-      break;
     default:
-      break; // parity / share / connected / most / compare are already weak
+      // relation / direct / cond are one-step tells: don't weaken them into
+      // other tells. The minimiser replaces them via looseFlavour instead.
+      break;
   }
   return out;
 }
 
-// Greedily replace each clue with the loosest variant that keeps the board both
-// globally unique AND solvable within `capDepth` (so a capDepth-deep player
-// never has to guess). Stripping this redundancy is what forces real deduction.
-function minimize(
-  clues: Clue[], solution: Status[], start: number, capDepth: number, rand: () => number,
-): Clue[] {
-  const cur = clues.slice();
-  const ss = solution[start];
-  for (let pass = 0; pass < 2; pass++) {
-    let improved = false;
-    for (const s of shuffle(Array.from({ length: SIZE }, (_, i) => i), rand)) {
-      const opts = [looseFlavour(s, solution, rand), ...weakenings(cur[s], solution)];
-      for (const w of opts) {
-        const trial = cur.slice(); trial[s] = w;
-        if (solutionCount(trial, 2) !== 1) continue;
-        if (requiredDepth(trial, start, ss, capDepth) > capDepth) continue;
-        cur[s] = w; improved = true; break;
-      }
-    }
-    if (!improved) break;
-  }
-  return cur;
+// How hard each tier may get for a no-guess player (the minimiser keeps boards
+// solvable within this depth) and how much genuine reasoning it must demand.
+// `need1` = min suspects whose verdict needs >=1 hypothetical; `need2` = min that
+// need nested (depth-2) reasoning. These thresholds make even "easy" stop
+// spoon-feeding, and separate the tiers.
+interface Spec { cap: number; need1: number; need2: number; maxTells: number; }
+const SPEC: Record<Difficulty, Spec> = {
+  easy:   { cap: 1, need1: 6,  need2: 0, maxTells: 4 },
+  medium: { cap: 2, need1: 10, need2: 2, maxTells: 3 },
+  hard:   { cap: 2, need1: 13, need2: 5, maxTells: 2 },
+  tricky: { cap: 2, need1: 15, need2: 8, maxTells: 2 },
+};
+const ATTEMPTS: Record<Difficulty, number> = { easy: 30, medium: 36, hard: 44, tricky: 56 };
+
+// A "tell" is a one-step giveaway: a direct reveal or a clue anchored on the
+// (already-known) speaker. We allow only a handful, mostly to bootstrap.
+function tellCount(clues: Clue[]): number {
+  return clues.filter((c) =>
+    c.kind === "direct" ||
+    (c.kind === "relation" && c.a === c.speaker) ||
+    (c.kind === "cond" && c.a === c.speaker),
+  ).length;
 }
 
-// Required reasoning depth per tier. easy still solves on plain propagation, but
-// stripped of giveaways; medium needs one hypothetical, hard/tricky need nested
-// contradiction reasoning (tricky pervasively so).
-const TARGET: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2, tricky: 2 };
-const ATTEMPTS: Record<Difficulty, number> = { easy: 16, medium: 20, hard: 26, tricky: 34 };
+const profOK = (perDepth: number[], spec: Spec) =>
+  perDepth[1] + perDepth[2] >= spec.need1 && perDepth[2] >= spec.need2;
 
-// Build a uniquely-solvable board, then strip it down to its target difficulty.
-// Accepts only boards that are globally unique, solvable at the tier's depth,
-// and NOT solvable below it (so the difficulty is genuinely required). Keeps the
-// hardest near-miss as a fallback.
+// Greedily replace each clue with the loosest variant that keeps the board
+// globally unique and solvable within the tier's depth — stopping as soon as the
+// tier's reasoning bar is met. The accept-check uses a single-depth solve (cheap);
+// the full profile is only recomputed after an accepted weakening (for early
+// stop). Honours `deadline` so generation latency stays bounded.
+function minimize(
+  clues: Clue[], solution: Status[], start: number, spec: Spec, rand: () => number, deadline: number,
+): { clues: Clue[]; perDepth: number[] } {
+  const cur = clues.slice();
+  const ss = solution[start];
+  let prof = solveProfile(cur, start, ss, 2).perDepth;
+
+  for (const s of shuffle(Array.from({ length: SIZE }, (_, i) => i), rand)) {
+    if (Date.now() > deadline) break;
+    if (profOK(prof, spec) && tellCount(cur) <= spec.maxTells) break;
+    const opts = [...looseFlavours(s, solution, rand), ...weakenings(cur[s], solution)];
+    for (const w of opts) {
+      const trial = cur.slice(); trial[s] = w;
+      if (solutionCount(trial, 2) !== 1) continue;
+      if (!solveAtDepth(trial, start, ss, spec.cap).solved) continue; // stays within tier depth
+      cur[s] = w;
+      prof = solveProfile(cur, start, ss, 2).perDepth;
+      break;
+    }
+  }
+  return { clues: cur, perDepth: prof };
+}
+
+// Build a uniquely-solvable board, strip it of giveaways, and accept it only if
+// it's globally unique and demands the tier's amount of real deduction. A wall-
+// clock budget bounds latency: if no attempt fully clears the bar in time, the
+// most-demanding near-miss is returned.
+const BUDGET_MS = 1100;
 export function generatePuzzle(seed: number, difficulty: Difficulty = "medium"): Puzzle {
-  const target = TARGET[difficulty];
+  const spec = SPEC[difficulty];
+  const deadline = Date.now() + BUDGET_MS;
   let fallback: Puzzle | null = null;
   let fallbackScore = -1;
 
-  for (let i = 0; i < ATTEMPTS[difficulty]; i++) {
-    const rand = rng((seed + i * 0x1000193) >>> 0);
-    const base = build((seed + i * 0x1000193) >>> 0, difficulty);
+  for (let i = 0; i < ATTEMPTS[difficulty] && Date.now() < deadline; i++) {
+    const s32 = (seed + i * 0x1000193) >>> 0;
+    const rand = rng(s32);
+    const base = build(s32, difficulty);
     const res = solve(base.clues, withStart(base.start, base.solution[base.start]));
     if (!res.solvedAll || res.contradiction || solutionCount(base.clues, 2) !== 1) continue;
 
-    const ss = base.solution[base.start];
-    const clues = minimize(base.clues, base.solution, base.start, target, rand);
+    const { clues, perDepth } = minimize(base.clues, base.solution, base.start, spec, rand, deadline);
     if (solutionCount(clues, 2) !== 1) continue;
 
-    const solvesAtTarget = solveAtDepth(clues, base.start, ss, target).solved;
-    if (!solvesAtTarget) continue;
-    const tooEasy = target > 0 && solveAtDepth(clues, base.start, ss, target - 1).solved;
+    const tells = tellCount(clues);
+    if (profOK(perDepth, spec) && tells <= spec.maxTells) return { ...base, clues, seed };
 
-    // tricky must need depth-2 across much of the board, not in just one spot
-    let pervasiveEnough = true;
-    if (difficulty === "tricky") {
-      pervasiveEnough = solveAtDepth(clues, base.start, ss, 1).known.filter((v) => v === null).length >= 6;
-    }
-
-    if (!tooEasy && pervasiveEnough) {
-      return { ...base, clues, seed };
-    }
-    // score near-misses by how much reasoning they still demand
-    const score = solveAtDepth(clues, base.start, ss, Math.max(0, target - 1)).known.filter((v) => v === null).length;
+    const score = perDepth[1] + perDepth[2] * 2 - Math.max(0, tells - spec.maxTells) * 3;
     if (score > fallbackScore) { fallbackScore = score; fallback = { ...base, clues, seed }; }
   }
 

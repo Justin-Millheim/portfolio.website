@@ -167,8 +167,8 @@
 /* ---- card ---- */
 .clues-root .cl-card {
   position: relative;
-  display: flex; flex-direction: column; align-items: center;
-  padding: 10px 6px 8px; min-height: 92px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 6px; height: 96px; /* fixed: the board never reflows */
   background: var(--c-surface);
   border: 1px solid var(--c-line);
   border-radius: 12px;
@@ -176,6 +176,7 @@
   text-align: center;
   transition: border-color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
 }
+.clues-root .cl-card.is-revealed { border-style: solid; }
 .clues-root .cl-card:active { transform: scale(0.98); }
 .clues-root .cl-card.is-selected {
   border-color: var(--c-brass);
@@ -290,10 +291,28 @@
   border: 1px solid var(--c-line); color: var(--c-brass); font-size: 13px; letter-spacing: 1px;
 }
 
-/* note indicator on a card */
+/* indicators on a card (board dimensions never change as clues/notes appear) */
 .clues-root .cl-note-flag {
   position: absolute; bottom: 4px; right: 6px; font-size: 10px; color: var(--c-brass); opacity: 0.85;
 }
+.clues-root .cl-clue-flag {
+  position: absolute; bottom: 1px; left: 6px; font-size: 13px; line-height: 1;
+  color: var(--c-brass); opacity: 0.7;
+}
+
+/* ---- clue list sheet ---- */
+.clues-root .cl-cluelist {
+  position: relative; width: 100%; max-width: 380px; max-height: 75vh; overflow-y: auto;
+  background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 18px; padding: 20px 18px;
+}
+.clues-root .cl-cluelist-empty { color: var(--c-muted); font-size: 13.5px; margin: 12px 2px 0; }
+.clues-root .cl-cluelist-items { list-style: none; margin: 12px 0 0; padding: 0; }
+.clues-root .cl-cluelist-item {
+  display: flex; flex-direction: column; gap: 2px; padding: 9px 0; border-top: 1px solid var(--c-line);
+}
+.clues-root .cl-cluelist-item:first-child { border-top: none; }
+.clues-root .cl-cluelist-who { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--c-brass); }
+.clues-root .cl-cluelist-text { font-size: 13.5px; line-height: 1.4; color: var(--c-cream); }
 
 /* ---- suspect sheet (centered, board never reflows) ---- */
 .clues-root .cl-sheet {

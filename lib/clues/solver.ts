@@ -6,7 +6,7 @@
 
 import type { Clue, Status } from "./types";
 import { SIZE, neighbors } from "./grid";
-import { propagate } from "./clues";
+import { propagate, clueCells } from "./clues";
 
 export interface SolveResult {
   known: (Status | null)[];
@@ -177,10 +177,14 @@ function deepClose(active: Clue[], start: (Status | null)[], depth: number): Clo
   if (contra) return { known, contra: true };
   if (depth <= 0) return { known, contra: false };
 
+  // only cells some active clue constrains can ever be forced — probe just those
+  const relevant = new Set<number>();
+  for (const c of active) for (const i of clueCells(c)) relevant.add(i);
+
   let changed = true;
   while (changed) {
     changed = false;
-    for (let c = 0; c < SIZE; c++) {
+    for (const c of relevant) {
       if (known[c] !== null) continue;
       const tryCrim = known.slice(); tryCrim[c] = "criminal";
       const tryInn = known.slice(); tryInn[c] = "innocent";
@@ -226,6 +230,37 @@ export function requiredDepth(
     if (solveAtDepth(clues, start, startStatus, d).solved) return d;
   }
   return maxDepth + 1;
+}
+
+// How the whole board breaks down by reasoning effort: perDepth[d] = how many
+// suspects' verdicts first become forced only at reasoning depth d (0 = a single
+// clue, 1 = one hypothetical, 2 = nested). Lets the generator demand that real
+// deduction — not one-step tells — carries most of the board.
+export function solveProfile(
+  clues: Clue[], start: number, startStatus: Status, maxDepth = 2,
+): { solved: boolean; perDepth: number[] } {
+  const known: (Status | null)[] = new Array(SIZE).fill(null);
+  known[start] = startStatus;
+  const perDepth = new Array(maxDepth + 1).fill(0);
+
+  for (let guard = 0; guard < SIZE + 2; guard++) {
+    const active = clues.filter((c) => c !== undefined && known[c.speaker] !== null);
+    let advanced = false;
+    for (let d = 0; d <= maxDepth; d++) {
+      const r = deepClose(active, known, d);
+      if (r.contra) return { solved: false, perDepth };
+      const fresh: number[] = [];
+      for (let i = 0; i < SIZE; i++) if (known[i] === null && r.known[i] !== null) fresh.push(i);
+      if (fresh.length > 0) {
+        for (const i of fresh) known[i] = r.known[i];
+        perDepth[d] += fresh.length;
+        advanced = true;
+        break; // re-reveal clues and prefer the cheapest deductions again
+      }
+    }
+    if (!advanced) break;
+  }
+  return { solved: known.every((v) => v !== null), perDepth };
 }
 
 // The easiest next deduction for a player holding `known` (their correct marks):

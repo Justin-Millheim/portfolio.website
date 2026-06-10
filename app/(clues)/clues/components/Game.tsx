@@ -7,6 +7,7 @@ import { nextHint } from "@/lib/clues/solver";
 import { SIZE, coord } from "@/lib/clues/grid";
 import SuspectCard, { type HintRole } from "./SuspectCard";
 import SuspectModal from "./SuspectModal";
+import ClueList from "./ClueList";
 import WinOverlay from "./WinOverlay";
 
 const TAG_COUNT = 4;
@@ -58,6 +59,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
   const [startedAt] = useState(() => initial?.startedAt ?? Date.now());
   const [selected, setSelected] = useState<number | null>(null);
   const [hint, setHint] = useState<Hint | null>(null);
+  const [showClues, setShowClues] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [solved, setSolved] = useState(() =>
     (initial?.marks ?? freshMarks(puzzle)).every((v, i) => v === puzzle.solution[i]));
@@ -146,6 +148,15 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
 
   const labelled = useMemo(() => marks.filter((m) => m !== null).length, [marks]);
 
+  // clues revealed = the free start plus every suspect correctly identified
+  const revealedEntries = useMemo(() => puzzle.suspects
+    .filter((s) => s.id === puzzle.start || marks[s.id] === puzzle.solution[s.id])
+    .map((s) => ({
+      coord: coord(s.id), name: s.name, profession: s.profession,
+      text: renderClue(puzzle.clues[s.id], puzzle.suspects),
+    })), [puzzle, marks]);
+  const revealedCount = revealedEntries.length;
+
   return (
     <div className="cl-wrap">
       <div className="cl-glow cl-glow-tr" />
@@ -158,6 +169,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
 
       <div className="cl-statusbar">
         <span className="cl-mono">{labelled}/{SIZE} labelled</span>
+        <button className="cl-link" onClick={() => setShowClues(true)}>Clues ({revealedCount})</button>
         <span className="cl-mono cl-clock">{fmtTime(now - startedAt)}</span>
       </div>
 
@@ -175,7 +187,6 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
               mark={m}
               isStart={s.id === puzzle.start}
               revealed={revealed}
-              clueText={renderClue(puzzle.clues[s.id], puzzle.suspects)}
               error={m !== null && m !== puzzle.solution[s.id]}
               tag={tags[s.id]}
               hint={hintRole(s.id)}
@@ -222,6 +233,8 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
           />
         );
       })()}
+
+      {showClues && <ClueList entries={revealedEntries} onClose={() => setShowClues(false)} />}
 
       {showWin && solved && (
         <WinOverlay
