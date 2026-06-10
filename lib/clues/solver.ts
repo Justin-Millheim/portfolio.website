@@ -263,6 +263,20 @@ export function solveProfile(
   return { solved: known.every((v) => v !== null), perDepth };
 }
 
+// What a player can deduce RIGHT NOW: closes `known` under only the clues that
+// are already revealed (spoken by an already-known suspect), with up to
+// `maxDepth` reasoning — and crucially WITHOUT unlocking clues of cells deduced
+// in this step (you only reveal a clue by committing to that suspect). The game
+// uses this to enforce no-guessing: a suspect may only be judged once their
+// verdict appears in this closure.
+export function deduceClosure(
+  clues: Clue[], known: (Status | null)[], maxDepth = 2,
+): (Status | null)[] {
+  const active = clues.filter((c) => c !== undefined && known[c.speaker] !== null);
+  const r = deepClose(active, known, maxDepth);
+  return r.contra ? known.slice() : r.known;
+}
+
 // The easiest next deduction for a player holding `known` (their correct marks):
 // the lowest reasoning depth that pins a new cell, using only revealed clues.
 // Drives the hint button now that single-clue propagation no longer suffices.

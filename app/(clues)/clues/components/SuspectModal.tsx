@@ -15,6 +15,7 @@ interface Props {
   revealed: boolean;
   clueText: string;
   note: string;
+  markError: string | null;
   onMark: (s: Status) => void;
   onClear: () => void;
   onNote: (text: string) => void;
@@ -24,7 +25,7 @@ interface Props {
 // Centered, screen-stable suspect sheet. Opening it never reflows the board:
 // verdict choice and the "note to self" both live here.
 export default function SuspectModal({
-  coord, name, profession, avatar, mark, isStart, revealed, clueText, note,
+  coord, name, profession, avatar, mark, isStart, revealed, clueText, note, markError,
   onMark, onClear, onNote, onClose,
 }: Props) {
   const [draft, setDraft] = useState(note);
@@ -68,6 +69,8 @@ export default function SuspectModal({
             <button className="cl-verdict-btn clr" onClick={onClear} disabled={mark === null}>Clear</button>
           </div>
         )}
+
+        {markError && <p className="cl-mark-error">{markError}</p>}
 
         <label className="cl-note-label cl-mono" htmlFor="cl-note">Note to self</label>
         <textarea

@@ -353,6 +353,11 @@
 .clues-root .cl-verdict-btn.clr { flex: 0 0 64px; }
 .clues-root .cl-verdict-btn:disabled { opacity: 0.4; cursor: default; }
 
+.clues-root .cl-mark-error {
+  margin: 0 0 14px; padding: 10px 12px; border-radius: 10px;
+  background: var(--c-cri-bg); border: 1px solid var(--c-cri);
+  color: #f0a08f; font-size: 12.5px; line-height: 1.4;
+}
 .clues-root .cl-note-label { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--c-faint); margin-bottom: 6px; }
 .clues-root .cl-note-input {
   width: 100%; resize: none; padding: 10px 12px; border-radius: 10px;
