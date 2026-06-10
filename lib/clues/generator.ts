@@ -463,19 +463,22 @@ const profOK = (perDepth: number[], spec: Spec) =>
 
 // The approved clue policy: direct reveals and same/opposite relations are
 // easy/medium-only and capped at one each; conditionals at most two; saturated
-// "all/none" counts at most one (a bootstrap opener); "the most" never appears.
+// "all/none" counts at most one (a bootstrap opener); comparisons capped so they
+// don't dominate; "the most" never appears.
+const MAX_COMPARE = 4;
 function policyOK(clues: Clue[], difficulty: Difficulty): boolean {
-  let direct = 0, relation = 0, cond = 0, sat = 0;
+  let direct = 0, relation = 0, cond = 0, sat = 0, compare = 0;
   for (const c of clues) {
     if (c === undefined) continue;
     if (c.kind === "direct") direct++;
     else if (c.kind === "relation") relation++;
     else if (c.kind === "cond") cond++;
     else if (c.kind === "most") return false;
+    else if (c.kind === "compare") compare++;
     else if (c.kind === "count" && (c.k === 0 || c.k === c.region.length)) sat++;
   }
   const tellCap = difficulty === "easy" || difficulty === "medium" ? 1 : 0;
-  return direct <= tellCap && relation <= tellCap && cond <= 2 && sat <= 1;
+  return direct <= tellCap && relation <= tellCap && cond <= 2 && sat <= 1 && compare <= MAX_COMPARE;
 }
 
 // Greedily replace each clue with the loosest variant that keeps the board
