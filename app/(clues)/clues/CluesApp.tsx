@@ -53,6 +53,7 @@ export default function CluesApp() {
   const [history, setHistory] = useState<SolvedHistory>(emptyHistory);
   const [visibleCount, setVisibleCount] = useState(PAGE);
   const [showHowTo, setShowHowTo] = useState(false);
+  const [busy, setBusy] = useState(false);
   const activeRef = useRef<PuzzleRef | null>(null);
   const booted = useRef(false);
 
@@ -115,10 +116,16 @@ export default function CluesApp() {
   }, []);
 
   const startGame = useCallback((ref: PuzzleRef, savedInitial: GameState | null) => {
-    const puzzle = generatePuzzle(ref.seed, ref.difficulty);
-    activeRef.current = ref;
-    setCurrent({ ref, puzzle, initial: savedInitial });
-    setScreen("game");
+    // Harder boards take a few hundred ms to strip down; show a beat of feedback
+    // and defer the heavy synchronous generate so the tap never feels frozen.
+    setBusy(true);
+    setTimeout(() => {
+      const puzzle = generatePuzzle(ref.seed, ref.difficulty);
+      activeRef.current = ref;
+      setCurrent({ ref, puzzle, initial: savedInitial });
+      setScreen("game");
+      setBusy(false);
+    }, 30);
   }, []);
 
   const startDaily = useCallback(() => {
@@ -152,6 +159,7 @@ export default function CluesApp() {
           onNext={handleNext}
         />
         {showHowTo && <HowTo onClose={() => setShowHowTo(false)} />}
+        {busy && <div className="cl-overlay"><div className="cl-busy cl-mono">Assembling the case…</div></div>}
       </>
     );
   }
@@ -172,6 +180,7 @@ export default function CluesApp() {
         onHowTo={() => setShowHowTo(true)}
       />
       {showHowTo && <HowTo onClose={() => setShowHowTo(false)} />}
+      {busy && <div className="cl-overlay"><div className="cl-busy cl-mono">Assembling the case…</div></div>}
     </>
   );
 }

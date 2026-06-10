@@ -12,7 +12,7 @@ import {
   colLetter, CORNERS, EDGE, between, commonNeighbors, rowOf, colOf,
 } from "./grid";
 import { propagate, evalClue } from "./clues";
-import { solve, solutionCount } from "./solver";
+import { solve, solutionCount, solveAtDepth, requiredDepth } from "./solver";
 import { NAME_POOL, PROFESSIONS } from "./suspects";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "tricky"];
@@ -322,24 +322,127 @@ function buildFallback(seed: number, difficulty: Difficulty): Puzzle {
   return { suspects, solution, clues, start: order[0], seed, difficulty };
 }
 
-// Weak one-directional clues (parity, conditionals) make trickier boards rarely
-// globally unique on the first try, so give those tiers more attempts. Each
-// build is ~1ms, so even 90 attempts is cheap for an on-demand single puzzle.
-const ATTEMPTS: Record<Difficulty, number> = { easy: 24, medium: 28, hard: 40, tricky: 90 };
-
-// Build a puzzle for `seed`+`difficulty`, accepting only boards that are both
-// forced-solvable (no guessing, in reveal order) AND globally unique (the clue
-// set pins exactly one board on its own). Falls back to an always-unique direct
-// chain if no candidate qualifies.
-export function generatePuzzle(seed: number, difficulty: Difficulty = "medium"): Puzzle {
-  for (let i = 0; i < ATTEMPTS[difficulty]; i++) {
-    const puzzle = build((seed + i * 0x1000193) >>> 0, difficulty);
-    const res = solve(puzzle.clues, withStart(puzzle.start, puzzle.solution[puzzle.start]));
-    if (res.solvedAll && !res.contradiction && solutionCount(puzzle.clues, 2) === 1) {
-      return { ...puzzle, seed };
+// A true, low-information clue used to strip a board's spoon-feeding: a "more
+// criminals in A than B" comparison (rarely pins a cell by itself, but bites
+// under contradiction reasoning), falling back to a parity over a big region.
+function looseFlavour(speaker: number, solution: Status[], rand: () => number): Clue {
+  const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
+  const regs: { region: number[]; label: string }[] = [];
+  for (let r = 0; r < 5; r++) regs.push({ region: rowMembersByR(r), label: `the people in row ${r + 1}` });
+  for (let c = 0; c < 4; c++) regs.push({ region: colMembersByC(c), label: `the people in column ${colLetter(c)}` });
+  regs.push({ region: EDGE.slice(), label: "the people on the edge" });
+  const shuffled = shuffle(regs, rand);
+  for (const A of shuffled) for (const B of shuffled) {
+    if (A === B) continue;
+    if (crim(A.region) > crim(B.region)) {
+      return { kind: "compare", speaker, regionA: A.region, labelA: A.label, regionB: B.region, labelB: B.label };
     }
   }
-  return { ...buildFallback(seed, difficulty), seed };
+  const big = shuffled[0];
+  return { kind: "parity", speaker, region: big.region, label: big.label, even: crim(big.region) % 2 === 0 };
+}
+
+// Strictly weaker, still-true variants of a clue (looser bounds, one-directional
+// conditionals, parity in place of an exact count). Feeding these to the
+// minimiser is how a spoon-feeding board becomes one you must reason through.
+function weakenings(clue: Clue, solution: Status[]): Clue[] {
+  const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
+  const out: Clue[] = [];
+  const sp = clue.speaker;
+  switch (clue.kind) {
+    case "count": {
+      const n = clue.region.length;
+      const k = crim(clue.region);
+      if (clue.op !== "atleast" && k >= 1) out.push({ kind: "count", speaker: sp, region: clue.region, label: clue.label, op: "atleast", k });
+      if (clue.op !== "atmost" && k <= n - 1) out.push({ kind: "count", speaker: sp, region: clue.region, label: clue.label, op: "atmost", k });
+      if (clue.op === "atleast" && clue.k > 1) out.push({ ...clue, k: clue.k - 1 });
+      if (clue.op === "atmost" && clue.k < n - 1) out.push({ ...clue, k: clue.k + 1 });
+      out.push({ kind: "parity", speaker: sp, region: clue.region, label: clue.label, even: k % 2 === 0 });
+      break;
+    }
+    case "relation": {
+      const aS = solution[clue.a]; const bS = solution[clue.b];
+      out.push({ kind: "cond", speaker: sp, a: clue.a, aStatus: aS, b: clue.b, bStatus: bS });
+      out.push({ kind: "cond", speaker: sp, a: clue.b, aStatus: bS, b: clue.a, bStatus: aS });
+      break;
+    }
+    case "direct":
+      out.push({ kind: "cond", speaker: sp, a: clue.target, aStatus: clue.status, b: clue.target, bStatus: clue.status });
+      break;
+    default:
+      break; // parity / share / connected / most / compare are already weak
+  }
+  return out;
+}
+
+// Greedily replace each clue with the loosest variant that keeps the board both
+// globally unique AND solvable within `capDepth` (so a capDepth-deep player
+// never has to guess). Stripping this redundancy is what forces real deduction.
+function minimize(
+  clues: Clue[], solution: Status[], start: number, capDepth: number, rand: () => number,
+): Clue[] {
+  const cur = clues.slice();
+  const ss = solution[start];
+  for (let pass = 0; pass < 2; pass++) {
+    let improved = false;
+    for (const s of shuffle(Array.from({ length: SIZE }, (_, i) => i), rand)) {
+      const opts = [looseFlavour(s, solution, rand), ...weakenings(cur[s], solution)];
+      for (const w of opts) {
+        const trial = cur.slice(); trial[s] = w;
+        if (solutionCount(trial, 2) !== 1) continue;
+        if (requiredDepth(trial, start, ss, capDepth) > capDepth) continue;
+        cur[s] = w; improved = true; break;
+      }
+    }
+    if (!improved) break;
+  }
+  return cur;
+}
+
+// Required reasoning depth per tier. easy still solves on plain propagation, but
+// stripped of giveaways; medium needs one hypothetical, hard/tricky need nested
+// contradiction reasoning (tricky pervasively so).
+const TARGET: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2, tricky: 2 };
+const ATTEMPTS: Record<Difficulty, number> = { easy: 16, medium: 20, hard: 26, tricky: 34 };
+
+// Build a uniquely-solvable board, then strip it down to its target difficulty.
+// Accepts only boards that are globally unique, solvable at the tier's depth,
+// and NOT solvable below it (so the difficulty is genuinely required). Keeps the
+// hardest near-miss as a fallback.
+export function generatePuzzle(seed: number, difficulty: Difficulty = "medium"): Puzzle {
+  const target = TARGET[difficulty];
+  let fallback: Puzzle | null = null;
+  let fallbackScore = -1;
+
+  for (let i = 0; i < ATTEMPTS[difficulty]; i++) {
+    const rand = rng((seed + i * 0x1000193) >>> 0);
+    const base = build((seed + i * 0x1000193) >>> 0, difficulty);
+    const res = solve(base.clues, withStart(base.start, base.solution[base.start]));
+    if (!res.solvedAll || res.contradiction || solutionCount(base.clues, 2) !== 1) continue;
+
+    const ss = base.solution[base.start];
+    const clues = minimize(base.clues, base.solution, base.start, target, rand);
+    if (solutionCount(clues, 2) !== 1) continue;
+
+    const solvesAtTarget = solveAtDepth(clues, base.start, ss, target).solved;
+    if (!solvesAtTarget) continue;
+    const tooEasy = target > 0 && solveAtDepth(clues, base.start, ss, target - 1).solved;
+
+    // tricky must need depth-2 across much of the board, not in just one spot
+    let pervasiveEnough = true;
+    if (difficulty === "tricky") {
+      pervasiveEnough = solveAtDepth(clues, base.start, ss, 1).known.filter((v) => v === null).length >= 6;
+    }
+
+    if (!tooEasy && pervasiveEnough) {
+      return { ...base, clues, seed };
+    }
+    // score near-misses by how much reasoning they still demand
+    const score = solveAtDepth(clues, base.start, ss, Math.max(0, target - 1)).known.filter((v) => v === null).length;
+    if (score > fallbackScore) { fallbackScore = score; fallback = { ...base, clues, seed }; }
+  }
+
+  return fallback ?? { ...buildFallback(seed, difficulty), seed };
 }
 
 // --- seeds -------------------------------------------------------------------

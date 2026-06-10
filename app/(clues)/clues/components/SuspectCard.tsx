@@ -5,39 +5,36 @@ import type { Status } from "@/lib/clues/types";
 export type HintRole = "speaker" | "region" | "target" | null;
 
 interface Props {
-  coord: string;         // grid label, e.g. "A1"
+  coord: string;
   name: string;
   profession: string;
   avatar: string;
   mark: Status | null;
   isStart: boolean;
-  selected: boolean;
-  revealed: boolean;     // show this suspect's clue text
+  revealed: boolean;
   clueText: string;
-  error: boolean;        // marked, but contradicts the solution
-  tag: number;           // 0 = no tag, 1..4 = colour
+  error: boolean;
+  tag: number;          // 0 = no tag, 1..4 = colour
   hint: HintRole;
-  onSelect: () => void;
-  onMark: (s: Status) => void;
-  onClear: () => void;
+  hasNote: boolean;
+  onOpen: () => void;   // opens the centered suspect modal
   onTag: () => void;
 }
 
 export default function SuspectCard({
-  coord, name, profession, avatar, mark, isStart, selected, revealed, clueText, error, tag, hint,
-  onSelect, onMark, onClear, onTag,
+  coord, name, profession, avatar, mark, isStart, revealed, clueText, error, tag, hint, hasNote,
+  onOpen, onTag,
 }: Props) {
   const cls = [
     "cl-card",
     mark ? `is-${mark}` : "is-blank",
-    selected ? "is-selected" : "",
     error ? "is-error" : "",
     hint ? `hint-${hint}` : "",
     tag ? `tag-${tag}` : "",
   ].filter(Boolean).join(" ");
 
   return (
-    <div className={cls} onClick={onSelect} role="button" tabIndex={0}>
+    <div className={cls} onClick={onOpen} role="button" tabIndex={0}>
       <span className="cl-coord">{coord}</span>
       <button
         className="cl-tag-dot"
@@ -49,20 +46,12 @@ export default function SuspectCard({
       <div className="cl-name">{name}</div>
       <div className="cl-prof">{profession}</div>
 
-      {mark && (
-        <div className="cl-verdict">{mark === "criminal" ? "Criminal" : "Innocent"}</div>
-      )}
+      {mark && <div className="cl-verdict">{mark === "criminal" ? "Criminal" : "Innocent"}</div>}
       {isStart && <div className="cl-given">given</div>}
 
       {revealed && clueText && <p className="cl-clue">{clueText}</p>}
 
-      {selected && !isStart && (
-        <div className="cl-actions" onClick={(e) => e.stopPropagation()}>
-          <button className="cl-mark cl-mark-inn" onClick={() => onMark("innocent")}>Innocent</button>
-          <button className="cl-mark cl-mark-cri" onClick={() => onMark("criminal")}>Criminal</button>
-          {mark && <button className="cl-mark cl-mark-clear" onClick={onClear}>Clear</button>}
-        </div>
-      )}
+      {hasNote && <span className="cl-note-flag" aria-label="has a note" title="Note to self">✎</span>}
     </div>
   );
 }

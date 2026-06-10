@@ -285,6 +285,63 @@
   margin: 12px 2px 0; text-align: center; font-size: 12.5px; color: var(--c-brass);
 }
 
+.clues-root .cl-busy {
+  padding: 16px 22px; border-radius: 12px; background: var(--c-surface);
+  border: 1px solid var(--c-line); color: var(--c-brass); font-size: 13px; letter-spacing: 1px;
+}
+
+/* note indicator on a card */
+.clues-root .cl-note-flag {
+  position: absolute; bottom: 4px; right: 6px; font-size: 10px; color: var(--c-brass); opacity: 0.85;
+}
+
+/* ---- suspect sheet (centered, board never reflows) ---- */
+.clues-root .cl-sheet {
+  position: relative; width: 100%; max-width: 360px;
+  background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 18px;
+  padding: 20px 18px 18px;
+}
+.clues-root .cl-sheet-x {
+  position: absolute; top: 12px; right: 12px; width: 28px; height: 28px;
+  background: var(--c-deep); border: 1px solid var(--c-line); border-radius: 8px;
+  color: var(--c-muted); cursor: pointer; font-size: 12px; line-height: 1;
+}
+.clues-root .cl-sheet-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.clues-root .cl-sheet-avatar { font-size: 34px; line-height: 1; }
+.clues-root .cl-sheet-name { font-family: var(--font-serif), Georgia, serif; font-size: 22px; letter-spacing: -0.4px; }
+.clues-root .cl-sheet-sub { font-size: 11px; color: var(--c-faint); letter-spacing: 0.5px; text-transform: uppercase; }
+.clues-root .cl-sheet-clue {
+  margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--c-deep);
+  font-size: 14px; line-height: 1.4; color: var(--c-cream);
+}
+.clues-root .cl-sheet-clue-locked { color: var(--c-faint); font-style: italic; }
+.clues-root .cl-sheet-given {
+  margin-bottom: 14px; padding: 10px; text-align: center; border-radius: 10px;
+  background: var(--c-deep); color: var(--c-brass); font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+}
+
+.clues-root .cl-sheet-verdicts { display: flex; gap: 8px; margin-bottom: 16px; }
+.clues-root .cl-verdict-btn {
+  flex: 1; padding: 13px 6px; border-radius: 11px; cursor: pointer;
+  font-family: var(--font-mono), monospace; font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase;
+  background: var(--c-deep); border: 1px solid var(--c-line); color: var(--c-muted);
+  transition: transform 0.08s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.clues-root .cl-verdict-btn:active { transform: scale(0.97); }
+.clues-root .cl-verdict-btn.inn.on { background: var(--c-inn-bg); border-color: var(--c-inn); color: var(--c-inn); }
+.clues-root .cl-verdict-btn.cri.on { background: var(--c-cri-bg); border-color: var(--c-cri); color: var(--c-cri); }
+.clues-root .cl-verdict-btn.clr { flex: 0 0 64px; }
+.clues-root .cl-verdict-btn:disabled { opacity: 0.4; cursor: default; }
+
+.clues-root .cl-note-label { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--c-faint); margin-bottom: 6px; }
+.clues-root .cl-note-input {
+  width: 100%; resize: none; padding: 10px 12px; border-radius: 10px;
+  background: var(--c-deep); border: 1px solid var(--c-line); color: var(--c-cream);
+  font-family: var(--font-sans), system-ui, sans-serif; font-size: 13.5px; line-height: 1.4;
+}
+.clues-root .cl-note-input:focus { outline: none; border-color: var(--c-brass); }
+.clues-root .cl-note-count { text-align: right; font-size: 10px; color: var(--c-faint); margin-top: 4px; }
+
 /* ---- overlays (win + how-to) ---- */
 .clues-root .cl-overlay {
   position: fixed; inset: 0; z-index: 30;
