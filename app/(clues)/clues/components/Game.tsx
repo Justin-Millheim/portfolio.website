@@ -93,6 +93,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
       return;
     }
     setMarkError(null);
+    setSelected(null); // success: collapse the modal back to the board
     setMarks((prev) => {
       if (prev[i] === status) return prev;
       const next = prev.slice();
@@ -100,7 +101,6 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
       if (next.every((v, idx) => v === puzzle.solution[idx])) {
         setSolved(true);
         setShowWin(true);
-        setSelected(null);
         onSolved();
       }
       return next;

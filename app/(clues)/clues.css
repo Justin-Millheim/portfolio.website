@@ -1,28 +1,31 @@
 /* ============================================================
-   /clues theme — Ink & Ember, scoped under .clues-root so it
-   sits above the portfolio body background and shares nothing
-   with the marketing site. Dark mode only, mobile-first.
+   /clues theme — "midnight precinct". A cool, high-contrast dark
+   scheme tuned for legibility, scoped under .clues-root so it does
+   not affect the rest of the site. Dark mode only, mobile-first.
    ============================================================ */
 .clues-root {
-  --c-bg: #15110d;
-  --c-surface: #211a14;
-  --c-deep: #0f0c08;
-  --c-cream: #f1e8dc;
-  --c-muted: #9a8c7c;
-  --c-faint: #6f6457;
-  --c-line: #34291d;
-  --c-ember: #e86a33;
-  --c-brass: #c99a52;
-  /* verdicts */
-  --c-inn: #5fae89;     /* innocent — calm green */
-  --c-inn-bg: rgba(95, 174, 137, 0.13);
-  --c-cri: #d8552f;     /* criminal — brick/ember red */
-  --c-cri-bg: rgba(216, 85, 47, 0.13);
+  --c-bg: #0e1320;       /* deep midnight navy */
+  --c-surface: #1a2436;  /* cards / panels */
+  --c-surface2: #22304a;
+  --c-deep: #0a0f1a;     /* recessed */
+  --c-cream: #eef3fb;    /* primary text — near white, high contrast */
+  --c-muted: #aab8d0;    /* secondary text */
+  --c-faint: #6d7c97;    /* tertiary labels */
+  --c-line: #2c3a54;     /* borders */
+  --c-ember: #ffb43d;    /* primary accent — warm amber */
+  --c-brass: #e3b765;    /* secondary accent */
+  /* verdicts — vivid + high contrast on the dark base */
+  --c-inn: #4ade80;      /* innocent green */
+  --c-inn-bg: #123a2b;   /* deep green card */
+  --c-inn-line: #2f7d57;
+  --c-cri: #ff6b7a;      /* criminal red */
+  --c-cri-bg: #3f1a25;   /* deep red card */
+  --c-cri-line: #99394a;
   /* hunch tags */
-  --tag-1: #14b8a6;
-  --tag-2: #c99a52;
-  --tag-3: #8b7fd6;
-  --tag-4: #e07a9b;
+  --tag-1: #2dd4bf;
+  --tag-2: #ffb43d;
+  --tag-3: #a78bfa;
+  --tag-4: #f472b6;
 
   position: relative;
   z-index: 5;
@@ -59,11 +62,11 @@
 .clues-root .cl-glow { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; }
 .clues-root .cl-glow-tr {
   top: -120px; right: -120px; width: 360px; height: 360px;
-  background: radial-gradient(circle, rgba(232, 106, 51, 0.10) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,180,61,0.12) 0%, transparent 70%);
 }
 .clues-root .cl-glow-bl {
   bottom: -100px; left: -100px; width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(201, 154, 82, 0.07) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 70%);
 }
 
 /* ---- header ---- */
@@ -86,8 +89,8 @@
   position: relative; z-index: 1;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   width: 100%; margin: 4px 0 18px; padding: 16px 18px;
-  background: linear-gradient(135deg, rgba(232,106,51,0.16), rgba(201,154,82,0.10));
-  border: 1px solid rgba(232,106,51,0.4); border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,180,61,0.16), rgba(99,102,241,0.12));
+  border: 1px solid rgba(255,180,61,0.42); border-radius: 14px;
   cursor: pointer; text-align: left; color: var(--c-cream);
   transition: transform 0.08s ease, border-color 0.15s ease;
 }
@@ -115,7 +118,7 @@
   font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
-.clues-root .cl-tab.is-on { color: #1a0f08; background: var(--c-brass); border-color: var(--c-brass); font-weight: 700; }
+.clues-root .cl-tab.is-on { color: #14202e; background: var(--c-brass); border-color: var(--c-brass); font-weight: 700; }
 
 .clues-root .cl-pgrid {
   position: relative; z-index: 1;
@@ -177,8 +180,8 @@
   transition: border-color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
 }
 .clues-root .cl-card:active { transform: scale(0.98); }
-.clues-root .cl-card.is-innocent { background: #234a39; border-color: #356b51; }
-.clues-root .cl-card.is-criminal { background: #4d2730; border-color: #7a3a45; }
+.clues-root .cl-card.is-innocent { background: var(--c-inn-bg); border-color: var(--c-inn-line); }
+.clues-root .cl-card.is-criminal { background: var(--c-cri-bg); border-color: var(--c-cri-line); }
 .clues-root .cl-card.is-error { border-color: var(--c-cri); box-shadow: 0 0 0 2px var(--c-cri); animation: cl-shake 0.3s ease; }
 
 @keyframes cl-shake {
@@ -209,7 +212,7 @@
   margin: 0; font-size: 9px; line-height: 1.28; color: var(--c-cream);
   display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
 }
-.clues-root .is-innocent .cl-clue, .clues-root .is-criminal .cl-clue { color: #f1e8dc; }
+.clues-root .is-innocent .cl-clue, .clues-root .is-criminal .cl-clue { color: var(--c-cream); }
 .clues-root .cl-tap-hint {
   font-family: var(--font-mono), monospace; font-size: 8px; letter-spacing: 0.5px;
   text-transform: uppercase; color: var(--c-faint); opacity: 0.55;
@@ -248,7 +251,7 @@
 }
 @keyframes cl-pulse {
   0%, 100% { box-shadow: 0 0 0 2px var(--c-ember); }
-  50% { box-shadow: 0 0 0 4px rgba(232,106,51,0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(255,180,61,0.4); }
 }
 
 /* inline mark actions on the selected card */
@@ -279,7 +282,7 @@
 }
 .clues-root .cl-btn:active { transform: scale(0.985); }
 .clues-root .cl-btn:disabled { opacity: 0.4; cursor: default; }
-.clues-root .cl-btn-primary { background: var(--c-ember); color: #1a0f08; }
+.clues-root .cl-btn-primary { background: var(--c-ember); color: #14202e; }
 .clues-root .cl-btn-ghost { background: var(--c-surface); border: 1px solid var(--c-line); color: var(--c-cream); }
 
 .clues-root .cl-hint-note {
