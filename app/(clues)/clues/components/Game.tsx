@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Puzzle, Status } from "@/lib/clues/types";
 import { renderClue, clueMentions } from "@/lib/clues/clues";
-import { nextHint } from "@/lib/clues/solver";
+import { nextHint, deduceClosure } from "@/lib/clues/solver";
 import { SIZE, coord } from "@/lib/clues/grid";
 import SuspectCard, { type HintRole } from "./SuspectCard";
 import SuspectModal from "./SuspectModal";
@@ -57,6 +57,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
   const [errors, setErrors] = useState(() => initial?.errors ?? 0);
   const [startedAt] = useState(() => initial?.startedAt ?? Date.now());
   const [selected, setSelected] = useState<number | null>(null);
+  const [markError, setMarkError] = useState<string | null>(null);
   const [hint, setHint] = useState<Hint | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [solved, setSolved] = useState(() =>
@@ -77,11 +78,25 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
   const setMark = useCallback((i: number, status: Status) => {
     if (i === puzzle.start) return;
     setHint(null);
+    // No guessing: a suspect can only be judged once their verdict is forced by
+    // what's already been deduced. Work only from the player's CORRECT marks.
+    const known = marks.map((v, j) => (v === puzzle.solution[j] ? v : null));
+    const forced = deduceClosure(puzzle.clues, known, 2)[i];
+    if (forced === null) {
+      setErrors((e) => e + 1);
+      setMarkError("Not enough to convict. A suspect can only be judged once the revealed clues force their verdict with 100% certainty — keep deducing.");
+      return;
+    }
+    if (status !== forced) {
+      setErrors((e) => e + 1);
+      setMarkError("That doesn't follow from the clues. Re-check your logic before judging.");
+      return;
+    }
+    setMarkError(null);
     setMarks((prev) => {
       if (prev[i] === status) return prev;
       const next = prev.slice();
       next[i] = status;
-      if (status !== puzzle.solution[i]) setErrors((e) => e + 1);
       if (next.every((v, idx) => v === puzzle.solution[idx])) {
         setSolved(true);
         setShowWin(true);
@@ -90,7 +105,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
       }
       return next;
     });
-  }, [puzzle, onSolved]);
+  }, [puzzle, marks, onSolved]);
 
   const clearMark = useCallback((i: number) => {
     if (i === puzzle.start) return;
@@ -180,7 +195,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
               tag={tags[s.id]}
               hint={hintRole(s.id)}
               hasNote={!!notes[s.id]?.trim()}
-              onOpen={() => setSelected(s.id)}
+              onOpen={() => { setMarkError(null); setSelected(s.id); }}
               onTag={() => cycleTag(s.id)}
             />
           );
@@ -215,10 +230,11 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
             revealed={selected === puzzle.start || marks[selected] === puzzle.solution[selected]}
             clueText={renderClue(puzzle.clues[selected], puzzle.suspects)}
             note={notes[selected] ?? ""}
+            markError={markError}
             onMark={(st) => setMark(selected, st)}
             onClear={() => clearMark(selected)}
             onNote={(text) => setNote(selected, text)}
-            onClose={() => setSelected(null)}
+            onClose={() => { setMarkError(null); setSelected(null); }}
           />
         );
       })()}
