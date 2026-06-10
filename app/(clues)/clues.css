@@ -1,0 +1,261 @@
+/* ============================================================
+   /clues theme — Ink & Ember, scoped under .clues-root so it
+   sits above the portfolio body background and shares nothing
+   with the marketing site. Dark mode only, mobile-first.
+   ============================================================ */
+.clues-root {
+  --c-bg: #15110d;
+  --c-surface: #211a14;
+  --c-deep: #0f0c08;
+  --c-cream: #f1e8dc;
+  --c-muted: #9a8c7c;
+  --c-faint: #6f6457;
+  --c-line: #34291d;
+  --c-ember: #e86a33;
+  --c-brass: #c99a52;
+  /* verdicts */
+  --c-inn: #5fae89;     /* innocent — calm green */
+  --c-inn-bg: rgba(95, 174, 137, 0.13);
+  --c-cri: #d8552f;     /* criminal — brick/ember red */
+  --c-cri-bg: rgba(216, 85, 47, 0.13);
+  /* hunch tags */
+  --tag-1: #14b8a6;
+  --tag-2: #c99a52;
+  --tag-3: #8b7fd6;
+  --tag-4: #e07a9b;
+
+  position: relative;
+  z-index: 5;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--c-bg);
+  color: var(--c-cream);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clues-root .cl-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.clues-root .cl-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 28px 14px 64px;
+}
+
+.clues-root .cl-loading {
+  margin-top: 30vh;
+  text-align: center;
+  color: var(--c-muted);
+  font-family: var(--font-mono), monospace;
+  letter-spacing: 0.5px;
+}
+
+/* ambient warm glows */
+.clues-root .cl-glow { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; }
+.clues-root .cl-glow-tr {
+  top: -120px; right: -120px; width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(232, 106, 51, 0.10) 0%, transparent 70%);
+}
+.clues-root .cl-glow-bl {
+  bottom: -100px; left: -100px; width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(201, 154, 82, 0.07) 0%, transparent 70%);
+}
+
+/* ---- header ---- */
+.clues-root .cl-head { position: relative; z-index: 1; text-align: center; margin-bottom: 16px; }
+.clues-root .cl-kicker {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--c-brass);
+}
+.clues-root .cl-title {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 44px; line-height: 1; margin: 6px 0 8px;
+  letter-spacing: -1px;
+}
+.clues-root .cl-title::after { content: "."; color: var(--c-ember); }
+.clues-root .cl-tag { color: var(--c-muted); font-size: 13.5px; margin: 0; }
+
+/* ---- status bar ---- */
+.clues-root .cl-statusbar {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 14px 2px 12px;
+  font-size: 12px; color: var(--c-muted);
+}
+.clues-root .cl-clock { color: var(--c-cream); }
+.clues-root .cl-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--c-brass); font-size: 12px; text-decoration: underline; text-underline-offset: 3px;
+  font-family: inherit;
+}
+
+/* ---- grid ---- */
+.clues-root .cl-grid {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; align-items: start;
+}
+
+/* ---- card ---- */
+.clues-root .cl-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 6px 8px; min-height: 92px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+}
+.clues-root .cl-card:active { transform: scale(0.98); }
+.clues-root .cl-card.is-selected {
+  border-color: var(--c-brass);
+  box-shadow: 0 0 0 1px var(--c-brass);
+}
+.clues-root .cl-card.is-innocent { background: var(--c-inn-bg); border-color: rgba(95,174,137,0.4); }
+.clues-root .cl-card.is-criminal { background: var(--c-cri-bg); border-color: rgba(216,85,47,0.45); }
+.clues-root .cl-card.is-error { border-color: var(--c-cri); box-shadow: 0 0 0 1px var(--c-cri); animation: cl-shake 0.3s ease; }
+
+@keyframes cl-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.clues-root .cl-avatar { font-size: 26px; line-height: 1; }
+.clues-root .cl-name {
+  margin-top: 3px; font-size: 13px; font-weight: 600; color: var(--c-cream);
+}
+.clues-root .cl-verdict {
+  margin-top: 2px; font-family: var(--font-mono), monospace;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+}
+.clues-root .is-innocent .cl-verdict { color: var(--c-inn); }
+.clues-root .is-criminal .cl-verdict { color: var(--c-cri); }
+.clues-root .cl-given {
+  margin-top: 2px; font-family: var(--font-mono), monospace;
+  font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--c-faint);
+}
+.clues-root .cl-clue {
+  margin: 7px 0 0; font-size: 10.5px; line-height: 1.32; color: var(--c-muted);
+  border-top: 1px solid var(--c-line); padding-top: 6px; width: 100%;
+}
+
+/* tag dot in the top-right corner */
+.clues-root .cl-tag-dot {
+  position: absolute; top: 5px; right: 5px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 1.5px solid var(--c-line); background: transparent;
+  padding: 0; cursor: pointer; z-index: 2;
+}
+.clues-root .tag-1 .cl-tag-dot { background: var(--tag-1); border-color: var(--tag-1); }
+.clues-root .tag-2 .cl-tag-dot { background: var(--tag-2); border-color: var(--tag-2); }
+.clues-root .tag-3 .cl-tag-dot { background: var(--tag-3); border-color: var(--tag-3); }
+.clues-root .tag-4 .cl-tag-dot { background: var(--tag-4); border-color: var(--tag-4); }
+.clues-root .tag-1 { box-shadow: inset 3px 0 0 var(--tag-1); }
+.clues-root .tag-2 { box-shadow: inset 3px 0 0 var(--tag-2); }
+.clues-root .tag-3 { box-shadow: inset 3px 0 0 var(--tag-3); }
+.clues-root .tag-4 { box-shadow: inset 3px 0 0 var(--tag-4); }
+
+/* hint highlights */
+.clues-root .cl-card.hint-region { border-color: var(--c-brass); }
+.clues-root .cl-card.hint-speaker {
+  border-color: var(--c-brass); box-shadow: 0 0 0 1px var(--c-brass);
+}
+.clues-root .cl-card.hint-target {
+  border-color: var(--c-ember); box-shadow: 0 0 0 2px var(--c-ember);
+  animation: cl-pulse 1.1s ease-in-out infinite;
+}
+@keyframes cl-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--c-ember); }
+  50% { box-shadow: 0 0 0 4px rgba(232,106,51,0.35); }
+}
+
+/* inline mark actions on the selected card */
+.clues-root .cl-actions {
+  display: flex; flex-wrap: wrap; gap: 4px; width: 100%; margin-top: 8px;
+}
+.clues-root .cl-mark {
+  flex: 1 1 auto; padding: 6px 4px; border-radius: 7px; cursor: pointer;
+  font-family: var(--font-mono), monospace; font-size: 9.5px; letter-spacing: 0.5px;
+  text-transform: uppercase; border: 1px solid var(--c-line); background: var(--c-deep); color: var(--c-cream);
+}
+.clues-root .cl-mark-inn { border-color: rgba(95,174,137,0.5); color: var(--c-inn); }
+.clues-root .cl-mark-cri { border-color: rgba(216,85,47,0.5); color: var(--c-cri); }
+.clues-root .cl-mark-clear { flex-basis: 100%; color: var(--c-muted); }
+.clues-root .cl-mark:active { transform: scale(0.96); }
+
+/* ---- controls ---- */
+.clues-root .cl-controls {
+  position: relative; z-index: 1;
+  display: flex; gap: 8px; margin-top: 18px;
+}
+.clues-root .cl-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px; border: none; border-radius: 12px; cursor: pointer;
+  font-family: var(--font-mono), monospace; font-size: 12.5px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  transition: transform 0.08s ease, opacity 0.2s ease;
+}
+.clues-root .cl-btn:active { transform: scale(0.985); }
+.clues-root .cl-btn:disabled { opacity: 0.4; cursor: default; }
+.clues-root .cl-btn-primary { background: var(--c-ember); color: #1a0f08; }
+.clues-root .cl-btn-ghost { background: var(--c-surface); border: 1px solid var(--c-line); color: var(--c-cream); }
+
+.clues-root .cl-hint-note {
+  position: relative; z-index: 1;
+  margin: 12px 2px 0; text-align: center; font-size: 12.5px; color: var(--c-brass);
+}
+
+/* ---- overlays (win + how-to) ---- */
+.clues-root .cl-overlay {
+  position: fixed; inset: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: rgba(10, 8, 5, 0.78); backdrop-filter: blur(3px);
+  animation: cl-fade 0.2s ease;
+}
+@keyframes cl-fade { from { opacity: 0; } to { opacity: 1; } }
+.clues-root .cl-win, .clues-root .cl-howto {
+  width: 100%; max-width: 380px;
+  background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 18px;
+  padding: 26px 22px; text-align: center;
+}
+.clues-root .cl-howto { text-align: left; }
+.clues-root .cl-win-mark {
+  font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--c-brass);
+}
+.clues-root .cl-win-title {
+  font-family: var(--font-serif), Georgia, serif; font-size: 24px; line-height: 1.15;
+  margin: 8px 0 6px; letter-spacing: -0.5px;
+}
+.clues-root .cl-win-sub { color: var(--c-muted); font-size: 13.5px; margin: 0 0 18px; }
+.clues-root .cl-win-stats {
+  display: flex; justify-content: space-around; gap: 8px; margin-bottom: 20px;
+}
+.clues-root .cl-win-stats div { display: flex; flex-direction: column; gap: 2px; }
+.clues-root .cl-win-stats span {
+  font-family: var(--font-serif), Georgia, serif; font-size: 26px; color: var(--c-ember);
+}
+.clues-root .cl-win-stats label {
+  font-family: var(--font-mono), monospace; font-size: 9.5px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--c-faint);
+}
+.clues-root .cl-win .cl-btn, .clues-root .cl-howto .cl-btn { width: 100%; margin-top: 8px; }
+
+.clues-root .cl-howto-list { margin: 14px 0 20px; padding-left: 18px; }
+.clues-root .cl-howto-list li { font-size: 13.5px; line-height: 1.5; color: var(--c-muted); margin-bottom: 10px; }
+.clues-root .cl-howto-list b { color: var(--c-cream); font-weight: 600; }
+.clues-root .cl-howto-list i { color: var(--c-brass); font-style: italic; }
+
+@media (min-width: 420px) {
+  .clues-root .cl-grid { gap: 10px; }
+  .clues-root .cl-clue { font-size: 11px; }
+}
