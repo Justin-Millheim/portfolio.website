@@ -11,8 +11,7 @@ interface Props {
   avatar: string;
   mark: Status | null;
   isStart: boolean;
-  revealed: boolean;
-  clueText: string;
+  revealed: boolean;    // its clue is available (shown in the modal / clue list)
   error: boolean;
   tag: number;          // 0 = no tag, 1..4 = colour
   hint: HintRole;
@@ -22,7 +21,7 @@ interface Props {
 }
 
 export default function SuspectCard({
-  coord, name, profession, avatar, mark, isStart, revealed, clueText, error, tag, hint, hasNote,
+  coord, name, profession, avatar, mark, isStart, revealed, error, tag, hint, hasNote,
   onOpen, onTag,
 }: Props) {
   const cls = [
@@ -31,6 +30,7 @@ export default function SuspectCard({
     error ? "is-error" : "",
     hint ? `hint-${hint}` : "",
     tag ? `tag-${tag}` : "",
+    revealed ? "is-revealed" : "",
   ].filter(Boolean).join(" ");
 
   return (
@@ -47,10 +47,9 @@ export default function SuspectCard({
       <div className="cl-prof">{profession}</div>
 
       {mark && <div className="cl-verdict">{mark === "criminal" ? "Criminal" : "Innocent"}</div>}
-      {isStart && <div className="cl-given">given</div>}
+      {isStart && !mark && <div className="cl-given">given</div>}
 
-      {revealed && clueText && <p className="cl-clue">{clueText}</p>}
-
+      {revealed && <span className="cl-clue-flag" aria-hidden>“”</span>}
       {hasNote && <span className="cl-note-flag" aria-label="has a note" title="Note to self">✎</span>}
     </div>
   );

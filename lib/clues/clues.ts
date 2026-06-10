@@ -86,6 +86,22 @@ export function renderClue(clue: Clue, suspects: Suspect[]): string {
   }
 }
 
+// Every suspect this clue constrains. A cell no active clue references can never
+// be deduced, so the solver only probes this set — a big, sound speed-up.
+export function clueCells(clue: Clue): number[] {
+  switch (clue.kind) {
+    case "direct": return [clue.target];
+    case "relation": return [clue.a, clue.b];
+    case "cond": return [clue.a, clue.b];
+    case "count":
+    case "parity":
+    case "connected": return clue.region;
+    case "share": return [clue.a, clue.b, ...clue.region];
+    case "most": return [clue.who, ...neighbors(clue.who)];
+    case "compare": return [...clue.regionA, ...clue.regionB];
+  }
+}
+
 // Does this clue talk about suspect `index`? Used by the hint button to point a
 // stuck player at the clues that, together, pin a given suspect.
 export function clueMentions(clue: Clue, index: number): boolean {
