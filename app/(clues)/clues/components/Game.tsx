@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Puzzle, Status } from "@/lib/clues/types";
-import { renderClue } from "@/lib/clues/clues";
-import { nextDeduction } from "@/lib/clues/solver";
+import { renderClue, clueMentions } from "@/lib/clues/clues";
+import { nextHint } from "@/lib/clues/solver";
 import { SIZE, coord } from "@/lib/clues/grid";
 import SuspectCard, { type HintRole } from "./SuspectCard";
+import SuspectModal from "./SuspectModal";
 import WinOverlay from "./WinOverlay";
 
 const TAG_COUNT = 4;
@@ -13,6 +14,7 @@ const TAG_COUNT = 4;
 export interface GameState {
   marks: (Status | null)[];
   tags: number[];
+  notes: string[];
   hintsUsed: number;
   errors: number;
   startedAt: number;
@@ -30,8 +32,7 @@ interface Props {
 
 interface Hint {
   level: 1 | 2;
-  speaker: number;
-  region: number[];
+  speakers: number[]; // revealed clues (by speaker) that together pin the target
   target: number;
 }
 
@@ -50,6 +51,8 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
   const [marks, setMarks] = useState<(Status | null)[]>(() => initial?.marks ?? freshMarks(puzzle));
   const [tags, setTags] = useState<number[]>(() =>
     initial?.tags?.length === SIZE ? initial.tags : new Array(SIZE).fill(0));
+  const [notes, setNotes] = useState<string[]>(() =>
+    initial?.notes?.length === SIZE ? initial.notes : new Array(SIZE).fill(""));
   const [hintsUsed, setHintsUsed] = useState(() => initial?.hintsUsed ?? 0);
   const [errors, setErrors] = useState(() => initial?.errors ?? 0);
   const [startedAt] = useState(() => initial?.startedAt ?? Date.now());
@@ -62,8 +65,8 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
 
   // report progress upward for persistence
   useEffect(() => {
-    onChange({ marks, tags, hintsUsed, errors, startedAt });
-  }, [marks, tags, hintsUsed, errors, startedAt, onChange]);
+    onChange({ marks, tags, notes, hintsUsed, errors, startedAt });
+  }, [marks, tags, notes, hintsUsed, errors, startedAt, onChange]);
 
   useEffect(() => {
     if (solved) return;
@@ -107,20 +110,29 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
     });
   }, []);
 
+  const setNote = useCallback((i: number, text: string) => {
+    setNotes((prev) => {
+      if (prev[i] === text) return prev;
+      const next = prev.slice();
+      next[i] = text;
+      return next;
+    });
+  }, []);
+
   // Hints reason only from verdicts the player has correct, so a stray wrong
   // mark never sends the hint down a false path.
   const requestHint = useCallback(() => {
     if (hint && hint.level === 1) { setHint({ ...hint, level: 2 }); return; }
     const known = marks.map((v, i) => (v === puzzle.solution[i] ? v : null));
-    const step = nextDeduction(puzzle.clues, known);
+    const step = nextHint(puzzle.clues, known, 2);
     if (!step) return;
-    const clue = puzzle.clues[step.by];
-    const region =
-      clue.kind === "count" || clue.kind === "parity" || clue.kind === "share" || clue.kind === "connected" ? clue.region
-      : clue.kind === "compare" ? [...clue.regionA, ...clue.regionB]
-      : clue.kind === "most" ? [clue.who]
-      : [clue.speaker];
-    setHint({ level: 1, speaker: clue.speaker, region, target: step.index });
+    // the revealed clues that talk about the deducible suspect — the ones to read
+    const speakers = Array.from(new Set(
+      puzzle.clues
+        .filter((c) => known[c.speaker] !== null && clueMentions(c, step.index))
+        .map((c) => c.speaker),
+    ));
+    setHint({ level: 1, speakers: speakers.length ? speakers : [step.index], target: step.index });
     setHintsUsed((h) => h + 1);
     setSelected(null);
   }, [puzzle, marks, hint]);
@@ -128,8 +140,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
   const hintRole = useCallback((i: number): HintRole => {
     if (!hint) return null;
     if (hint.level >= 2 && i === hint.target) return "target";
-    if (i === hint.speaker) return "speaker";
-    if (hint.region.includes(i)) return "region";
+    if (hint.speakers.includes(i)) return "speaker";
     return null;
   }, [hint]);
 
@@ -163,15 +174,13 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
               avatar={s.avatar}
               mark={m}
               isStart={s.id === puzzle.start}
-              selected={selected === s.id}
               revealed={revealed}
               clueText={renderClue(puzzle.clues[s.id], puzzle.suspects)}
               error={m !== null && m !== puzzle.solution[s.id]}
               tag={tags[s.id]}
               hint={hintRole(s.id)}
-              onSelect={() => setSelected((cur) => (cur === s.id ? null : s.id))}
-              onMark={(st) => setMark(s.id, st)}
-              onClear={() => clearMark(s.id)}
+              hasNote={!!notes[s.id]?.trim()}
+              onOpen={() => setSelected(s.id)}
               onTag={() => cycleTag(s.id)}
             />
           );
@@ -188,10 +197,31 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
       {hint && (
         <p className="cl-hint-note">
           {hint.level === 1
-            ? "Read the highlighted clue — it pins down one more suspect."
+            ? "Read the highlighted clues together — they pin down one more suspect."
             : `You can now identify ${puzzle.suspects[hint.target].name}.`}
         </p>
       )}
+
+      {selected !== null && (() => {
+        const s = puzzle.suspects[selected];
+        return (
+          <SuspectModal
+            coord={coord(selected)}
+            name={s.name}
+            profession={s.profession}
+            avatar={s.avatar}
+            mark={marks[selected]}
+            isStart={selected === puzzle.start}
+            revealed={selected === puzzle.start || marks[selected] === puzzle.solution[selected]}
+            clueText={renderClue(puzzle.clues[selected], puzzle.suspects)}
+            note={notes[selected] ?? ""}
+            onMark={(st) => setMark(selected, st)}
+            onClear={() => clearMark(selected)}
+            onNote={(text) => setNote(selected, text)}
+            onClose={() => setSelected(null)}
+          />
+        );
+      })()}
 
       {showWin && solved && (
         <WinOverlay

@@ -145,3 +145,102 @@ export function solutionCount(clues: Clue[], limit = 2): number {
   rec(0);
   return found;
 }
+
+// --- human-style reasoning: unit propagation + contradiction probing ---------
+// Models how a real player cracks a hard board: take the revealed clues, deduce
+// everything that's directly forced, and when stuck, hypothesise a verdict and
+// chase it until it either sticks or self-destructs. `depth` is how many nested
+// hypotheticals are allowed — the lever that separates a 5/100 board from a
+// 70/100 one. Sound: every cell it fixes is entailed by the (true) clues.
+
+interface CloseResult { known: (Status | null)[]; contra: boolean; }
+
+// Closure under single-clue propagation using ONLY the given (revealed) clues.
+function unitClosure(active: Clue[], start: (Status | null)[]): CloseResult {
+  const known = start.slice();
+  let progressed = true;
+  while (progressed) {
+    progressed = false;
+    for (const clue of active) {
+      for (const f of propagate(clue, known)) {
+        if (known[f.index] === null) { known[f.index] = f.status; progressed = true; }
+        else if (known[f.index] !== f.status) return { known, contra: true };
+      }
+    }
+  }
+  return { known, contra: !stillSatisfiable(active, known) };
+}
+
+// Unit closure, then up to `depth` levels of "assume X, derive contradiction".
+function deepClose(active: Clue[], start: (Status | null)[], depth: number): CloseResult {
+  let { known, contra } = unitClosure(active, start);
+  if (contra) return { known, contra: true };
+  if (depth <= 0) return { known, contra: false };
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let c = 0; c < SIZE; c++) {
+      if (known[c] !== null) continue;
+      const tryCrim = known.slice(); tryCrim[c] = "criminal";
+      const tryInn = known.slice(); tryInn[c] = "innocent";
+      const crimBad = deepClose(active, tryCrim, depth - 1).contra;
+      const innBad = deepClose(active, tryInn, depth - 1).contra;
+      if (crimBad && innBad) return { known, contra: true };
+      if (crimBad || innBad) {
+        known[c] = crimBad ? "innocent" : "criminal";
+        const uc = unitClosure(active, known);
+        if (uc.contra) return { known, contra: true };
+        known = uc.known;
+        changed = true;
+      }
+    }
+  }
+  return { known, contra: false };
+}
+
+// Play the board the way the game does: reveal clues as suspects are pinned,
+// reasoning at the given depth, until no more progress. Returns whether the
+// whole board falls out at that depth.
+export function solveAtDepth(
+  clues: Clue[], start: number, startStatus: Status, depth: number,
+): { solved: boolean; known: (Status | null)[] } {
+  const known: (Status | null)[] = new Array(SIZE).fill(null);
+  known[start] = startStatus;
+  for (let guard = 0; guard < SIZE + 2; guard++) {
+    const active = clues.filter((c) => c !== undefined && known[c.speaker] !== null);
+    const r = deepClose(active, known, depth);
+    if (r.contra) return { solved: false, known };
+    if (r.known.every((v, i) => v === known[i])) break; // stuck
+    for (let i = 0; i < SIZE; i++) known[i] = r.known[i];
+  }
+  return { solved: known.every((v) => v !== null), known };
+}
+
+// The shallowest reasoning depth (0..maxDepth) that fully cracks the board, or
+// maxDepth+1 if even that isn't enough. This IS the difficulty score.
+export function requiredDepth(
+  clues: Clue[], start: number, startStatus: Status, maxDepth = 2,
+): number {
+  for (let d = 0; d <= maxDepth; d++) {
+    if (solveAtDepth(clues, start, startStatus, d).solved) return d;
+  }
+  return maxDepth + 1;
+}
+
+// The easiest next deduction for a player holding `known` (their correct marks):
+// the lowest reasoning depth that pins a new cell, using only revealed clues.
+// Drives the hint button now that single-clue propagation no longer suffices.
+export function nextHint(
+  clues: Clue[], known: (Status | null)[], maxDepth = 2,
+): { index: number; status: Status; depth: number } | null {
+  const active = clues.filter((c) => c !== undefined && known[c.speaker] !== null);
+  for (let d = 0; d <= maxDepth; d++) {
+    const r = deepClose(active, known, d);
+    if (r.contra) continue;
+    for (let i = 0; i < SIZE; i++) {
+      if (known[i] === null && r.known[i] !== null) return { index: i, status: r.known[i] as Status, depth: d };
+    }
+  }
+  return null;
+}

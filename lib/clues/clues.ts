@@ -86,6 +86,22 @@ export function renderClue(clue: Clue, suspects: Suspect[]): string {
   }
 }
 
+// Does this clue talk about suspect `index`? Used by the hint button to point a
+// stuck player at the clues that, together, pin a given suspect.
+export function clueMentions(clue: Clue, index: number): boolean {
+  switch (clue.kind) {
+    case "direct": return clue.target === index;
+    case "relation": return clue.a === index || clue.b === index;
+    case "cond": return clue.a === index || clue.b === index;
+    case "count":
+    case "parity":
+    case "connected": return clue.region.includes(index);
+    case "share": return clue.a === index || clue.b === index || clue.region.includes(index);
+    case "most": return clue.who === index || neighbors(clue.who).includes(index);
+    case "compare": return clue.regionA.includes(index) || clue.regionB.includes(index);
+  }
+}
+
 // Is the clue true under the full solution? Used only at generation time.
 export function evalClue(clue: Clue, solution: Status[]): boolean {
   const crim = (region: number[]) => region.filter((i) => solution[i] === "criminal").length;
