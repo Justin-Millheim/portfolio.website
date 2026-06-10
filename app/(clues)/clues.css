@@ -161,14 +161,14 @@
 .clues-root .cl-grid {
   position: relative; z-index: 1;
   display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 8px; align-items: start;
+  gap: 7px;
 }
 
-/* ---- card ---- */
+/* ---- card: fixed height so revealing a clue never reflows the board ---- */
 .clues-root .cl-card {
   position: relative;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 10px 6px; height: 96px; /* fixed: the board never reflows */
+  display: flex; flex-direction: column; align-items: center;
+  padding: 14px 5px 8px; height: 152px; overflow: hidden;
   background: var(--c-surface);
   border: 1px solid var(--c-line);
   border-radius: 12px;
@@ -176,15 +176,10 @@
   text-align: center;
   transition: border-color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
 }
-.clues-root .cl-card.is-revealed { border-style: solid; }
 .clues-root .cl-card:active { transform: scale(0.98); }
-.clues-root .cl-card.is-selected {
-  border-color: var(--c-brass);
-  box-shadow: 0 0 0 1px var(--c-brass);
-}
-.clues-root .cl-card.is-innocent { background: var(--c-inn-bg); border-color: rgba(95,174,137,0.4); }
-.clues-root .cl-card.is-criminal { background: var(--c-cri-bg); border-color: rgba(216,85,47,0.45); }
-.clues-root .cl-card.is-error { border-color: var(--c-cri); box-shadow: 0 0 0 1px var(--c-cri); animation: cl-shake 0.3s ease; }
+.clues-root .cl-card.is-innocent { background: #234a39; border-color: #356b51; }
+.clues-root .cl-card.is-criminal { background: #4d2730; border-color: #7a3a45; }
+.clues-root .cl-card.is-error { border-color: var(--c-cri); box-shadow: 0 0 0 2px var(--c-cri); animation: cl-shake 0.3s ease; }
 
 @keyframes cl-shake {
   0%, 100% { transform: translateX(0); }
@@ -197,28 +192,34 @@
   font-family: var(--font-mono), monospace; font-size: 8px; letter-spacing: 0.5px;
   color: var(--c-faint);
 }
-.clues-root .cl-avatar { font-size: 26px; line-height: 1; margin-top: 6px; }
+.clues-root .cl-card-top { display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; }
+.clues-root .cl-avatar { font-size: 24px; line-height: 1; }
 .clues-root .cl-name {
-  margin-top: 3px; font-size: 13px; font-weight: 600; color: var(--c-cream);
+  margin-top: 2px; font-size: 12.5px; font-weight: 600; color: var(--c-cream); line-height: 1.1;
 }
 .clues-root .cl-prof {
-  font-family: var(--font-mono), monospace; font-size: 8.5px; letter-spacing: 0.5px;
+  font-family: var(--font-mono), monospace; font-size: 8px; letter-spacing: 0.5px;
   color: var(--c-faint); text-transform: lowercase;
 }
-.clues-root .cl-verdict {
-  margin-top: 2px; font-family: var(--font-mono), monospace;
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-}
-.clues-root .is-innocent .cl-verdict { color: var(--c-inn); }
-.clues-root .is-criminal .cl-verdict { color: var(--c-cri); }
-.clues-root .cl-given {
-  margin-top: 2px; font-family: var(--font-mono), monospace;
-  font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--c-faint);
+.clues-root .cl-card-body {
+  flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+  width: 100%; margin-top: 5px; overflow: hidden;
 }
 .clues-root .cl-clue {
-  margin: 7px 0 0; font-size: 10.5px; line-height: 1.32; color: var(--c-muted);
-  border-top: 1px solid var(--c-line); padding-top: 6px; width: 100%;
+  margin: 0; font-size: 9px; line-height: 1.28; color: var(--c-cream);
+  display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
 }
+.clues-root .is-innocent .cl-clue, .clues-root .is-criminal .cl-clue { color: #f1e8dc; }
+.clues-root .cl-tap-hint {
+  font-family: var(--font-mono), monospace; font-size: 8px; letter-spacing: 0.5px;
+  text-transform: uppercase; color: var(--c-faint); opacity: 0.55;
+}
+.clues-root .cl-verdict {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+}
+.clues-root .is-innocent .cl-verdict { color: #8fe3bb; }
+.clues-root .is-criminal .cl-verdict { color: #f0a08f; }
 
 /* tag dot in the top-right corner */
 .clues-root .cl-tag-dot {

@@ -82,7 +82,7 @@ export function renderClue(clue: Clue, suspects: Suspect[]): string {
         ? `I have the most criminal neighbours.`
         : `${name(clue.who)} has the most criminal neighbours.`;
     case "compare":
-      return `There are more criminals among ${clue.labelA} than ${clue.labelB}.`;
+      return `More criminals in ${clue.labelA} than ${clue.labelB}.`;
   }
 }
 

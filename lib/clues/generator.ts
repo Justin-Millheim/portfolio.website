@@ -77,19 +77,19 @@ function regionsFor(
   groups: Map<string, number[]>, difficulty: Difficulty, rand: () => number,
 ): Region[] {
   const out: Region[] = [];
-  out.push({ region: rowMembers(speaker), label: "the people in my row" });
-  out.push({ region: colMembers(speaker), label: "the people in my column" });
+  out.push({ region: rowMembers(speaker), label: "my row" });
+  out.push({ region: colMembers(speaker), label: "my column" });
   out.push({ region: neighbors(speaker), label: "my neighbours" });
 
   if (difficulty !== "easy") {
-    out.push({ region: CORNERS.slice(), label: "the four corners" });
-    out.push({ region: EDGE.slice(), label: "the people on the edge" });
+    out.push({ region: CORNERS.slice(), label: "the corners" });
+    out.push({ region: EDGE.slice(), label: "the edge" });
     // a couple of absolute rows / columns elsewhere on the board
     for (const r of shuffle([0, 1, 2, 3, 4], rand).slice(0, 2)) {
-      if (r !== rowOf(speaker)) out.push({ region: rowMembersByR(r), label: `the people in row ${r + 1}` });
+      if (r !== rowOf(speaker)) out.push({ region: rowMembersByR(r), label: `row ${r + 1}` });
     }
     for (const c of shuffle([0, 1, 2, 3], rand).slice(0, 2)) {
-      if (c !== colOf(speaker)) out.push({ region: colMembersByC(c), label: `the people in column ${colLetter(c)}` });
+      if (c !== colOf(speaker)) out.push({ region: colMembersByC(c), label: `column ${colLetter(c)}` });
     }
     const mine = groups.get(suspects[speaker].profession);
     if (mine && mine.length >= 2) out.push({ region: mine.slice(), label: `the ${suspects[speaker].profession}s` });
@@ -106,9 +106,9 @@ function regionsFor(
     ).slice(0, 4);
     for (const a of knownOthers) {
       const btw = between(speaker, a);
-      if (btw.length >= 1) out.push({ region: btw, label: `the people between me and ${suspects[a].name}` });
+      if (btw.length >= 1) out.push({ region: btw, label: `between me and ${suspects[a].name}` });
       const cn = commonNeighbors(speaker, a);
-      if (cn.length >= 2) out.push({ region: cn, label: `the people ${suspects[a].name} and I both neighbour` });
+      if (cn.length >= 2) out.push({ region: cn, label: `${suspects[a].name}'s & my shared neighbours` });
     }
   }
   return out;
@@ -277,7 +277,7 @@ function flavourClue(
     }
   }
   const region = rand() < 0.5 ? rowMembers(speaker) : colMembers(speaker);
-  return { kind: "count", speaker, region, label: rand() < 0.5 ? "the people in my row" : "the people in my column", op: "exactly", k: crim(region) };
+  return { kind: "count", speaker, region, label: rand() < 0.5 ? "my row" : "my column", op: "exactly", k: crim(region) };
 }
 
 function build(seed: number, difficulty: Difficulty): Puzzle {
@@ -339,10 +339,10 @@ function buildFallback(seed: number, difficulty: Difficulty): Puzzle {
 function looseFlavours(speaker: number, solution: Status[], rand: () => number): Clue[] {
   const crim = (r: number[]) => r.filter((i) => solution[i] === "criminal").length;
   const regs: { region: number[]; label: string }[] = [];
-  for (let r = 0; r < 5; r++) regs.push({ region: rowMembersByR(r), label: `the people in row ${r + 1}` });
-  for (let c = 0; c < 4; c++) regs.push({ region: colMembersByC(c), label: `the people in column ${colLetter(c)}` });
-  regs.push({ region: EDGE.slice(), label: "the people on the edge" });
-  regs.push({ region: CORNERS.slice(), label: "the four corners" });
+  for (let r = 0; r < 5; r++) regs.push({ region: rowMembersByR(r), label: `row ${r + 1}` });
+  for (let c = 0; c < 4; c++) regs.push({ region: colMembersByC(c), label: `column ${colLetter(c)}` });
+  regs.push({ region: EDGE.slice(), label: "the edge" });
+  regs.push({ region: CORNERS.slice(), label: "the corners" });
   const shuffled = shuffle(regs, rand);
   const out: Clue[] = [];
 
