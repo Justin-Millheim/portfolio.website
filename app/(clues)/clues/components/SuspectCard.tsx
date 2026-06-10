@@ -11,17 +11,21 @@ interface Props {
   avatar: string;
   mark: Status | null;
   isStart: boolean;
-  revealed: boolean;    // its clue is available (shown in the modal / clue list)
+  revealed: boolean;    // its clue is shown on the card
+  clueText: string;
   error: boolean;
   tag: number;          // 0 = no tag, 1..4 = colour
   hint: HintRole;
   hasNote: boolean;
-  onOpen: () => void;   // opens the centered suspect modal
+  onOpen: () => void;   // opens the centered verdict / note modal
   onTag: () => void;
 }
 
+// Fixed-size card: every card is the same height whether or not a clue is shown,
+// so revealing a clue never reflows the board. Clue text lives on the card,
+// statically readable, like the source game.
 export default function SuspectCard({
-  coord, name, profession, avatar, mark, isStart, revealed, error, tag, hint, hasNote,
+  coord, name, profession, avatar, mark, isStart, revealed, clueText, error, tag, hint, hasNote,
   onOpen, onTag,
 }: Props) {
   const cls = [
@@ -41,16 +45,21 @@ export default function SuspectCard({
         aria-label="cycle colour tag"
         onClick={(e) => { e.stopPropagation(); onTag(); }}
       />
-
-      <div className="cl-avatar" aria-hidden>{avatar}</div>
-      <div className="cl-name">{name}</div>
-      <div className="cl-prof">{profession}</div>
-
-      {mark && <div className="cl-verdict">{mark === "criminal" ? "Criminal" : "Innocent"}</div>}
-      {isStart && !mark && <div className="cl-given">given</div>}
-
-      {revealed && <span className="cl-clue-flag" aria-hidden>“”</span>}
       {hasNote && <span className="cl-note-flag" aria-label="has a note" title="Note to self">✎</span>}
+
+      <div className="cl-card-top">
+        <div className="cl-avatar" aria-hidden>{avatar}</div>
+        <div className="cl-name">{name}</div>
+        <div className="cl-prof">{profession}</div>
+      </div>
+
+      <div className="cl-card-body">
+        {revealed
+          ? <p className="cl-clue">{clueText}</p>
+          : mark
+            ? <span className="cl-verdict">{mark === "criminal" ? "Criminal" : "Innocent"}</span>
+            : <span className="cl-tap-hint">tap to judge</span>}
+      </div>
     </div>
   );
 }
