@@ -81,6 +81,68 @@
 .clues-root .cl-title::after { content: "."; color: var(--c-ember); }
 .clues-root .cl-tag { color: var(--c-muted); font-size: 13.5px; margin: 0; }
 
+/* ---- library / menu ---- */
+.clues-root .cl-daily {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; margin: 4px 0 18px; padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(232,106,51,0.16), rgba(201,154,82,0.10));
+  border: 1px solid rgba(232,106,51,0.4); border-radius: 14px;
+  cursor: pointer; text-align: left; color: var(--c-cream);
+  transition: transform 0.08s ease, border-color 0.15s ease;
+}
+.clues-root .cl-daily:active { transform: scale(0.99); }
+.clues-root .cl-daily-k {
+  font-family: var(--font-mono), monospace; font-size: 10.5px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--c-brass);
+}
+.clues-root .cl-daily-l { font-family: var(--font-serif), Georgia, serif; font-size: 19px; margin-top: 3px; }
+.clues-root .cl-daily-go { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--c-ember); white-space: nowrap; }
+
+.clues-root .cl-section {
+  position: relative; z-index: 1;
+  display: flex; align-items: baseline; justify-content: space-between; margin: 4px 2px 10px;
+}
+.clues-root .cl-section-h { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--c-faint); }
+
+.clues-root .cl-tabs {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px;
+}
+.clues-root .cl-tab {
+  padding: 9px 4px; border: 1px solid var(--c-line); border-radius: 9px;
+  background: var(--c-surface); color: var(--c-muted); cursor: pointer;
+  font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.clues-root .cl-tab.is-on { color: #1a0f08; background: var(--c-brass); border-color: var(--c-brass); font-weight: 700; }
+
+.clues-root .cl-pgrid {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px;
+}
+.clues-root .cl-pnum {
+  position: relative; aspect-ratio: 1; border: 1px solid var(--c-line); border-radius: 9px;
+  background: var(--c-surface); color: var(--c-cream); cursor: pointer;
+  font-family: var(--font-mono), monospace; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s ease, transform 0.08s ease;
+}
+.clues-root .cl-pnum:active { transform: scale(0.95); }
+.clues-root .cl-pnum.is-solved { border-color: rgba(95,174,137,0.55); color: var(--c-inn); }
+.clues-root .cl-check { position: absolute; top: 2px; right: 4px; font-size: 8px; color: var(--c-inn); }
+
+/* ---- game top bar ---- */
+.clues-root .cl-gamebar {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.clues-root .cl-back {
+  background: none; border: none; padding: 4px 2px; cursor: pointer;
+  color: var(--c-brass); font-family: var(--font-mono), monospace; font-size: 12px; letter-spacing: 0.5px;
+}
+.clues-root .cl-gamelabel { margin-left: auto; font-size: 11px; color: var(--c-muted); }
+
 /* ---- status bar ---- */
 .clues-root .cl-statusbar {
   position: relative; z-index: 1;
@@ -129,9 +191,18 @@
   75% { transform: translateX(3px); }
 }
 
-.clues-root .cl-avatar { font-size: 26px; line-height: 1; }
+.clues-root .cl-coord {
+  position: absolute; top: 5px; left: 6px;
+  font-family: var(--font-mono), monospace; font-size: 8px; letter-spacing: 0.5px;
+  color: var(--c-faint);
+}
+.clues-root .cl-avatar { font-size: 26px; line-height: 1; margin-top: 6px; }
 .clues-root .cl-name {
   margin-top: 3px; font-size: 13px; font-weight: 600; color: var(--c-cream);
+}
+.clues-root .cl-prof {
+  font-family: var(--font-mono), monospace; font-size: 8.5px; letter-spacing: 0.5px;
+  color: var(--c-faint); text-transform: lowercase;
 }
 .clues-root .cl-verdict {
   margin-top: 2px; font-family: var(--font-mono), monospace;

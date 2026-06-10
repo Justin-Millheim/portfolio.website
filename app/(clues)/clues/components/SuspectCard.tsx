@@ -5,7 +5,9 @@ import type { Status } from "@/lib/clues/types";
 export type HintRole = "speaker" | "region" | "target" | null;
 
 interface Props {
+  coord: string;         // grid label, e.g. "A1"
   name: string;
+  profession: string;
   avatar: string;
   mark: Status | null;
   isStart: boolean;
@@ -22,7 +24,7 @@ interface Props {
 }
 
 export default function SuspectCard({
-  name, avatar, mark, isStart, selected, revealed, clueText, error, tag, hint,
+  coord, name, profession, avatar, mark, isStart, selected, revealed, clueText, error, tag, hint,
   onSelect, onMark, onClear, onTag,
 }: Props) {
   const cls = [
@@ -36,6 +38,7 @@ export default function SuspectCard({
 
   return (
     <div className={cls} onClick={onSelect} role="button" tabIndex={0}>
+      <span className="cl-coord">{coord}</span>
       <button
         className="cl-tag-dot"
         aria-label="cycle colour tag"
@@ -44,6 +47,7 @@ export default function SuspectCard({
 
       <div className="cl-avatar" aria-hidden>{avatar}</div>
       <div className="cl-name">{name}</div>
+      <div className="cl-prof">{profession}</div>
 
       {mark && (
         <div className="cl-verdict">{mark === "criminal" ? "Criminal" : "Innocent"}</div>

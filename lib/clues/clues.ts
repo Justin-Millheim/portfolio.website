@@ -1,76 +1,70 @@
 // Clue semantics: rendering to English, truth-checking against a solution, and
 // sound forced-propagation for the solver. Every propagate() result is a cell
-// that MUST hold given the current partial knowledge — never a guess. That
+// that MUST hold given current partial knowledge — never a guess. That
 // soundness is what guarantees generated puzzles have a unique, gettable answer.
+// (`compare` is the one flavour-only clue: always true, never load-bearing, so
+// it propagates nothing.)
 
-import type { Clue, Status, CountOp } from "./types";
-import type { Suspect } from "./types";
+import type { Clue, Status, CountOp, Suspect } from "./types";
 
 export const opp = (s: Status): Status => (s === "criminal" ? "innocent" : "criminal");
 
-// "is a criminal" / "is innocent"
 export function statusPhrase(s: Status): string {
   return s === "criminal" ? "a criminal" : "innocent";
 }
 
-function name(suspects: Suspect[], i: number): string {
-  return suspects[i]?.name ?? `#${i}`;
-}
-
-function countCriminals(region: number[], values: (Status | null)[]): {
-  criminals: number;
-  innocents: number;
-  unknown: number[];
-} {
+function crimCount(region: number[], values: (Status | null)[]) {
   let criminals = 0;
-  let innocents = 0;
   const unknown: number[] = [];
   for (const idx of region) {
     const v = values[idx];
     if (v === "criminal") criminals++;
-    else if (v === "innocent") innocents++;
-    else unknown.push(idx);
+    else if (v === null) unknown.push(idx);
   }
-  return { criminals, innocents, unknown };
+  return { criminals, unknown };
 }
 
-function countPhrase(op: CountOp, k: number, label: string): string {
+function countPhrase(op: CountOp, k: number, label: string, size: number): string {
   if (op === "exactly" && k === 0) return `None of ${label} are criminals.`;
-  const noun = k === 1 ? "is a criminal" : "are criminals";
+  if (op === "exactly" && k === size && size > 1) return `All of ${label} are criminals.`;
+  const verb = k === 1 ? "is a criminal" : "are criminals";
   const num = k === 1 ? "one" : String(k);
-  if (op === "exactly") return `Exactly ${num} of ${label} ${noun}.`;
-  if (op === "atleast") return `At least ${num} of ${label} ${noun}.`;
-  return `At most ${num} of ${label} ${noun}.`; // atmost
+  if (op === "exactly") return `Exactly ${num} of ${label} ${verb}.`;
+  if (op === "atleast") return `At least ${num} of ${label} ${verb}.`;
+  return `At most ${num} of ${label} ${verb}.`;
 }
 
 export function renderClue(clue: Clue, suspects: Suspect[]): string {
+  const name = (i: number) => suspects[i]?.name ?? `#${i}`;
   switch (clue.kind) {
     case "direct":
-      return `${name(suspects, clue.target)} is ${statusPhrase(clue.status)}.`;
+      return `${name(clue.target)} is ${statusPhrase(clue.status)}.`;
     case "relation": {
-      const a = name(suspects, clue.a);
-      const b = name(suspects, clue.b);
-      // Speak in the first person when the clue references its own speaker.
       if (clue.a === clue.speaker) {
         return clue.same
-          ? `${b} has the same verdict as me.`
-          : `${b} is the opposite of me.`;
+          ? `${name(clue.b)} has the same verdict as me.`
+          : `${name(clue.b)} is the opposite of me.`;
       }
       return clue.same
-        ? `${a} and ${b} share the same verdict.`
-        : `${a} and ${b} land on opposite sides.`;
+        ? `${name(clue.a)} and ${name(clue.b)} share the same verdict.`
+        : `${name(clue.a)} and ${name(clue.b)} land on opposite sides.`;
     }
     case "cond": {
-      const a = clue.a === clue.speaker ? "I am" : `${name(suspects, clue.a)} is`;
-      return `If ${a} ${statusPhrase(clue.aStatus)}, then ${name(suspects, clue.b)} is ${statusPhrase(clue.bStatus)}.`;
+      const a = clue.a === clue.speaker ? "I am" : `${name(clue.a)} is`;
+      return `If ${a} ${statusPhrase(clue.aStatus)}, then ${name(clue.b)} is ${statusPhrase(clue.bStatus)}.`;
     }
     case "count":
-      return countPhrase(clue.op, clue.k, clue.label);
+      return countPhrase(clue.op, clue.k, clue.label, clue.region.length);
+    case "parity":
+      return `An ${clue.even ? "even" : "odd"} number of ${clue.label} are criminals.`;
+    case "compare":
+      return `There are more criminals among ${clue.labelA} than ${clue.labelB}.`;
   }
 }
 
 // Is the clue true under the full solution? Used only at generation time.
 export function evalClue(clue: Clue, solution: Status[]): boolean {
+  const crim = (region: number[]) => region.filter((i) => solution[i] === "criminal").length;
   switch (clue.kind) {
     case "direct":
       return solution[clue.target] === clue.status;
@@ -81,11 +75,15 @@ export function evalClue(clue: Clue, solution: Status[]): boolean {
     case "cond":
       return solution[clue.a] !== clue.aStatus || solution[clue.b] === clue.bStatus;
     case "count": {
-      const c = clue.region.filter((i) => solution[i] === "criminal").length;
+      const c = crim(clue.region);
       if (clue.op === "exactly") return c === clue.k;
       if (clue.op === "atleast") return c >= clue.k;
-      return c <= clue.k; // atmost
+      return c <= clue.k;
     }
+    case "parity":
+      return crim(clue.region) % 2 === (clue.even ? 0 : 1);
+    case "compare":
+      return crim(clue.regionA) > crim(clue.regionB);
   }
 }
 
@@ -105,30 +103,36 @@ export function propagate(clue: Clue, known: (Status | null)[]): { index: number
       break;
     }
     case "cond": {
-      // modus ponens
       if (known[clue.a] === clue.aStatus && known[clue.b] === null)
-        out.push({ index: clue.b, status: clue.bStatus });
-      // modus tollens (the "if not B then not A" lesson)
+        out.push({ index: clue.b, status: clue.bStatus });            // modus ponens
       if (known[clue.b] === opp(clue.bStatus) && known[clue.a] === null)
-        out.push({ index: clue.a, status: opp(clue.aStatus) });
+        out.push({ index: clue.a, status: opp(clue.aStatus) });        // modus tollens
       break;
     }
     case "count": {
-      const { criminals, unknown } = countCriminals(clue.region, known);
+      const { criminals, unknown } = crimCount(clue.region, known);
       const u = unknown.length;
       if (u === 0) break;
-      const setAll = (status: Status) => unknown.forEach((i) => out.push({ index: i, status }));
+      const all = (status: Status) => unknown.forEach((i) => out.push({ index: i, status }));
       if (clue.op === "exactly") {
-        if (criminals === clue.k) setAll("innocent");
-        else if (criminals + u === clue.k) setAll("criminal");
+        if (criminals === clue.k) all("innocent");
+        else if (criminals + u === clue.k) all("criminal");
       } else if (clue.op === "atleast") {
-        if (criminals + u === clue.k) setAll("criminal"); // every remaining must be criminal
+        if (criminals + u === clue.k) all("criminal");
       } else {
-        // atmost
-        if (criminals === clue.k) setAll("innocent");
+        if (criminals === clue.k) all("innocent");
       }
       break;
     }
+    case "parity": {
+      const { criminals, unknown } = crimCount(clue.region, known);
+      if (unknown.length !== 1) break; // parity only pins the very last unknown
+      const targetParity = clue.even ? 0 : 1;
+      out.push({ index: unknown[0], status: criminals % 2 === targetParity ? "innocent" : "criminal" });
+      break;
+    }
+    case "compare":
+      break; // flavour only
   }
   return out;
 }

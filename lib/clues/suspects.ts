@@ -1,41 +1,37 @@
-// A pool of suspects. The generator draws 20 per puzzle and assigns each a
-// stable grid index. Names are deliberately plain and a touch noir; avatars are
-// just emoji mugshots so the board reads at a glance with zero image assets.
+// Suspect material. The generator draws 20 names, sorts them alphabetically (as
+// the source game does), and assigns each a profession from a small set so that
+// professions cluster into groups of 2–4 — which is what makes profession clues
+// ("exactly two cops are criminals") meaningful. The profession carries the
+// emoji mugshot, so no image assets are needed.
 
-interface SuspectSeed {
-  name: string;
-  avatar: string;
+export interface Profession {
+  title: string;   // shown under the name, e.g. "cop"
+  emoji: string;
 }
 
-export const SUSPECT_POOL: SuspectSeed[] = [
-  { name: "Mara", avatar: "🕵️" },
-  { name: "Dev", avatar: "🧑‍💼" },
-  { name: "Iris", avatar: "👩‍🎨" },
-  { name: "Cole", avatar: "🧑‍🔧" },
-  { name: "Nadia", avatar: "💃" },
-  { name: "Theo", avatar: "🧑‍🍳" },
-  { name: "Wren", avatar: "🧝" },
-  { name: "Otis", avatar: "👨‍🌾" },
-  { name: "Priya", avatar: "👩‍⚕️" },
-  { name: "Hugo", avatar: "🤵" },
-  { name: "Sage", avatar: "🧙" },
-  { name: "Beck", avatar: "🧑‍🚀" },
-  { name: "Lena", avatar: "👩‍🏫" },
-  { name: "Ravi", avatar: "🧑‍💻" },
-  { name: "Juna", avatar: "👩‍🔬" },
-  { name: "Felix", avatar: "🧛" },
-  { name: "Opal", avatar: "👵" },
-  { name: "Tariq", avatar: "👳" },
-  { name: "Vera", avatar: "🦹" },
-  { name: "Gus", avatar: "👮" },
-  { name: "Esme", avatar: "👩‍✈️" },
-  { name: "Niko", avatar: "🧑‍🎤" },
-  { name: "Dot", avatar: "👧" },
-  { name: "Rex", avatar: "🕴️" },
-  { name: "Halle", avatar: "👩‍🚒" },
-  { name: "Sol", avatar: "🧑‍🌾" },
-  { name: "Bram", avatar: "🧑‍⚖️" },
-  { name: "Cleo", avatar: "👸" },
-  { name: "Ivo", avatar: "🧑‍🚒" },
-  { name: "Faye", avatar: "🧚" },
+export const PROFESSIONS: Profession[] = [
+  { title: "cop", emoji: "👮" },
+  { title: "judge", emoji: "🧑‍⚖️" },
+  { title: "pilot", emoji: "🧑‍✈️" },
+  { title: "builder", emoji: "👷" },
+  { title: "farmer", emoji: "🧑‍🌾" },
+  { title: "cook", emoji: "🧑‍🍳" },
+  { title: "painter", emoji: "🧑‍🎨" },
+  { title: "doctor", emoji: "🧑‍⚕️" },
+  { title: "teacher", emoji: "🧑‍🏫" },
+  { title: "guard", emoji: "💂" },
+  { title: "coder", emoji: "🧑‍💻" },
+  { title: "singer", emoji: "🧑‍🎤" },
+  { title: "pilot", emoji: "🧑‍✈️" },
+  { title: "clerk", emoji: "🧑‍💼" },
+  { title: "scientist", emoji: "🧑‍🔬" },
+  { title: "sailor", emoji: "🧑‍✈️" },
+];
+
+// Plenty of names so a 20-draw still has variety puzzle to puzzle.
+export const NAME_POOL: string[] = [
+  "Achilles", "Beck", "Cleo", "Dev", "Esme", "Faye", "Gus", "Hank", "Iris", "Juna",
+  "Klay", "Lena", "Mara", "Noah", "Opal", "Priya", "Quita", "Ravi", "Sage", "Tariq",
+  "Usain", "Vera", "Wanda", "Xena", "Yara", "Zeno", "Bram", "Cole", "Dot", "Felix",
+  "Halle", "Ivo", "Nadia", "Otis", "Paula", "Rex", "Sol", "Theo", "Vicky", "Wren",
 ];
