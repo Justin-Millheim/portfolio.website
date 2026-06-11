@@ -40,6 +40,8 @@ export default function IntentSetup({
   account,
   onSignIn,
   onSignOut,
+  showGuestNudge,
+  onDismissNudge,
 }: {
   value: Intent;
   onChange: (next: Intent) => void;
@@ -50,6 +52,8 @@ export default function IntentSetup({
   account: { mode: "guest" | "cloud"; email?: string } | null;
   onSignIn: () => void;
   onSignOut: () => void;
+  showGuestNudge: boolean;
+  onDismissNudge: () => void;
 }) {
   const set = (patch: Partial<Intent>) => onChange({ ...value, ...patch });
   const toggleConstraint = (c: Constraint) =>
@@ -65,7 +69,7 @@ export default function IntentSetup({
       <div className="t-accent-bl" />
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span className="t-eyebrow" style={{ color: "var(--t-flame)" }}>● BURN MODE</span>
+        <span className="t-eyebrow" style={{ color: "var(--t-flame)" }}>🐯 TRENT</span>
         {hasHistory && (
           <button onClick={onHistory} className="t-mono" style={{ background: "none", border: "none", color: "var(--t-muted)", fontSize: 13, cursor: "pointer" }}>
             Progress →
@@ -92,6 +96,20 @@ export default function IntentSetup({
               <button onClick={onSignIn} style={{ background: "none", border: "none", color: "var(--t-amber)", cursor: "pointer", fontFamily: "inherit", fontSize: 11 }}>Sign in to sync →</button>
             </>
           )}
+        </div>
+      )}
+
+      {showGuestNudge && (
+        <div style={{ background: "linear-gradient(135deg, rgba(255,106,50,0.16), rgba(255,174,61,0.1))", border: "1px solid var(--t-flame)", borderRadius: 14, padding: "14px 16px", marginBottom: 22 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+            <p style={{ fontSize: 13, color: "var(--t-ink)", margin: 0, lineHeight: 1.5 }}>
+              <span style={{ fontWeight: 700 }}>🐯 Don&apos;t lose your progress.</span> Create an account to remember and save your workouts across devices.
+            </p>
+            <button onClick={onDismissNudge} aria-label="Dismiss" style={{ background: "none", border: "none", color: "var(--t-muted)", fontSize: 16, cursor: "pointer", lineHeight: 1, flex: "0 0 auto" }}>✕</button>
+          </div>
+          <button onClick={onSignIn} className="t-mono" style={{ marginTop: 12, width: "100%", padding: "11px", borderRadius: 10, cursor: "pointer", background: "linear-gradient(135deg,var(--t-flame),var(--t-amber))", border: "none", color: "#fff", fontSize: 13, fontWeight: 700 }}>
+            Create an account →
+          </button>
         </div>
       )}
 

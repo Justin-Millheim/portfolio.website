@@ -61,6 +61,25 @@ export function buzz(): void {
   }
 }
 
+// Quiet, short "tick" for the 3-2-1 countdown before a timer ends.
+export function playTick(): void {
+  if (isMuted()) return;
+  const c = getCtx();
+  if (!c) return;
+  if (c.state === "suspended") c.resume().catch(() => {});
+  const now = c.currentTime;
+  const osc = c.createOscillator();
+  const gain = c.createGain();
+  osc.type = "sine";
+  osc.frequency.value = 660; // E5
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.14, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+  osc.connect(gain).connect(c.destination);
+  osc.start(now);
+  osc.stop(now + 0.14);
+}
+
 export function cheerFx(): void {
   playDing();
   buzz();
