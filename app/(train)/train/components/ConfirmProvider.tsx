@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import TrainPortal from "./TrainPortal";
 
 export type ConfirmResult = "confirm" | "alt" | "cancel";
 interface ConfirmOpts {
@@ -56,6 +57,7 @@ export default function ConfirmProvider({ children }: { children: React.ReactNod
       {children}
 
       {dialog && (
+        <TrainPortal>
         <div className="t-confirm-scrim" onClick={() => settle("cancel")}>
           <div className="t-confirm" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
             <h3 style={{ fontSize: 19, margin: "0 0 8px" }}>{dialog.title}</h3>
@@ -78,9 +80,10 @@ export default function ConfirmProvider({ children }: { children: React.ReactNod
             </div>
           </div>
         </div>
+        </TrainPortal>
       )}
 
-      {toastMsg && <div className="t-toast" role="status">{toastMsg}</div>}
+      {toastMsg && <TrainPortal><div className="t-toast" role="status">{toastMsg}</div></TrainPortal>}
     </ConfirmContext.Provider>
   );
 }
