@@ -9,9 +9,9 @@
 import type { Clue, Difficulty, Puzzle, Status, Suspect } from "./types";
 import {
   SIZE, rowMembers, colMembers, neighbors, rowMembersByR, colMembersByC,
-  colLetter, CORNERS, EDGE, between, commonNeighbors, rowOf, colOf,
+  colLetter, CORNERS, EDGE, between, commonNeighbors, rowOf, colOf, coord,
 } from "./grid";
-import { propagate, evalClue } from "./clues";
+import { propagate, evalClue, renderClue } from "./clues";
 import { solve, solutionCount, solveAtDepth, solveProfile } from "./solver";
 import { NAME_POOL, PROFESSIONS } from "./suspects";
 
@@ -77,8 +77,8 @@ function regionsFor(
   groups: Map<string, number[]>, difficulty: Difficulty, rand: () => number,
 ): Region[] {
   const out: Region[] = [];
-  out.push({ region: rowMembers(speaker), label: "my row" });
-  out.push({ region: colMembers(speaker), label: "my column" });
+  out.push({ region: rowMembers(speaker), label: `row ${rowOf(speaker) + 1}` });
+  out.push({ region: colMembers(speaker), label: `column ${colLetter(colOf(speaker))}` });
   out.push({ region: neighbors(speaker), label: "my neighbours" });
 
   if (difficulty !== "easy") {
@@ -137,8 +137,8 @@ function specialCandidates(
 
   // CONNECTED — a row/column whose criminals are contiguous (>= 2 of them)
   const lines: { region: number[]; label: string }[] = [
-    { region: rowMembers(speaker), label: "my row" },
-    { region: colMembers(speaker), label: "my column" },
+    { region: rowMembers(speaker), label: `row ${rowOf(speaker) + 1}` },
+    { region: colMembers(speaker), label: `column ${colLetter(colOf(speaker))}` },
   ];
   for (const r of shuffle([0, 1, 2, 3, 4], rand).slice(0, 2)) lines.push({ region: rowMembersByR(r), label: `row ${r + 1}` });
   for (const c of shuffle([0, 1, 2, 3], rand).slice(0, 2)) lines.push({ region: colMembersByC(c), label: `column ${colLetter(c)}` });
@@ -263,8 +263,8 @@ function flavourClue(
     const nb = nbmoreClue(speaker, solution, rand);
     if (nb) specials.push(nb);
     for (const ln of [
-      { region: rowMembers(speaker), label: "my row" },
-      { region: colMembers(speaker), label: "my column" },
+      { region: rowMembers(speaker), label: `row ${rowOf(speaker) + 1}` },
+      { region: colMembers(speaker), label: `column ${colLetter(colOf(speaker))}` },
     ]) {
       const cl: Clue = { kind: "connected", speaker, region: ln.region, label: ln.label };
       if (crim(ln.region) >= 2 && evalClue(cl, solution)) specials.push(cl);
@@ -298,7 +298,7 @@ function flavourClue(
   // a true count, but never saturated (all/none) — pick the row/column whose
   // criminal count is interior, else fall back to a loose "at least" bound.
   for (const [region, label] of shuffle([
-    [rowMembers(speaker), "my row"], [colMembers(speaker), "my column"],
+    [rowMembers(speaker), `row ${rowOf(speaker) + 1}`], [colMembers(speaker), `column ${colLetter(colOf(speaker))}`],
   ] as [number[], string][], rand)) {
     const k = crim(region);
     if (k > 0 && k < region.length) return { kind: "count", speaker, region, label, op: "exactly", k };
@@ -307,8 +307,8 @@ function flavourClue(
   const n = region.length;
   const k = crim(region);
   return k === 0
-    ? { kind: "count", speaker, region, label: "my row", op: "atmost", k: 1 }
-    : { kind: "count", speaker, region, label: "my row", op: "atleast", k: Math.min(k, n - 1) };
+    ? { kind: "count", speaker, region, label: `row ${rowOf(speaker) + 1}`, op: "atmost", k: 1 }
+    : { kind: "count", speaker, region, label: `row ${rowOf(speaker) + 1}`, op: "atleast", k: Math.min(k, n - 1) };
 }
 
 function build(seed: number, difficulty: Difficulty): Puzzle {
@@ -519,6 +519,7 @@ const BUDGET_MS = 1100;
 export function generatePuzzle(seed: number, difficulty: Difficulty = "medium"): Puzzle {
   const spec = SPEC[difficulty];
   const deadline = Date.now() + BUDGET_MS;
+  let chosen: Puzzle | null = null;
   let fallback: Puzzle | null = null;
   let fallbackScore = -1;
 
@@ -533,13 +534,80 @@ export function generatePuzzle(seed: number, difficulty: Difficulty = "medium"):
     if (solutionCount(clues, 2) !== 1 || !policyOK(clues, difficulty)) continue;
 
     const tells = tellCount(clues);
-    if (profOK(perDepth, spec) && tells <= spec.maxTells) return { ...base, clues, seed };
+    if (profOK(perDepth, spec) && tells <= spec.maxTells) { chosen = { ...base, clues, seed }; break; }
 
     const score = perDepth[1] + perDepth[2] * 2 - Math.max(0, tells - spec.maxTells) * 3;
     if (score > fallbackScore) { fallbackScore = score; fallback = { ...base, clues, seed }; }
   }
 
-  return fallback ?? { ...buildFallback(seed, difficulty), seed };
+  const out = chosen ?? fallback ?? { ...buildFallback(seed, difficulty), seed };
+  dedupeClues(out, rng((seed ^ 0x5bd1e995) >>> 0)); // no two identical clue texts
+  return out;
+}
+
+// Funny quips that replace a logically-redundant duplicate clue.
+const BLURBS = [
+  "I'd never break the law… on a weekday.",
+  "I was home, watching the kettle boil.",
+  "My alibi is ironclad. Mostly.",
+  "Don't look at me — look at them.",
+  "I only ever steal the show.",
+  "I plead the fifth. And the sixth.",
+  "I was framed by a very rude pigeon.",
+  "Officer, I'm but a humble bystander.",
+  "Whatever they told you, I was asleep.",
+  "I'm far too charming to be guilty.",
+  "Ask my lawyer. He's also me.",
+  "Suspicious? Me? Outrageous.",
+  "I left my memory in my other coat.",
+  "No comment, on the advice of my cat.",
+  "I'd swear on it, but I'm out of hands.",
+];
+
+// Ensure no two clue texts are identical. For each colliding group we first try
+// to keep just ONE copy and quip the rest (works when the copies are logically
+// redundant); failing that (e.g. two different "my neighbours" regions that read
+// the same), we disambiguate by naming the speaker so the text differs.
+function dedupeClues(p: Puzzle, rand: () => number): void {
+  const ss = p.solution[p.start];
+  const pool = shuffle(BLURBS, rand);
+  const usedBlurbs = new Set<string>();
+  let bi = 0;
+  const nextQuip = () => {
+    let q = pool[bi % pool.length];
+    for (let g = 0; g < pool.length * 2 && usedBlurbs.has(q); g++) q = pool[(++bi) % pool.length];
+    bi++; usedBlurbs.add(q); return q;
+  };
+
+  // group non-blurb clue indices by their rendered text
+  const groups = new Map<string, number[]>();
+  for (let i = 0; i < SIZE; i++) {
+    if (p.clues[i].kind === "blurb") continue;
+    const t = renderClue(p.clues[i], p.suspects);
+    (groups.get(t) ?? groups.set(t, []).get(t)!).push(i);
+  }
+
+  for (const [, idxs] of groups) {
+    if (idxs.length < 2) continue;
+    // try keeping each single copy, quipping the others
+    let resolved = false;
+    for (const keep of idxs) {
+      const trial = p.clues.slice();
+      for (const j of idxs) if (j !== keep) trial[j] = { kind: "blurb", speaker: p.clues[j].speaker, text: "" };
+      if (solutionCount(trial, 2) === 1 && solveAtDepth(trial, p.start, ss, 2).solved) {
+        for (const j of idxs) if (j !== keep) p.clues[j] = { kind: "blurb", speaker: p.clues[j].speaker, text: nextQuip() };
+        resolved = true; break;
+      }
+    }
+    if (resolved) continue;
+    // copies are all needed — disambiguate by naming the speaker (keep the first)
+    for (let k = 1; k < idxs.length; k++) {
+      const c = p.clues[idxs[k]];
+      if ((c.kind === "count" || c.kind === "parity") && c.label === "my neighbours") {
+        c.label = `${coord(c.speaker)}'s neighbours`;
+      }
+    }
+  }
 }
 
 // --- seeds -------------------------------------------------------------------

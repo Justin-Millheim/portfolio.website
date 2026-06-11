@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Puzzle, Status } from "@/lib/clues/types";
-import { renderClue, clueMentions } from "@/lib/clues/clues";
+import { renderClue, clueMentions, explainClue } from "@/lib/clues/clues";
 import { nextHint, deduceClosure } from "@/lib/clues/solver";
 import { SIZE, coord } from "@/lib/clues/grid";
 import SuspectCard, { type HintRole } from "./SuspectCard";
 import SuspectModal from "./SuspectModal";
+import Glossary from "./Glossary";
 import WinOverlay from "./WinOverlay";
 
 const TAG_COUNT = 4;
@@ -15,6 +16,7 @@ export interface GameState {
   marks: (Status | null)[];
   tags: number[];
   notes: string[];
+  dimmed: boolean[];
   hintsUsed: number;
   errors: number;
   startedAt: number;
@@ -53,6 +55,8 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
     initial?.tags?.length === SIZE ? initial.tags : new Array(SIZE).fill(0));
   const [notes, setNotes] = useState<string[]>(() =>
     initial?.notes?.length === SIZE ? initial.notes : new Array(SIZE).fill(""));
+  const [dimmed, setDimmed] = useState<boolean[]>(() =>
+    initial?.dimmed?.length === SIZE ? initial.dimmed : new Array(SIZE).fill(false));
   const [hintsUsed, setHintsUsed] = useState(() => initial?.hintsUsed ?? 0);
   const [errors, setErrors] = useState(() => initial?.errors ?? 0);
   const [startedAt] = useState(() => initial?.startedAt ?? Date.now());
@@ -66,8 +70,8 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
 
   // report progress upward for persistence
   useEffect(() => {
-    onChange({ marks, tags, notes, hintsUsed, errors, startedAt });
-  }, [marks, tags, notes, hintsUsed, errors, startedAt, onChange]);
+    onChange({ marks, tags, notes, dimmed, hintsUsed, errors, startedAt });
+  }, [marks, tags, notes, dimmed, hintsUsed, errors, startedAt, onChange]);
 
   useEffect(() => {
     if (solved) return;
@@ -94,6 +98,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
     }
     setMarkError(null);
     setSelected(null); // success: collapse the modal back to the board
+    setDimmed((prev) => { if (!prev[i]) return prev; const n = prev.slice(); n[i] = false; return n; });
     setMarks((prev) => {
       if (prev[i] === status) return prev;
       const next = prev.slice();
@@ -107,15 +112,12 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
     });
   }, [puzzle, marks, onSolved]);
 
-  const clearMark = useCallback((i: number) => {
-    if (i === puzzle.start) return;
-    setMarks((prev) => {
-      if (prev[i] === null) return prev;
-      const next = prev.slice();
-      next[i] = null;
-      return next;
-    });
-  }, [puzzle.start]);
+  // "Clear" wipes a suspect's colour tag and dims their card to set it aside —
+  // but never removes a correct verdict.
+  const clearAnnotations = useCallback((i: number) => {
+    setTags((prev) => { const n = prev.slice(); n[i] = 0; return n; });
+    setDimmed((prev) => { const n = prev.slice(); n[i] = true; return n; });
+  }, []);
 
   const cycleTag = useCallback((i: number) => {
     setTags((prev) => {
@@ -123,6 +125,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
       next[i] = (next[i] + 1) % (TAG_COUNT + 1);
       return next;
     });
+    setDimmed((prev) => { if (!prev[i]) return prev; const n = prev.slice(); n[i] = false; return n; });
   }, []);
 
   const setNote = useCallback((i: number, text: string) => {
@@ -195,6 +198,7 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
               tag={tags[s.id]}
               hint={hintRole(s.id)}
               hasNote={!!notes[s.id]?.trim()}
+              dimmed={dimmed[s.id]}
               onOpen={() => { setMarkError(null); setSelected(s.id); }}
               onTag={() => cycleTag(s.id)}
             />
@@ -217,6 +221,8 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
         </p>
       )}
 
+      <Glossary />
+
       {selected !== null && (() => {
         const s = puzzle.suspects[selected];
         return (
@@ -229,10 +235,12 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
             isStart={selected === puzzle.start}
             revealed={selected === puzzle.start || marks[selected] === puzzle.solution[selected]}
             clueText={renderClue(puzzle.clues[selected], puzzle.suspects)}
+            explainText={explainClue(puzzle.clues[selected], puzzle.suspects)}
+            dimmed={dimmed[selected]}
             note={notes[selected] ?? ""}
             markError={markError}
             onMark={(st) => setMark(selected, st)}
-            onClear={() => clearMark(selected)}
+            onClear={() => clearAnnotations(selected)}
             onNote={(text) => setNote(selected, text)}
             onClose={() => { setMarkError(null); setSelected(null); }}
           />

@@ -131,6 +131,8 @@ function stillSatisfiable(clues: Clue[], assign: (Status | null)[]): boolean {
         if (maxA <= minB) return false;
         break;
       }
+      case "blurb":
+        break; // no constraint
     }
   }
   return true;

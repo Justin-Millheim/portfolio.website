@@ -17,6 +17,7 @@ interface Props {
   tag: number;          // 0 = no tag, 1..4 = colour
   hint: HintRole;
   hasNote: boolean;
+  dimmed: boolean;
   onOpen: () => void;   // opens the centered verdict / note modal
   onTag: () => void;
 }
@@ -25,7 +26,7 @@ interface Props {
 // so revealing a clue never reflows the board. Clue text lives on the card,
 // statically readable, like the source game.
 export default function SuspectCard({
-  coord, name, profession, avatar, mark, isStart, revealed, clueText, error, tag, hint, hasNote,
+  coord, name, profession, avatar, mark, isStart, revealed, clueText, error, tag, hint, hasNote, dimmed,
   onOpen, onTag,
 }: Props) {
   const cls = [
@@ -35,6 +36,7 @@ export default function SuspectCard({
     hint ? `hint-${hint}` : "",
     tag ? `tag-${tag}` : "",
     revealed ? "is-revealed" : "",
+    dimmed ? "is-dimmed" : "",
   ].filter(Boolean).join(" ");
 
   return (

@@ -6,7 +6,7 @@
 // it propagates nothing.)
 
 import type { Clue, Status, CountOp, Suspect } from "./types";
-import { neighbors } from "./grid";
+import { neighbors, coord } from "./grid";
 
 export const opp = (s: Status): Status => (s === "criminal" ? "innocent" : "criminal");
 
@@ -71,9 +71,9 @@ export function renderClue(clue: Clue, suspects: Suspect[]): string {
       return `An ${clue.even ? "even" : "odd"} number of ${clue.label} are criminals.`;
     case "share": {
       const n = clue.even ? "even" : "odd";
-      return clue.a === clue.speaker
-        ? `${name(clue.b)} and I share an ${n} number of criminal neighbours.`
-        : `${name(clue.a)} and ${name(clue.b)} share an ${n} number of criminal neighbours.`;
+      // always name both (no first-person) so two speakers sharing with the same
+      // partner don't render to identical text
+      return `${name(clue.a)} and ${name(clue.b)} share an ${n} number of criminal neighbours.`;
     }
     case "connected":
       return `The criminals in ${clue.label} are connected.`;
@@ -85,6 +85,50 @@ export function renderClue(clue: Clue, suspects: Suspect[]): string {
       return `${clue.x === clue.speaker ? "I have" : `${name(clue.x)} has`} more criminal neighbours than ${name(clue.y)}.`;
     case "compare":
       return `More criminals in ${clue.labelA} than ${clue.labelB}.`;
+    case "blurb":
+      return clue.text;
+  }
+}
+
+// A precise, unambiguous restatement of a clue — naming the exact suspects it
+// refers to — so a player can validate what it means without being handed the
+// deduction. Powers the "What this means" expander in each suspect's modal.
+export function explainClue(clue: Clue, suspects: Suspect[]): string {
+  const nm = (i: number) => `${coord(i)} ${suspects[i]?.name ?? ""}`.trim();
+  const members = (region: number[]) => region.map((i) => coord(i)).join(", ");
+  const ph = (s: Status) => (s === "criminal" ? "a criminal" : "innocent");
+  switch (clue.kind) {
+    case "direct":
+      return `${nm(clue.target)} is ${ph(clue.status)}.`;
+    case "relation":
+      return clue.same
+        ? `${nm(clue.a)} and ${nm(clue.b)} have the SAME verdict — both innocent, or both criminals.`
+        : `${nm(clue.a)} and ${nm(clue.b)} are OPPOSITE — exactly one of them is a criminal.`;
+    case "cond":
+      return `If ${nm(clue.a)} is ${ph(clue.aStatus)}, then ${nm(clue.b)} is ${ph(clue.bStatus)}. ` +
+        `Equivalently: if ${nm(clue.b)} is ${ph(opp(clue.bStatus))}, then ${nm(clue.a)} is ${ph(opp(clue.aStatus))}. ` +
+        `(It says nothing when ${suspects[clue.a]?.name} is ${ph(opp(clue.aStatus))}.)`;
+    case "count": {
+      const word = clue.op === "exactly" ? "exactly" : clue.op === "atleast" ? "at least" : "at most";
+      const noun = clue.k === 1 ? "is a criminal" : "are criminals";
+      return `Among ${clue.label} — ${members(clue.region)} — ${word} ${clue.k} ${noun}.`;
+    }
+    case "parity":
+      return `Among ${clue.label} — ${members(clue.region)} — the number of criminals is ${clue.even ? "even (0, 2, 4…)" : "odd (1, 3, 5…)"}.`;
+    case "share":
+      return `Look only at suspects who neighbour BOTH ${nm(clue.a)} and ${nm(clue.b)} — ${members(clue.region)}. ` +
+        `An ${clue.even ? "even" : "odd"} number of those are criminals.`;
+    case "connected":
+      return `Reading ${clue.label} in order — ${members(clue.region)} — the criminals form one unbroken run: no innocent sits between two criminals.`;
+    case "most":
+      return `${nm(clue.who)} has more criminal neighbours than anyone else on the board.`;
+    case "nbmore":
+      return `${nm(clue.x)} has strictly more criminal neighbours than ${nm(clue.y)}. ` +
+        `(A “neighbour” is any of the up-to-8 suspects touching them, including diagonals.)`;
+    case "compare":
+      return `The number of criminals among ${clue.labelA} (${members(clue.regionA)}) is strictly greater than among ${clue.labelB} (${members(clue.regionB)}).`;
+    case "blurb":
+      return `Just chatter — this suspect's line carries no logical information.`;
   }
 }
 
@@ -102,6 +146,7 @@ export function clueCells(clue: Clue): number[] {
     case "most": return [clue.who, ...neighbors(clue.who)];
     case "nbmore": return [clue.x, ...neighbors(clue.x), clue.y, ...neighbors(clue.y)];
     case "compare": return [...clue.regionA, ...clue.regionB];
+    case "blurb": return [];
   }
 }
 
@@ -120,6 +165,7 @@ export function clueMentions(clue: Clue, index: number): boolean {
     case "nbmore":
       return clue.x === index || clue.y === index || neighbors(clue.x).includes(index) || neighbors(clue.y).includes(index);
     case "compare": return clue.regionA.includes(index) || clue.regionB.includes(index);
+    case "blurb": return false;
   }
 }
 
@@ -164,6 +210,8 @@ export function evalClue(clue: Clue, solution: Status[]): boolean {
       return neighbourCrimBounds(clue.x, solution).lo > neighbourCrimBounds(clue.y, solution).lo;
     case "compare":
       return crim(clue.regionA) > crim(clue.regionB);
+    case "blurb":
+      return true;
   }
 }
 
@@ -254,7 +302,8 @@ export function propagate(clue: Clue, known: (Status | null)[]): { index: number
       break;
     }
     case "compare":
-      break; // flavour only
+    case "blurb":
+      break; // no logical content
   }
   return out;
 }
