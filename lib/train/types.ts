@@ -127,7 +127,7 @@ export interface WorkoutSession {
 export interface StepSnapshot {
   itemIndex: number;
   currentSet: number;
-  subMode: "work" | "rest";
+  subMode: "work" | "rest" | "ready";
   timer: number | null;
   timerActive: boolean;
 }
