@@ -294,6 +294,7 @@ export default function TrainApp() {
           onSwap={handleSwap}
           onOpenExercise={setModalExercise}
           onAddExercise={() => setShowAddModal(true)}
+          onReorder={(items) => { if (plan) setPlan({ ...plan, items }); }}
           onBack={() => setScreen("home")}
         />
       )}
