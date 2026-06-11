@@ -10,6 +10,7 @@ import { cheerFx, isMuted, setMuted, unlockAudio } from "@/lib/train/sound";
 import { formatTime } from "@/lib/train/format";
 import SessionTimer from "./SessionTimer";
 import Celebration from "./Celebration";
+import { useConfirm } from "./ConfirmProvider";
 
 const READY_SECS = 10; // brief "get ready / up next" transition between exercises
 
@@ -50,7 +51,7 @@ export default function Runner({
   initial?: RunnerSnapshot | null;
   prefs: ExercisePrefs;
   onComplete: (logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) => void;
-  onExit: () => void;
+  onExit: (mode: "save" | "discard", logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) => void;
   onOpenExercise: (ex: Exercise) => void;
   onPersist: (snap: RunnerSnapshot) => void;
   onTogglePreferred: (id: string) => void;
@@ -72,6 +73,8 @@ export default function Runner({
   const [progressHint, setProgressHint] = useState<string | null>(null);
 
   const [cheer, setCheer] = useState(0);
+  const [finaleCheer, setFinaleCheer] = useState(0);
+  const { confirm } = useConfirm();
   const [muted, setMutedState] = useState(false);
 
   // Master session clock + per-phase buckets (timestamp-based so it stays
@@ -256,8 +259,7 @@ export default function Runner({
       setSubMode("rest");
       if (item.rest > 0) armTimer(item.rest); else disarmTimer(null);
     } else {
-      if (itemIndex + 1 < items.length) setCheer((c) => c + 1);
-      doAdvance();
+      doAdvance(true);
     }
   }
 
@@ -288,10 +290,22 @@ export default function Runner({
     disarmTimer(effDuration(items[idx]) ?? null);
   }
 
-  function doAdvance() {
+  function doAdvance(completed = false) {
     const nextIdx = itemIndex + 1;
-    if (nextIdx < items.length) enterReady(nextIdx);
-    else onComplete(logs, Math.round(totalRef.current), roundedBuckets());
+    if (nextIdx >= items.length) {
+      onComplete(logs, Math.round(totalRef.current), roundedBuckets());
+      return;
+    }
+    // Celebration timing: a cheer between main moves and at the end of warm-up;
+    // the big finale fires once, when the cool-down phase is first reached.
+    const pA = items[itemIndex].phase;
+    const pB = items[nextIdx].phase;
+    if (pB === "cooldown" && pA !== "cooldown") {
+      setFinaleCheer((c) => c + 1);
+    } else if (completed && ((pA === "warmup" && pB === "circuit") || (pA === "circuit" && pB === "circuit"))) {
+      setCheer((c) => c + 1);
+    }
+    enterReady(nextIdx);
   }
 
   function skipExercise() {
@@ -352,6 +366,19 @@ export default function Runner({
     if (!n) unlockAudio();
   }
 
+  async function handleExit() {
+    const r = await confirm({
+      title: "Exit workout?",
+      message: "Save your progress so far, or discard it. Either way you'll see your summary.",
+      confirmLabel: "Save & see summary",
+      altLabel: "Discard",
+      cancelLabel: "Keep going",
+    });
+    if (r === "cancel") return;
+    const finalLogs = logs.map((l) => (l.sets.some((s) => s.completed) || l.skipped ? l : { ...l, skipped: true }));
+    onExit(r === "confirm" ? "save" : "discard", finalLogs, Math.round(totalRef.current), roundedBuckets());
+  }
+
   const overallPct = Math.round((itemIndex / items.length) * 100);
   const canPrev = stepHistory.length > 0;
 
@@ -359,6 +386,7 @@ export default function Runner({
     <div className="t-wrap t-fadein" style={{ paddingTop: 56 }}>
       <SessionTimer seconds={elapsed} phase={item.phase} />
       <Celebration id={cheer} variant="exercise" />
+      <Celebration id={finaleCheer} variant="finale" />
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <span className="t-eyebrow" style={{ color: "var(--t-amber)" }}>{PHASE_HEADING[item.phase]}</span>
@@ -488,7 +516,7 @@ export default function Runner({
             <button
               onClick={() => {
                 if (prefs.blocked.includes(ex.id)) { onToggleBlocked(ex.id); return; }
-                if (confirm("Stop suggesting this exercise in future workouts?")) onToggleBlocked(ex.id);
+                confirm({ title: "Don't suggest this exercise?", message: "It won't appear in future generated workouts. You can undo this anytime.", confirmLabel: "Don't suggest", cancelLabel: "Cancel", danger: true }).then((r) => { if (r === "confirm") onToggleBlocked(ex.id); });
               }}
               aria-pressed={prefs.blocked.includes(ex.id)}
               className="t-mono"
@@ -518,7 +546,7 @@ export default function Runner({
             const globalIdx = itemIndex + 1 + i;
             return (
               <button key={globalIdx} onClick={() => {
-                if (confirm("Are you sure you want to skip exercises in your workout?")) jumpTo(globalIdx);
+                confirm({ title: "Skip ahead?", message: "This skips the exercises between here and there.", confirmLabel: "Skip ahead", cancelLabel: "Cancel" }).then((r) => { if (r === "confirm") jumpTo(globalIdx); });
               }}
                 style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", width: "100%", background: "none", border: "none", borderBottom: i < 2 ? "1px solid #1c1c1c" : "none", color: "var(--t-ink)", cursor: "pointer", textAlign: "left" }}>
                 <span style={{ opacity: 0.7 }}>{e?.emoji}</span>
@@ -530,7 +558,7 @@ export default function Runner({
         </div>
       )}
 
-      <button className="t-btn t-btn-quiet" style={{ marginTop: 20 }} onClick={onExit}>Exit workout</button>
+      <button className="t-btn t-btn-quiet" style={{ marginTop: 20 }} onClick={handleExit}>Exit workout</button>
     </div>
   );
 }

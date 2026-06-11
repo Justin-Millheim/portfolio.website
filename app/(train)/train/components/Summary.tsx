@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { WorkoutSession } from "@/lib/train/types";
 import { completedSetCount, formatClock, sessionVolume } from "@/lib/train/format";
-import Celebration from "./Celebration";
 
 export default function Summary({
   session,
@@ -17,10 +16,9 @@ export default function Summary({
   onToggleFavorite: (favorite: boolean) => void;
 }) {
   const [favorite, setFavorite] = useState(!!session.favorite);
-  // Fire the big finale celebration once when the summary mounts.
-  const [finale] = useState(1);
   const vol = sessionVolume(session);
   const sets = completedSetCount(session.logs);
+  const skipped = session.logs.filter((l) => l.skipped).length;
   const pt = session.phaseTimes;
   const total = Math.max(1, pt.warmup + pt.circuit + pt.cooldown);
 
@@ -32,20 +30,24 @@ export default function Summary({
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 44, textAlign: "center" }}>
-      <Celebration id={finale} variant="finale" />
       <div style={{ fontSize: 56 }}>🔥</div>
       <h1 style={{ fontSize: 28, fontWeight: 700, margin: "8px 0 6px" }}>
         Workout <span style={{ color: "var(--t-flame)" }}>complete</span>
       </h1>
       <p style={{ color: "var(--t-muted)", fontSize: 14, margin: "0 0 24px" }}>
-        {formatClock(session.totalSeconds)} of work. Logged and saved. 💪
+        {formatClock(session.totalSeconds)} of work. 💪
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: skipped > 0 ? 10 : 20 }}>
         <StatCard val={formatClock(session.totalSeconds)} label="Time" />
         <StatCard val={String(sets)} label="Sets" />
         <StatCard val={vol > 0 ? `${vol.toLocaleString()}` : "—"} label="Volume (lb)" />
       </div>
+      {skipped > 0 && (
+        <p className="t-mono" style={{ fontSize: 12, color: "var(--t-faint)", margin: "0 0 20px" }}>
+          ⏭ {skipped} exercise{skipped === 1 ? "" : "s"} skipped
+        </p>
+      )}
 
       {/* PHASE TIME SPLIT */}
       <div className="t-card" style={{ textAlign: "left", marginBottom: 16 }}>

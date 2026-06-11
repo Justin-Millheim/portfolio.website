@@ -5,7 +5,7 @@ import type {
   CheckIn as CheckInType, Exercise, ExerciseLog, PhaseTimes, RunnerSnapshot,
   WorkoutPlan, WorkoutSession,
 } from "@/lib/train/types";
-import { generatePlan, swapItem } from "@/lib/train/generator";
+import { generatePlan, planItemFor, swapItem } from "@/lib/train/generator";
 import {
   applyToggleBlocked, applyTogglePreferred, clearActive, getStore, loadActive,
   saveActive, setActiveStore, useLocalStore, type ExercisePrefs,
@@ -20,7 +20,9 @@ import Summary from "./components/Summary";
 import History from "./components/History";
 import ExerciseModal from "./components/ExerciseModal";
 import PreviousWorkoutsModal from "./components/PreviousWorkoutsModal";
+import AddExerciseModal from "./components/AddExerciseModal";
 import AuthGate from "./components/AuthGate";
+import { useConfirm } from "./components/ConfirmProvider";
 
 type Screen = "home" | "preview" | "precheck" | "run" | "postcheck" | "summary" | "history";
 type Account = { mode: "guest" | "cloud"; email?: string };
@@ -45,6 +47,8 @@ export default function TrainApp() {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [modalExercise, setModalExercise] = useState<Exercise | null>(null);
   const [showPrevModal, setShowPrevModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const { confirm, toast } = useConfirm();
 
   // ---- auth bootstrap: restore a cloud session, a remembered guest, or show the gate ----
   useEffect(() => {
@@ -114,7 +118,8 @@ export default function TrainApp() {
     resetToHome();
   }
   async function handleSignOut() {
-    if (!confirm("Sign out? Your cloud history stays safe and will be here next time you sign in.")) return;
+    const r = await confirm({ title: "Sign out?", message: "Your cloud history stays safe and will be here next time you sign in.", confirmLabel: "Sign out", cancelLabel: "Cancel" });
+    if (r !== "confirm") return;
     const sb = getSupabase();
     await sb?.auth.signOut();
     useLocalStore();
@@ -157,10 +162,24 @@ export default function TrainApp() {
     const before = plan.items[index]?.exerciseId;
     const next = swapItem(plan, index, prefs.blocked);
     if (next.items[index]?.exerciseId === before) {
-      alert("No similar alternative is available for that slot — try Reroll for a fresh plan.");
+      toast("No similar alternative for that slot — try Reroll.");
       return;
     }
     setPlan(next);
+  }
+  function handleAddExercise(exerciseId: string) {
+    if (!plan) return;
+    const newItem = planItemFor(exerciseId, "circuit");
+    if (!newItem) return;
+    const items = [...plan.items];
+    let idx = items.map((i) => i.phase).lastIndexOf("circuit");
+    if (idx === -1) {
+      const cd = items.findIndex((i) => i.phase === "cooldown");
+      idx = cd === -1 ? items.length - 1 : cd - 1;
+    }
+    items.splice(idx + 1, 0, newItem);
+    setPlan({ ...plan, items });
+    setShowAddModal(false);
   }
   function handleApprove() { setRunnerInitial(null); setScreen("precheck"); }
 
@@ -218,11 +237,33 @@ export default function TrainApp() {
     setScreen("home");
   }
 
-  function exitRun() {
-    if (confirm("Exit this workout? Your progress so far won't be saved.")) {
-      clearActive();
-      resetToHome();
-    }
+  // Exiting mid-workout builds a summary from what was done (unfinished moves
+  // marked skipped) and optionally saves it; the confirm itself lives in Runner.
+  function handleExit(mode: "save" | "discard", logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) {
+    clearActive();
+    setRunnerInitial(null);
+    if (!plan) { resetToHome(); return; }
+    const now = new Date().toISOString();
+    const sess: WorkoutSession = {
+      id: `w_${Date.now()}`,
+      userId: account?.mode === "cloud" ? "cloud" : "local",
+      date: now,
+      focus: plan.focus,
+      durationTarget: plan.durationTarget,
+      equipment: plan.equipment,
+      constraints: plan.constraints,
+      status: mode === "save" ? "completed" : "abandoned",
+      plan,
+      pre: pre ?? undefined,
+      logs,
+      totalSeconds,
+      phaseTimes,
+      completedAt: now,
+    };
+    if (mode === "save") getStore().save(sess).then(refresh).catch(console.error);
+    setRunResult(null);
+    setSession(sess);
+    setScreen("summary");
   }
 
   if (!entered) {
@@ -252,6 +293,7 @@ export default function TrainApp() {
           onReroll={handleReroll}
           onSwap={handleSwap}
           onOpenExercise={setModalExercise}
+          onAddExercise={() => setShowAddModal(true)}
           onBack={() => setScreen("home")}
         />
       )}
@@ -265,7 +307,7 @@ export default function TrainApp() {
           initial={runnerInitial}
           prefs={prefs}
           onComplete={handleRunComplete}
-          onExit={exitRun}
+          onExit={handleExit}
           onOpenExercise={setModalExercise}
           onPersist={handlePersist}
           onTogglePreferred={onTogglePreferred}
@@ -288,7 +330,10 @@ export default function TrainApp() {
         <History
           sessions={sessions}
           onBack={() => setScreen(session ? "summary" : "home")}
-          onDelete={async (id) => { await getStore().remove(id); refresh(); }}
+          onDelete={async (id) => {
+            const r = await confirm({ title: "Delete this workout?", message: "This permanently removes it from your history.", confirmLabel: "Delete", cancelLabel: "Cancel", danger: true });
+            if (r === "confirm") { await getStore().remove(id); refresh(); }
+          }}
         />
       )}
 
@@ -297,6 +342,14 @@ export default function TrainApp() {
           sessions={sessions}
           onStart={handleRepeat}
           onClose={() => setShowPrevModal(false)}
+        />
+      )}
+
+      {showAddModal && plan && (
+        <AddExerciseModal
+          plan={plan}
+          onAdd={handleAddExercise}
+          onClose={() => setShowAddModal(false)}
         />
       )}
 

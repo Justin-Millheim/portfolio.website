@@ -1,5 +1,5 @@
 import type {
-  Constraint, Difficulty, Equipment, Exercise, Focus, MuscleGroup, PlanItem, WorkoutPlan,
+  Constraint, Difficulty, Equipment, Exercise, Focus, MuscleGroup, Phase, PlanItem, WorkoutPlan,
 } from "./types";
 import { EXERCISES, getExercise } from "./exercises";
 
@@ -272,4 +272,12 @@ export function swapItem(plan: WorkoutPlan, index: number, blocked: string[] = [
   const items = plan.items.slice();
   items[index] = toItem(next, target.phase, target.sets);
   return { ...plan, items };
+}
+
+// Build a normalized plan item for a single library exercise (used when a user
+// adds their own move to a plan via search).
+export function planItemFor(exerciseId: string, phase: Phase): PlanItem | null {
+  const ex = getExercise(exerciseId);
+  if (!ex) return null;
+  return toItem(ex, phase, ex.defaultSets);
 }
