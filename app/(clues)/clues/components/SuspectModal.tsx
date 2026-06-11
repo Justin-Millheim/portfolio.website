@@ -14,6 +14,8 @@ interface Props {
   isStart: boolean;
   revealed: boolean;
   clueText: string;
+  explainText: string;
+  dimmed: boolean;
   note: string;
   markError: string | null;
   onMark: (s: Status) => void;
@@ -23,12 +25,13 @@ interface Props {
 }
 
 // Centered, screen-stable suspect sheet. Opening it never reflows the board:
-// verdict choice and the "note to self" both live here.
+// verdict choice, the plain-English clue translation, and the note all live here.
 export default function SuspectModal({
-  coord, name, profession, avatar, mark, isStart, revealed, clueText, note, markError,
+  coord, name, profession, avatar, mark, isStart, revealed, clueText, explainText, dimmed, note, markError,
   onMark, onClear, onNote, onClose,
 }: Props) {
   const [draft, setDraft] = useState(note);
+  const [showExplain, setShowExplain] = useState(false);
   const saved = useRef(note);
 
   // persist the note on unmount / close so we don't thrash storage per keystroke
@@ -50,9 +53,17 @@ export default function SuspectModal({
           </div>
         </div>
 
-        {revealed && clueText
-          ? <p className="cl-sheet-clue">“{clueText}”</p>
-          : <p className="cl-sheet-clue cl-sheet-clue-locked">Clue reveals once you correctly identify {name}.</p>}
+        {revealed && clueText ? (
+          <>
+            <p className="cl-sheet-clue">“{clueText}”</p>
+            <button className="cl-explain-toggle" onClick={() => setShowExplain((v) => !v)}>
+              {showExplain ? "Hide" : "What this means"}
+            </button>
+            {showExplain && <p className="cl-sheet-explain">{explainText}</p>}
+          </>
+        ) : (
+          <p className="cl-sheet-clue cl-sheet-clue-locked">Clue reveals once you correctly identify {name}.</p>
+        )}
 
         {isStart ? (
           <div className="cl-sheet-given cl-mono">Revealed for free · {mark === "criminal" ? "Criminal" : "Innocent"}</div>
@@ -66,7 +77,7 @@ export default function SuspectModal({
               className={`cl-verdict-btn cri ${mark === "criminal" ? "on" : ""}`}
               onClick={() => onMark("criminal")}
             >Criminal</button>
-            <button className="cl-verdict-btn clr" onClick={onClear} disabled={mark === null}>Clear</button>
+            <button className="cl-verdict-btn clr" onClick={onClear}>{dimmed ? "Cleared" : "Clear"}</button>
           </div>
         )}
 

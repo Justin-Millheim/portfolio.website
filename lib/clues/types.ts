@@ -38,7 +38,9 @@ export type Clue =
   // x has strictly more criminal neighbours than y (pairwise)
   | { kind: "nbmore"; speaker: number; x: number; y: number }
   // strictly more criminals in regionA than regionB (flavour: never load-bearing)
-  | { kind: "compare"; speaker: number; regionA: number[]; labelA: string; regionB: number[]; labelB: string };
+  | { kind: "compare"; speaker: number; regionA: number[]; labelA: string; regionB: number[]; labelB: string }
+  // a flavour quip with no logical content, used to replace a duplicate clue
+  | { kind: "blurb"; speaker: number; text: string };
 
 export interface Puzzle {
   suspects: Suspect[];
