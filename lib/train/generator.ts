@@ -76,13 +76,20 @@ function itemSeconds(ex: Exercise, sets: number): number {
   return sets * work + (sets - 1) * ex.defaultRest + 12; // +12s transition/setup
 }
 
+// Retuned rest periods (user feedback): shorter overall. ~20s for most moves,
+// ~30s kept for the heavier compound lifts. Warmup/cooldown stay at 0.
+function normalizeRest(rest: number): number {
+  if (rest <= 0) return 0;
+  return rest >= 40 ? 30 : 20;
+}
+
 function toItem(ex: Exercise, phase: PlanItem["phase"], sets: number): PlanItem {
   return {
     exerciseId: ex.id,
     phase,
     sets,
     reps: ex.defaultReps,
-    rest: ex.defaultRest,
+    rest: normalizeRest(ex.defaultRest),
     duration: ex.defaultDuration,
   };
 }
