@@ -12,7 +12,7 @@ import {
   colLetter, CORNERS, EDGE, between, commonNeighbors, rowOf, colOf, coord,
 } from "./grid";
 import { propagate, evalClue, renderClue } from "./clues";
-import { solve, solutionCount, solveAtDepth, solveProfile } from "./solver";
+import { solve, solutionCount, solveAtDepth, solveProfile, deduceClosure } from "./solver";
 import { NAME_POOL, PROFESSIONS } from "./suspects";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "tricky"];
@@ -542,7 +542,39 @@ export function generatePuzzle(seed: number, difficulty: Difficulty = "medium"):
 
   const out = chosen ?? fallback ?? { ...buildFallback(seed, difficulty), seed };
   dedupeClues(out, rng((seed ^ 0x5bd1e995) >>> 0)); // no two identical clue texts
-  return out;
+
+  // FINAL GATE: never ship a puzzle the actual game model can't fully and
+  // soundly solve. If anything slipped through (minimise/dedupe/fallback edge
+  // cases), drop to the guaranteed-valid direct-reveal chain instead.
+  if (verifyPuzzle(out)) return out;
+  const safe = { ...buildFallback(seed, difficulty), seed };
+  dedupeClues(safe, rng((seed ^ 0x27d4eb2f) >>> 0));
+  return verifyPuzzle(safe) ? safe : { ...buildFallback((seed ^ 0xdeadbeef) >>> 0, difficulty), seed };
+}
+
+// Replays the puzzle exactly as the game does — reveal the start, repeatedly
+// commit every cell forced by depth-2 reasoning over revealed clues — and
+// confirms it ends fully solved, every committed cell matches the solution, no
+// clue is false, and the clue set has a single global solution. This is the
+// invariant the UI depends on; the generator must not emit a board that fails it.
+function verifyPuzzle(p: Puzzle): boolean {
+  if (p.clues.some((c) => c === undefined) || p.clues.length !== SIZE) return false;
+  if (!p.clues.every((c) => evalClue(c, p.solution))) return false;
+  if (solutionCount(p.clues, 2) !== 1) return false;
+  const known: (Status | null)[] = new Array(SIZE).fill(null);
+  known[p.start] = p.solution[p.start];
+  for (let g = 0; g < SIZE + 3; g++) {
+    const closure = deduceClosure(p.clues, known, 2);
+    let added = 0;
+    for (let i = 0; i < SIZE; i++) {
+      if (known[i] === null && closure[i] !== null) {
+        if (closure[i] !== p.solution[i]) return false; // unsound deduction
+        known[i] = closure[i]; added++;
+      }
+    }
+    if (added === 0) break;
+  }
+  return known.every((v) => v !== null);
 }
 
 // Funny quips that replace a logically-redundant duplicate clue.

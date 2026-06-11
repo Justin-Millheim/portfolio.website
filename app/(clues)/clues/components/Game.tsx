@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Puzzle, Status } from "@/lib/clues/types";
 import { renderClue, clueMentions, explainClue } from "@/lib/clues/clues";
 import { nextHint, deduceClosure } from "@/lib/clues/solver";
+import type { Clue } from "@/lib/clues/types";
 import { SIZE, coord } from "@/lib/clues/grid";
 import SuspectCard, { type HintRole } from "./SuspectCard";
 import SuspectModal from "./SuspectModal";
@@ -112,11 +113,11 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
     });
   }, [puzzle, marks, onSolved]);
 
-  // "Clear" wipes a suspect's colour tag and dims their card to set it aside —
-  // but never removes a correct verdict.
+  // "Clear" wipes a suspect's colour tag and dims their card to set it aside;
+  // clicking again ("Unclear") un-dims it. A correct verdict is never removed.
   const clearAnnotations = useCallback((i: number) => {
-    setTags((prev) => { const n = prev.slice(); n[i] = 0; return n; });
-    setDimmed((prev) => { const n = prev.slice(); n[i] = true; return n; });
+    setDimmed((prev) => { const n = prev.slice(); n[i] = !prev[i]; return n; });
+    setTags((prev) => { if (prev[i] === 0) return prev; const n = prev.slice(); n[i] = 0; return n; });
   }, []);
 
   const cycleTag = useCallback((i: number) => {
@@ -144,11 +145,20 @@ export default function Game({ puzzle, label, initial, onChange, onSolved, onBac
     const known = marks.map((v, i) => (v === puzzle.solution[i] ? v : null));
     const step = nextHint(puzzle.clues, known, 2);
     if (!step) return;
-    // the revealed clues that talk about the deducible suspect — the ones to read
+    // Highlight the revealed clues that actually DRIVE the deduction: a clue is
+    // load-bearing if neutralising it stops step.index from being forced. This
+    // catches clues that matter without naming the suspect (e.g. a row-count one
+    // tier away), unlike a purely textual "mentions" filter.
+    const revealed = puzzle.clues.filter((c) => known[c.speaker] !== null);
+    const neutralise = (drop: Clue): Clue[] =>
+      puzzle.clues.map((c) => (c === drop ? { kind: "blurb", speaker: c.speaker, text: "" } : c));
+    const needed = revealed
+      .filter((c) => deduceClosure(neutralise(c), known, 2)[step.index] === null)
+      .map((c) => c.speaker);
     const speakers = Array.from(new Set(
-      puzzle.clues
-        .filter((c) => known[c.speaker] !== null && clueMentions(c, step.index))
-        .map((c) => c.speaker),
+      needed.length
+        ? needed
+        : puzzle.clues.filter((c) => known[c.speaker] !== null && clueMentions(c, step.index)).map((c) => c.speaker),
     ));
     setHint({ level: 1, speakers: speakers.length ? speakers : [step.index], target: step.index });
     setHintsUsed((h) => h + 1);

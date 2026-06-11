@@ -68,7 +68,7 @@ export default function SuspectModal({
         {isStart ? (
           <div className="cl-sheet-verdicts">
             <div className="cl-sheet-given cl-mono">Revealed for free · {mark === "criminal" ? "Criminal" : "Innocent"}</div>
-            <button className="cl-verdict-btn clr" onClick={onClear}>{dimmed ? "Cleared" : "Clear"}</button>
+            <button className="cl-verdict-btn clr" onClick={onClear}>{dimmed ? "Unclear" : "Clear"}</button>
           </div>
         ) : (
           <div className="cl-sheet-verdicts">
@@ -80,7 +80,7 @@ export default function SuspectModal({
               className={`cl-verdict-btn cri ${mark === "criminal" ? "on" : ""}`}
               onClick={() => onMark("criminal")}
             >Criminal</button>
-            <button className="cl-verdict-btn clr" onClick={onClear}>{dimmed ? "Cleared" : "Clear"}</button>
+            <button className="cl-verdict-btn clr" onClick={onClear}>{dimmed ? "Unclear" : "Clear"}</button>
           </div>
         )}
 
