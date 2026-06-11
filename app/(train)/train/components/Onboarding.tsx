@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Trent from "./Trent";
 
 interface Slide {
   emoji: string;
@@ -72,7 +73,9 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
       </div>
 
       <div key={i} className="t-fadein" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", padding: "0 6px" }}>
-        <div style={{ fontSize: 76, marginBottom: 10 }}>{s.emoji}</div>
+        {i === 0
+          ? <Trent size={150} style={{ margin: "0 auto 10px" }} />
+          : <div style={{ fontSize: 76, marginBottom: 10 }}>{s.emoji}</div>}
         <h1 style={{ fontSize: 27, fontWeight: 700, lineHeight: 1.2, margin: "0 0 14px" }}>{s.title}</h1>
         <p style={{ fontSize: 16, color: "var(--t-muted)", lineHeight: 1.6, margin: 0 }}>{s.body}</p>
         {s.foot && (

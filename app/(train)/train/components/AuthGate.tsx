@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import Trent from "./Trent";
 
 type Mode = "choose" | "signin" | "signup" | "forgot";
 
@@ -71,12 +72,12 @@ export default function AuthGate({
     <div className="t-wrap t-fadein" style={{ paddingTop: 64, maxWidth: 420 }}>
       <div className="t-accent-tr" />
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontSize: 52 }}>🐯</div>
-        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "8px 0 4px" }}>
+        <Trent size={120} style={{ margin: "0 auto" }} />
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 4px" }}>
           Trent the <span style={{ color: "var(--t-flame)" }}>Tiger Trainer</span>
         </h1>
         <p style={{ color: "var(--t-muted)", fontSize: 14, margin: 0 }}>
-          Your guided workout companion.
+          I&apos;m your coach. Sign in to save our progress — or jump in as a guest.
         </p>
       </div>
 

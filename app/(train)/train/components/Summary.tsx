@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { WorkoutSession } from "@/lib/train/types";
 import { completedSetCount, formatClock, sessionVolume } from "@/lib/train/format";
+import Trent from "./Trent";
 
 export default function Summary({
   session,
@@ -30,12 +31,12 @@ export default function Summary({
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 44, textAlign: "center" }}>
-      <div style={{ fontSize: 56 }}>🔥</div>
-      <h1 style={{ fontSize: 28, fontWeight: 700, margin: "8px 0 6px" }}>
-        Workout <span style={{ color: "var(--t-flame)" }}>complete</span>
+      <Trent size={96} style={{ margin: "0 auto" }} />
+      <h1 style={{ fontSize: 28, fontWeight: 700, margin: "6px 0 6px" }}>
+        That&apos;s a <span style={{ color: "var(--t-flame)" }}>wrap!</span>
       </h1>
       <p style={{ color: "var(--t-muted)", fontSize: 14, margin: "0 0 24px" }}>
-        {formatClock(session.totalSeconds)} of work. 💪
+        You moved for {formatClock(session.totalSeconds)} — proud of you. 💪
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: skipped > 0 ? 10 : 20 }}>
