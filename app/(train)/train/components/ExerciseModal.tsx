@@ -60,15 +60,15 @@ export default function ExerciseModal({
         <Section title="See it done">
           <a
             className="t-btn t-btn-ghost"
-            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`how to do ${exercise.name} exercise proper form`)}`}
+            href={`https://www.google.com/search?q=${encodeURIComponent(`${exercise.name} Exercise How to`)}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{ textDecoration: "none" }}
           >
-            ▶ Watch demos
+            🔎 See how it&apos;s done
           </a>
           <p style={{ ...pStyle, fontSize: 12, color: "var(--t-faint)", marginTop: 8 }}>
-            Opens a YouTube search for proper form in a new tab.
+            Opens a Google search for “{exercise.name} Exercise How to” in a new tab.
           </p>
         </Section>
 

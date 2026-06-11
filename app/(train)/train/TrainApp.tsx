@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type {
-  CheckIn as CheckInType, Exercise, ExerciseLog, PhaseTimes, RunnerSnapshot,
+  CheckIn as CheckInType, Exercise, ExerciseLog, Phase, PhaseTimes, RunnerSnapshot,
   WorkoutPlan, WorkoutSession,
 } from "@/lib/train/types";
 import { generatePlan, planItemFor, swapItem } from "@/lib/train/generator";
+import { getExercise } from "@/lib/train/exercises";
 import {
   applyToggleBlocked, applyTogglePreferred, clearActive, getStore, loadActive,
   saveActive, setActiveStore, useLocalStore, type ExercisePrefs,
@@ -169,13 +170,20 @@ export default function TrainApp() {
   }
   function handleAddExercise(exerciseId: string) {
     if (!plan) return;
-    const newItem = planItemFor(exerciseId, "circuit");
+    const ex = getExercise(exerciseId);
+    const phase: Phase = ex?.type === "warmup" ? "warmup" : ex?.type === "cooldown" ? "cooldown" : "circuit";
+    const newItem = planItemFor(exerciseId, phase);
     if (!newItem) return;
     const items = [...plan.items];
-    let idx = items.map((i) => i.phase).lastIndexOf("circuit");
+    // Insert after the last item already in that phase; otherwise at the phase boundary.
+    let idx = items.map((i) => i.phase).lastIndexOf(phase);
     if (idx === -1) {
-      const cd = items.findIndex((i) => i.phase === "cooldown");
-      idx = cd === -1 ? items.length - 1 : cd - 1;
+      if (phase === "warmup") idx = -1;
+      else if (phase === "cooldown") idx = items.length - 1;
+      else {
+        const cd = items.findIndex((i) => i.phase === "cooldown");
+        idx = cd === -1 ? items.length - 1 : cd - 1;
+      }
     }
     items.splice(idx + 1, 0, newItem);
     setPlan({ ...plan, items });
@@ -294,6 +302,7 @@ export default function TrainApp() {
           onSwap={handleSwap}
           onOpenExercise={setModalExercise}
           onAddExercise={() => setShowAddModal(true)}
+          onReorder={(items) => { if (plan) setPlan({ ...plan, items }); }}
           onBack={() => setScreen("home")}
         />
       )}
@@ -349,6 +358,7 @@ export default function TrainApp() {
         <AddExerciseModal
           plan={plan}
           onAdd={handleAddExercise}
+          onOpenExercise={setModalExercise}
           onClose={() => setShowAddModal(false)}
         />
       )}
