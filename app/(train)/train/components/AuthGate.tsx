@@ -3,8 +3,10 @@
 import { useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// First-run gate: create an account, sign in, or continue as a guest.
-// Guest keeps everything on-device; signing in syncs across devices.
+type Mode = "choose" | "signin" | "signup" | "forgot";
+
+// First-run gate: create an account, sign in, reset a password, or continue as
+// a guest. Guest keeps everything on-device; signing in syncs across devices.
 export default function AuthGate({
   supabase,
   onGuest,
@@ -14,20 +16,19 @@ export default function AuthGate({
   onGuest: () => void;
   onSignedIn: (userId: string) => void;
 }) {
-  const [mode, setMode] = useState<"choose" | "signin" | "signup">("choose");
+  const [mode, setMode] = useState<Mode>("choose");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function reset(next: Mode) { setMode(next); setError(null); setNotice(null); }
+
   async function submit() {
     setError(null);
     setNotice(null);
-    if (!supabase) {
-      setError("Cloud sync isn't set up for this site yet — continue as guest for now.");
-      return;
-    }
+    if (!supabase) { setError("Cloud sync isn't set up for this site yet — continue as guest for now."); return; }
     if (!email || !password) { setError("Enter your email and password."); return; }
     setLoading(true);
     try {
@@ -48,13 +49,31 @@ export default function AuthGate({
     }
   }
 
+  async function sendReset() {
+    setError(null);
+    setNotice(null);
+    if (!supabase) { setError("Cloud sync isn't set up for this site yet."); return; }
+    if (!email) { setError("Enter your email."); return; }
+    setLoading(true);
+    try {
+      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/train` : undefined;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      setNotice("If an account exists for that email, we've sent a password reset link. Check your inbox.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 64, maxWidth: 420 }}>
       <div className="t-accent-tr" />
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontSize: 44 }}>🔥</div>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: "8px 0 4px" }}>
-          Burn <span style={{ color: "var(--t-flame)" }}>Mode</span>
+        <div style={{ fontSize: 52 }}>🐯</div>
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "8px 0 4px" }}>
+          Trent the <span style={{ color: "var(--t-flame)" }}>Tiger Trainer</span>
         </h1>
         <p style={{ color: "var(--t-muted)", fontSize: 14, margin: 0 }}>
           Your guided workout companion.
@@ -63,8 +82,8 @@ export default function AuthGate({
 
       {mode === "choose" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <button className="t-btn t-btn-primary" onClick={() => setMode("signin")}>Sign in</button>
-          <button className="t-btn t-btn-ghost" onClick={() => setMode("signup")}>Create account</button>
+          <button className="t-btn t-btn-primary" onClick={() => reset("signin")}>Sign in</button>
+          <button className="t-btn t-btn-ghost" onClick={() => reset("signup")}>Create account</button>
           <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0" }}>
             <div style={{ flex: 1, height: 1, background: "var(--t-line)" }} />
             <span className="t-mono" style={{ fontSize: 11, color: "var(--t-faint)" }}>OR</span>
@@ -79,6 +98,24 @@ export default function AuthGate({
               Cloud sync isn&apos;t configured for this deployment yet — guest works now.
             </p>
           )}
+        </div>
+      ) : mode === "forgot" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <h2 style={{ fontSize: 18, margin: "0 0 4px" }}>Reset your password</h2>
+          <p style={{ fontSize: 13, color: "var(--t-muted)", margin: "0 0 6px", lineHeight: 1.55 }}>
+            Enter your email and we&apos;ll send a link to set a new password.
+          </p>
+          <label>
+            <div className="t-entry-label">Email</div>
+            <input type="email" autoComplete="email" inputMode="email" value={email}
+              onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          </label>
+          {error && <p style={{ color: "#ff8a5c", fontSize: 13, margin: 0 }}>{error}</p>}
+          {notice && <p style={{ color: "var(--t-amber)", fontSize: 13, margin: 0 }}>{notice}</p>}
+          <button className="t-btn t-btn-primary" onClick={sendReset} disabled={loading}>
+            {loading ? "…" : "Send reset link →"}
+          </button>
+          <button className="t-btn t-btn-quiet" onClick={() => reset("signin")}>← Back to sign in</button>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -102,9 +139,14 @@ export default function AuthGate({
           <button className="t-btn t-btn-primary" onClick={submit} disabled={loading}>
             {loading ? "…" : mode === "signin" ? "Sign in →" : "Create account →"}
           </button>
-          <button className="t-btn t-btn-quiet" onClick={() => { setMode("choose"); setError(null); setNotice(null); }}>
-            ← Back
-          </button>
+
+          {mode === "signin" && (
+            <button onClick={() => reset("forgot")} className="t-mono"
+              style={{ background: "none", border: "none", color: "var(--t-amber)", fontSize: 12, cursor: "pointer", padding: 4 }}>
+              Forgot password?
+            </button>
+          )}
+          <button className="t-btn t-btn-quiet" onClick={() => reset("choose")}>← Back</button>
         </div>
       )}
     </div>

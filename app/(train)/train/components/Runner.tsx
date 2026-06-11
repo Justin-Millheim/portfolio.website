@@ -6,7 +6,7 @@ import type {
 } from "@/lib/train/types";
 import { getExercise } from "@/lib/train/exercises";
 import { getStore, suggestNextWeight, type ExercisePrefs } from "@/lib/train/storage";
-import { cheerFx, isMuted, setMuted, unlockAudio } from "@/lib/train/sound";
+import { cheerFx, isMuted, playTick, setMuted, unlockAudio } from "@/lib/train/sound";
 import { formatTime } from "@/lib/train/format";
 import SessionTimer from "./SessionTimer";
 import Celebration from "./Celebration";
@@ -88,6 +88,7 @@ export default function Runner({
   // Countdown is driven by an absolute end-timestamp so it survives throttling.
   const timerEndRef = useRef<number | null>(null);
   const firedRef = useRef(false);
+  const lastBeepRef = useRef<number | null>(null);
 
   const item = items[itemIndex];
   const ex = getExercise(item.exerciseId) as Exercise;
@@ -185,6 +186,11 @@ export default function Runner({
       if (end == null) return;
       const remaining = Math.max(0, Math.round((end - Date.now()) / 1000));
       setTimer(remaining);
+      // 3-2-1 countdown beeps (once per second), before the end ding at 0.
+      if (remaining > 0 && remaining <= 3 && remaining !== lastBeepRef.current) {
+        lastBeepRef.current = remaining;
+        playTick();
+      }
       if (remaining <= 0 && !firedRef.current) {
         firedRef.current = true;
         onZeroRef.current();
@@ -226,6 +232,7 @@ export default function Runner({
   function armTimer(seconds: number) {
     timerEndRef.current = Date.now() + seconds * 1000;
     firedRef.current = false;
+    lastBeepRef.current = null;
     setTimer(seconds);
     setTimerActive(true);
   }

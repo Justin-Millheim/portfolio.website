@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
-  CheckIn as CheckInType, Exercise, ExerciseLog, Phase, PhaseTimes, RunnerSnapshot,
+  ActiveSession, CheckIn as CheckInType, Exercise, ExerciseLog, Phase, PhaseTimes, RunnerSnapshot,
   WorkoutPlan, WorkoutSession,
 } from "@/lib/train/types";
+import { FOCUS_LABEL } from "@/lib/train/format";
 import { generatePlan, planItemFor, swapItem } from "@/lib/train/generator";
 import { getExercise } from "@/lib/train/exercises";
 import {
@@ -23,6 +24,8 @@ import ExerciseModal from "./components/ExerciseModal";
 import PreviousWorkoutsModal from "./components/PreviousWorkoutsModal";
 import AddExerciseModal from "./components/AddExerciseModal";
 import AuthGate from "./components/AuthGate";
+import Onboarding from "./components/Onboarding";
+import SetPasswordScreen from "./components/SetPasswordScreen";
 import { useConfirm } from "./components/ConfirmProvider";
 
 type Screen = "home" | "preview" | "precheck" | "run" | "postcheck" | "summary" | "history";
@@ -32,11 +35,20 @@ const DEFAULT_INTENT: Intent = {
   focus: "full", minutes: 20, equipment: "full", constraints: [], difficulty: "beginner",
 };
 const GUEST_FLAG = "train.guest";
+const ONBOARDED_FLAG = "train.onboarded.v1";
+const NUDGE_FLAG = "train.guestNudge.v1";
 
 export default function TrainApp() {
   const [entered, setEntered] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
   const [prefs, setPrefs] = useState<ExercisePrefs>({ preferred: [], blocked: [] });
+
+  const [booting, setBooting] = useState(true);
+  const [onboarded, setOnboarded] = useState(true);
+  const [recovery, setRecovery] = useState(false);
+  const [pendingResume, setPendingResume] = useState<ActiveSession | null>(null);
+  const [nudgeDismissed, setNudgeDismissed] = useState(true);
+  const resumeAskedRef = useRef(false);
 
   const [screen, setScreen] = useState<Screen>("home");
   const [intent, setIntent] = useState<Intent>(DEFAULT_INTENT);
@@ -55,18 +67,54 @@ export default function TrainApp() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (typeof window !== "undefined") {
+        setOnboarded(window.localStorage.getItem(ONBOARDED_FLAG) === "1");
+        setNudgeDismissed(window.localStorage.getItem(NUDGE_FLAG) === "1");
+      }
+      const guest = typeof window !== "undefined" && window.localStorage.getItem(GUEST_FLAG) === "1";
       const sb = getSupabase();
       if (sb) {
         const { data } = await sb.auth.getSession();
-        if (data.session?.user && !cancelled) { await enterCloud(); return; }
-      }
-      if (!cancelled && typeof window !== "undefined" && window.localStorage.getItem(GUEST_FLAG) === "1") {
+        if (data.session?.user && !cancelled) await enterCloud();
+        else if (guest && !cancelled) await enterGuest();
+      } else if (guest && !cancelled) {
         await enterGuest();
       }
+      if (!cancelled) setBooting(false);
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Detect a password-reset link landing -> show the "set new password" screen.
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb) return;
+    const { data: sub } = sb.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") { setRecovery(true); setBooting(false); }
+    });
+    return () => { sub.subscription.unsubscribe(); };
+  }, []);
+
+  // Prompt to resume an interrupted workout (instead of silently reloading it).
+  useEffect(() => {
+    if (!entered || !pendingResume || resumeAskedRef.current) return;
+    resumeAskedRef.current = true;
+    (async () => {
+      const r = await confirm({
+        title: "Resume your workout?",
+        message: `You have a ${FOCUS_LABEL[pendingResume.plan.focus]} workout in progress on this device.`,
+        confirmLabel: "Resume",
+        altLabel: "Discard it",
+        cancelLabel: "Not now",
+      });
+      if (r === "confirm") handleResume();
+      else if (r === "alt") handleDiscardResume();
+      else setPendingResume(null); // keep cached; re-offer next load
+      resumeAskedRef.current = false;
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entered, pendingResume]);
 
   async function finishEnter(acct: Account) {
     const store = getStore();
@@ -74,14 +122,35 @@ export default function TrainApp() {
     setSessions(list);
     setPrefs(p);
     const active = loadActive();
-    if (active?.plan && active.snapshot) {
-      setPlan(active.plan);
-      setPre(active.pre ?? null);
-      setRunnerInitial(active.snapshot);
-      setScreen("run");
-    }
+    if (active?.plan && active.snapshot) setPendingResume(active);
     setAccount(acct);
     setEntered(true);
+  }
+
+  function handleResume() {
+    if (!pendingResume) return;
+    setPlan(pendingResume.plan);
+    setPre(pendingResume.pre ?? null);
+    setRunnerInitial(pendingResume.snapshot);
+    setPendingResume(null);
+    setScreen("run");
+  }
+  function handleDiscardResume() {
+    clearActive();
+    setPendingResume(null);
+  }
+
+  function handleOnboarded() {
+    if (typeof window !== "undefined") window.localStorage.setItem(ONBOARDED_FLAG, "1");
+    setOnboarded(true);
+  }
+  function handleRecoveryDone() {
+    setRecovery(false);
+    enterCloud();
+  }
+  function dismissNudge() {
+    if (typeof window !== "undefined") window.localStorage.setItem(NUDGE_FLAG, "1");
+    setNudgeDismissed(true);
   }
 
   async function enterGuest() {
@@ -274,9 +343,14 @@ export default function TrainApp() {
     setScreen("summary");
   }
 
+  if (booting) return null;
+  if (recovery) return <SetPasswordScreen supabase={getSupabase()} onDone={handleRecoveryDone} />;
+  if (!onboarded) return <Onboarding onDone={handleOnboarded} />;
   if (!entered) {
     return <AuthGate supabase={getSupabase()} onGuest={enterGuest} onSignedIn={() => enterCloud()} />;
   }
+
+  const showGuestNudge = account?.mode === "guest" && sessions.length >= 3 && !nudgeDismissed;
 
   return (
     <>
@@ -291,6 +365,8 @@ export default function TrainApp() {
           account={account}
           onSignIn={backToGate}
           onSignOut={handleSignOut}
+          showGuestNudge={showGuestNudge}
+          onDismissNudge={dismissNudge}
         />
       )}
 
