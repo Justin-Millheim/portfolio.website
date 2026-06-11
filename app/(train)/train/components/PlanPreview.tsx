@@ -16,6 +16,7 @@ export default function PlanPreview({
   onReroll,
   onSwap,
   onOpenExercise,
+  onAddExercise,
   onBack,
 }: {
   plan: WorkoutPlan;
@@ -23,10 +24,11 @@ export default function PlanPreview({
   onReroll: () => void;
   onSwap: (index: number) => void;
   onOpenExercise: (ex: Exercise) => void;
+  onAddExercise: () => void;
   onBack: () => void;
 }) {
   return (
-    <div className="t-wrap t-fadein" style={{ paddingTop: 36 }}>
+    <div className="t-wrap t-fadein" style={{ paddingTop: 36, paddingBottom: 110 }}>
       <button onClick={onBack} className="t-mono" style={{ background: "none", border: "none", color: "var(--t-muted)", fontSize: 13, cursor: "pointer", marginBottom: 8 }}>
         ← Change
       </button>
@@ -89,15 +91,20 @@ export default function PlanPreview({
         );
       })}
 
-      <button className="t-btn t-btn-ghost" style={{ marginTop: 8, marginBottom: 12 }} onClick={onReroll}>
-        ⟳ Reroll whole plan
+      <button className="t-btn t-btn-ghost" style={{ marginTop: 8 }} onClick={onAddExercise}>
+        ＋ Add an exercise
       </button>
-      <button className="t-btn t-btn-primary" onClick={onApprove}>
-        Approve &amp; Start →
-      </button>
-      <p className="t-mono" style={{ textAlign: "center", color: "var(--t-faint)", fontSize: 11, marginTop: 12 }}>
-        Tap an exercise name to see how to do it · Swap to trade it for a similar one.
+      <p className="t-mono" style={{ textAlign: "center", color: "var(--t-faint)", fontSize: 11, marginTop: 14 }}>
+        Tap an exercise name to see how to do it · ⟳ to swap · ＋ to add your own.
       </p>
+
+      {/* Always-visible action bar */}
+      <div className="t-sticky-footer">
+        <div style={{ display: "flex", gap: 10, width: "100%", maxWidth: 520, margin: "0 auto" }}>
+          <button className="t-btn t-btn-ghost reroll" onClick={onReroll} aria-label="Reroll whole plan" title="Reroll whole plan">⟳</button>
+          <button className="t-btn t-btn-primary approve" onClick={onApprove}>Approve &amp; Start →</button>
+        </div>
+      </div>
     </div>
   );
 }

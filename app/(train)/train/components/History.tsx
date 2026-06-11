@@ -111,7 +111,7 @@ export default function History({
               </div>
             </div>
             <button
-              onClick={() => { if (confirm("Delete this workout?")) onDelete(s.id); }}
+              onClick={() => onDelete(s.id)}
               aria-label="Delete"
               style={{ background: "#161616", border: "1px solid #2a2a2a", color: "#777", borderRadius: 8, padding: "6px 9px", fontSize: 13, cursor: "pointer" }}
             >

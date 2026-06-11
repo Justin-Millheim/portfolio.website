@@ -57,6 +57,21 @@ export default function ExerciseModal({
           </ul>
         </Section>
 
+        <Section title="See it done">
+          <a
+            className="t-btn t-btn-ghost"
+            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`how to do ${exercise.name} exercise proper form`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "none" }}
+          >
+            ▶ Watch demos
+          </a>
+          <p style={{ ...pStyle, fontSize: 12, color: "var(--t-faint)", marginTop: 8 }}>
+            Opens a YouTube search for proper form in a new tab.
+          </p>
+        </Section>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
           <Mod label="Make it easier" body={exercise.howTo.easier} />
           <Mod label="Make it harder" body={exercise.howTo.harder} />
