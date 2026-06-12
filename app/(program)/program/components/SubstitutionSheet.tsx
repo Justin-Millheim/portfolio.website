@@ -1,6 +1,7 @@
 "use client";
 
 import { getExercise } from "@/lib/program/exercises";
+import ProgramPortal from "./ProgramPortal";
 
 // Curated equipment swaps for one lift (PRD §5). Choosing a swap is sticky in
 // prefs; progression still tracks under the original lift, so the chart never
@@ -21,6 +22,7 @@ export default function SubstitutionSheet({
   const subs = ex.subs ?? [];
 
   return (
+   <ProgramPortal>
     <div className="t-modal-scrim" onClick={onClose}>
       <div className="t-modal" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
@@ -54,6 +56,7 @@ export default function SubstitutionSheet({
         </div>
       </div>
     </div>
+   </ProgramPortal>
   );
 }
 

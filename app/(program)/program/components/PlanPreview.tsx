@@ -29,7 +29,7 @@ export default function PlanPreview({
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 40, paddingBottom: 120 }}>
-      <button onClick={onBack} className="t-mono" style={{ background: "none", border: "none", color: "var(--t-muted)", fontSize: 13, cursor: "pointer", padding: "4px 0", marginBottom: 8 }}>
+      <button onClick={onBack} className="p-nav-btn">
         ← Back
       </button>
       <div className="t-eyebrow" style={{ marginBottom: 4 }}>

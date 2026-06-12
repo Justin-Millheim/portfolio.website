@@ -22,7 +22,7 @@ export default function BlockMap({
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 40 }}>
-      <button onClick={onBack} className="t-mono" style={{ background: "none", border: "none", color: "var(--t-muted)", fontSize: 13, cursor: "pointer", padding: "4px 0", marginBottom: 8 }}>
+      <button onClick={onBack} className="p-nav-btn">
         ← Home
       </button>
       <h1 style={{ fontSize: 25, fontWeight: 700, margin: "0 0 4px" }}>The Block</h1>

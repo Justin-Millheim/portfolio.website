@@ -434,3 +434,48 @@
 .program-root .p-round-dot.done {
   background: linear-gradient(135deg, var(--t-flame), var(--t-amber)); color: #fff; border-color: transparent;
 }
+
+/* ============================================================
+   Feedback fixes: standalone-PWA safe areas, bigger tap targets,
+   modal layering above the sticky footer.
+   ============================================================ */
+
+/* In a home-screen (standalone) launch the status bar/notch overlays the top of
+   the page (viewport-fit=cover). Pad the app and nudge the fixed widgets down so
+   the top-left nav button and the session timer clear the notch. No-op in a
+   browser tab (safe-area insets are 0 there). */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .program-root { padding-top: env(safe-area-inset-top); }
+  .program-root .t-session-timer { top: calc(12px + env(safe-area-inset-top)); }
+  .program-root .t-cheer-banner { top: calc(26px + env(safe-area-inset-top)); }
+  .program-root .t-finale-banner { top: calc(16% + env(safe-area-inset-top)); }
+}
+
+/* Comfortable back/home nav button — a real ≥44px tap target instead of tiny
+   text (much easier to hit, especially as an installed app). */
+.program-root .p-nav-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--t-surface2); border: 1px solid var(--t-line);
+  color: var(--t-muted); border-radius: 11px;
+  padding: 11px 16px; font-size: 13px; cursor: pointer;
+  font-family: "JetBrains Mono", ui-monospace, monospace; line-height: 1;
+  min-height: 44px; margin-bottom: 16px;
+}
+.program-root .p-nav-btn:active { background: #222; transform: scale(0.98); }
+
+/* Modal scrim must sit above the portaled sticky footer (z 55). */
+.program-root .t-modal-scrim { z-index: 200; }
+
+/* Calmer celebrations for The Block. The shared /train cheer streaks a banner
+   (and a parade of critters) fully across the viewport — on a phone, and
+   especially as an installed app, that reads as janky. Scoped overrides keep
+   the celebratory feel but contain the motion to a centered pop + fade. */
+@keyframes p-cheer-pop {
+  0%   { transform: translate(-50%, -10px) scale(0.9); opacity: 0; }
+  16%  { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  78%  { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -10px) scale(0.96); opacity: 0; }
+}
+.program-root .t-cheer-banner.t-streak { animation: p-cheer-pop 2.6s ease-in-out forwards; }
+/* Drop the across-screen critter parade in the finale; keep confetti + banner. */
+.program-root .t-cheer .t-critter { display: none; }
