@@ -140,10 +140,20 @@ can't be trapped by a transformed ancestor (this was a real bug). `TrainPortal.t
 does the same body‑portal trick for the sticky footer. **All** `window.confirm/alert`
 were removed.
 
-## 8. Branding: Trent (in progress)
-- `Trent.tsx` renders `/train/trent.png` with a **🐯 emoji fallback** (so nothing
-  breaks before the asset exists). `TrentSays.tsx` = recurring **coach speech
-  bubble**.
+## 8. Branding: Trent
+- `Trent.tsx` renders the mascot as a **hand-authored inline SVG** (chibi tiger:
+  red headband + knot, whistle on a cord, navy shorts, curly striped tail,
+  friendly grin). Scales crisply at every size via the `size` prop with **no
+  asset/network dependency** — no PNG, no fallback needed. `TrentSays.tsx` =
+  recurring **coach speech bubble**.
+- *Why SVG, not the Canva render:* the sandbox can't fetch external hosts (Canva
+  /S3 all 403) and pasted images arrive vision-only. The Drive download path
+  works, but a single tool call truncates large content (keeps head+tail, drops
+  the ~13KB middle of the 23KB JPEG), and mid-stream base64 can't be reproduced
+  by hand. The vector mascot sidesteps the transfer entirely. To swap in the
+  exact Canva art later, drop a **<12KB** JPG/PNG in Drive (small enough to
+  survive one pass) and decode it to `public/train/trent.png`, then point
+  `Trent.tsx` back at an `<img>`.
 - Voice = **first‑person, present, encouraging, briefly playful** ("Trent here.
   Before we pounce…", "I built you a Legs plan", "That's a wrap! …"). Applied to
   auth gate, onboarding slide 1, check‑ins, home, plan preview, summary.
@@ -152,14 +162,10 @@ were removed.
 - **Production `main`** is fully shipped through the
   onboarding/auth/password‑reset/resume/guest‑nudge/beeps batch (last merged PR
   #12).
-- **Branch `claude/practical-maxwell-FpDJF`** (on a Vercel preview, **NOT
-  merged**) adds the **Trent component + voice pass**. It's **blocked on one
-  asset**: `public/train/trent.png`. The mascot was generated in the owner's
-  **Canva** (design `DAHMTDwjHCg`), but **the sandbox cannot download from Canva
-  (or any external host — all 403)**, and **pasted images arrive as vision only,
-  never as files**. The transfer plan: owner uploads `trent.png` to **Google
-  Drive**, then fetch it via `mcp__Google_Drive__search_files` +
-  `download_file_content` (base64) → decode → `public/train/trent.png`.
+- **Branch `claude/practical-maxwell-FpDJF`** (on a Vercel preview) adds the
+  **Trent mascot (inline SVG) + voice pass**. No longer blocked on any asset —
+  the mascot ships as vector. (Optional future polish: swap in the exact Canva
+  render `DAHMTDwjHCg` once a <12KB copy is in Drive — see §8.)
 - **Owner to‑dos for password reset:** allowlist `/train` redirect URLs in
   Supabase Auth, and brand the "Reset password" + "Confirm signup" email
   templates.
@@ -207,6 +213,6 @@ lib/train/
   sound, format
 supabase/
   schema.sql, README.md
-public/train/trent.png            (pending asset)
+Trent.tsx                         (mascot = inline SVG, no asset needed)
 .env.example
 ```
