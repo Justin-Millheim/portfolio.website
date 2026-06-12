@@ -1,0 +1,436 @@
+/* ============================================================
+   /program theme — "The Block" — "burn mode". Scoped under .program-root so it
+   sits above the portfolio body background + noise overlay and
+   shares nothing with the marketing site.
+   ============================================================ */
+.program-root {
+  --t-bg: #0a0a0a;
+  --t-surface: #111;
+  --t-surface2: #161616;
+  --t-deep: #0d0d0d;
+  --t-line: #1e1e1e;
+  --t-ink: #f4f1ea;
+  /* Contrast-tuned against #0a0a0a for WCAG AA on normal text. */
+  --t-muted: #b4aca0;   /* secondary text — ~7:1 */
+  --t-faint: #968d80;   /* tertiary labels/eyebrows — ~4.7:1 */
+  --t-flame: #ff6a32;   /* brighter flame for AA on dark */
+  --t-amber: #ffae3d;
+  /* Cool teal — the complement of the flame, for celebratory banners so they
+     pop against the warm UI instead of blending into it. White text reads AA. */
+  --t-cheer-a: #0f766e;
+  --t-cheer-b: #14b8a6;
+
+  position: relative;
+  z-index: 5; /* above the portfolio's fixed noise overlay (z-index 1) */
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--t-bg);
+  color: var(--t-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile-first: content column never exceeds a comfy phone width. */
+.program-root .t-wrap {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 16px 120px;
+}
+
+.program-root .t-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.program-root h1, .program-root h2, .program-root h3 { letter-spacing: -0.5px; }
+
+/* Glow accents echoing the prototype. */
+.program-root .t-accent-tr,
+.program-root .t-accent-bl { position: fixed; pointer-events: none; z-index: 0; }
+.program-root .t-accent-tr {
+  top: -100px; right: -100px; width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,80,30,0.12) 0%, transparent 70%);
+}
+.program-root .t-accent-bl {
+  bottom: -80px; left: -80px; width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,180,0,0.07) 0%, transparent 70%);
+}
+
+/* ---- buttons ---- */
+.program-root .t-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 16px; border: none; border-radius: 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: transform 0.08s ease, opacity 0.2s ease;
+}
+.program-root .t-btn:active { transform: scale(0.985); }
+.program-root .t-btn-primary {
+  background: linear-gradient(135deg, var(--t-flame), var(--t-amber)); color: #fff;
+}
+.program-root .t-btn-ghost {
+  background: #1e1e1e; border: 1px solid #333; color: var(--t-ink);
+}
+.program-root .t-btn-quiet {
+  background: #1a1a1a; border: 1px solid #2a2a2a; color: var(--t-faint);
+  text-transform: none; letter-spacing: 0;
+}
+.program-root .t-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- cards ---- */
+.program-root .t-card {
+  background: var(--t-surface); border: 1px solid var(--t-line);
+  border-radius: 16px; padding: 20px;
+}
+
+/* ---- pills / chips (intent choices) ---- */
+.program-root .t-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 10px; border-radius: 12px; cursor: pointer;
+  background: var(--t-surface2); border: 1px solid var(--t-line);
+  color: var(--t-muted); font-size: 13px; font-weight: 700;
+  transition: all 0.15s ease; text-align: center;
+}
+.program-root .t-chip.active {
+  background: linear-gradient(135deg, rgba(255,90,30,0.18), rgba(255,159,30,0.12));
+  border-color: var(--t-flame); color: var(--t-ink);
+}
+
+/* ---- inputs ---- */
+.program-root input[type="number"], .program-root input[type="text"],
+.program-root input[type="email"], .program-root input[type="password"],
+.program-root input[type="tel"], .program-root input[type="url"],
+.program-root textarea {
+  width: 100%; display: block; background: var(--t-deep); border: 1px solid var(--t-line);
+  border-radius: 10px; color: var(--t-ink); padding: 12px 14px;
+  font-size: 16px; /* 16px avoids iOS zoom-on-focus */ font-family: inherit;
+  line-height: 1.3; -webkit-appearance: none; appearance: none;
+}
+.program-root input::placeholder, .program-root textarea::placeholder { color: #6f675c; }
+.program-root input:focus, .program-root textarea:focus {
+  outline: none; border-color: var(--t-flame);
+}
+.program-root .t-eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--t-faint);
+}
+
+/* ---- the persistent corner session timer ---- */
+.program-root .t-session-timer {
+  position: fixed; top: 12px; right: 12px; z-index: 60;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(13,13,13,0.92); border: 1px solid var(--t-line);
+  border-radius: 999px; padding: 7px 12px; backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.program-root .t-session-timer .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--t-flame);
+  animation: t-pulse 1.4s ease-in-out infinite;
+}
+.program-root .t-session-timer .t-time {
+  font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
+  color: var(--t-ink); letter-spacing: 1px;
+}
+.program-root .t-session-timer .t-phase {
+  font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1px;
+  color: var(--t-amber); text-transform: uppercase;
+}
+
+@keyframes t-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes t-fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.program-root .t-fadein { animation: t-fadein 0.3s ease both; }
+
+/* ---- scrollbars (subtle) ---- */
+.program-root ::-webkit-scrollbar { width: 8px; height: 8px; }
+.program-root ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 8px; }
+
+/* ---- modal ---- */
+.program-root .t-modal-scrim {
+  position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,0.7);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.program-root .t-modal {
+  width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto;
+  background: var(--t-surface); border: 1px solid var(--t-line);
+  border-radius: 20px 20px 0 0; padding: 22px 20px 32px;
+  animation: t-slideup 0.25s ease both;
+}
+@keyframes t-slideup { from { transform: translateY(100%); } to { transform: none; } }
+
+@media (min-width: 560px) {
+  .program-root .t-modal-scrim { align-items: center; }
+  .program-root .t-modal { border-radius: 20px; }
+}
+
+/* ---- per-set log entry box ---- */
+.program-root .t-entry {
+  background: var(--t-deep); border: 1px solid var(--t-line);
+  border-radius: 14px; padding: 16px;
+}
+.program-root .t-entry-label {
+  font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--t-faint); margin-bottom: 6px;
+}
+.program-root .t-stepper {
+  display: flex; align-items: stretch; gap: 0;
+  border: 1px solid var(--t-line); border-radius: 10px; overflow: hidden;
+}
+.program-root .t-stepper button {
+  width: 44px; background: #161616; border: none; color: var(--t-ink);
+  font-size: 20px; cursor: pointer;
+}
+.program-root .t-stepper button:active { background: #222; }
+.program-root .t-stepper input {
+  flex: 1; border: none; border-radius: 0; text-align: center; background: var(--t-deep);
+}
+
+/* ---- favorite / save toggle ---- */
+.program-root .t-fav {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px; border-radius: 12px; cursor: pointer;
+  font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.5px; transition: all 0.15s ease;
+  background: #161616; border: 1px solid var(--t-line); color: var(--t-muted);
+}
+.program-root .t-fav.on {
+  background: linear-gradient(135deg, rgba(255,106,50,0.18), rgba(255,174,61,0.12));
+  border-color: var(--t-flame); color: var(--t-ink);
+}
+
+/* ---- collapsible drawer (previous workouts modal) ---- */
+.program-root .t-drawer-head {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--t-surface2); border: 1px solid var(--t-line); border-radius: 12px;
+  padding: 13px 14px; cursor: pointer; color: var(--t-ink);
+  font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.program-root .t-drawer-count {
+  margin-left: auto; color: var(--t-faint); font-size: 11px;
+}
+.program-root .t-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--t-surface); border: 1px solid var(--t-line);
+  border-radius: 12px; padding: 11px 13px;
+}
+
+/* ---- resume banner ---- */
+.program-root .t-resume {
+  background: linear-gradient(135deg, rgba(255,106,50,0.16), rgba(255,174,61,0.1));
+  border: 1px solid var(--t-flame); border-radius: 14px; padding: 16px;
+  margin-bottom: 20px;
+}
+
+/* ---- celebrations (goofy animal cheers) ---- */
+.program-root .t-cheer {
+  position: fixed; inset: 0; z-index: 90; pointer-events: none; overflow: hidden;
+}
+.program-root .t-critter {
+  position: absolute; white-space: nowrap; display: flex; align-items: center; gap: 8px;
+  will-change: transform;
+}
+.program-root .t-critter .emoji { font-size: 52px; position: relative; line-height: 1; }
+.program-root .t-critter .hat {
+  position: absolute; top: -14px; right: -8px; font-size: 26px; transform: rotate(12deg);
+}
+/* Per-exercise cheer: a solid banner (critter + message) pinned near the top of
+   the screen. It slides in from the left, pauses dead-center for a beat so the
+   message reads, then slides off to the right. Centered with left:50% plus a
+   -50% translate baked into every keyframe; the vw term carries it across. */
+.program-root .t-cheer-banner {
+  position: absolute; left: 50%; top: 26px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px 10px 14px;
+  background: linear-gradient(135deg, var(--t-cheer-a), var(--t-cheer-b));
+  border-radius: 999px;
+  box-shadow: 0 12px 34px rgba(0,0,0,0.55);
+  white-space: nowrap; will-change: transform;
+}
+.program-root .t-cheer-banner .emoji { font-size: 38px; position: relative; line-height: 1; }
+.program-root .t-cheer-banner .hat {
+  position: absolute; top: -12px; right: -8px; font-size: 20px; transform: rotate(12deg);
+}
+.program-root .t-cheer-msg {
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 800;
+  font-size: 16px; letter-spacing: 0.3px; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+@keyframes t-streak {
+  0%   { transform: translate(calc(-50% - 85vw), 0) rotate(-3deg); opacity: 0; }
+  20%  { transform: translate(-50%, 0) rotate(0deg); opacity: 1; } /* settle dead-center */
+  60%  { transform: translate(-50%, 0) rotate(0deg); opacity: 1; } /* brief pause */
+  100% { transform: translate(calc(-50% + 95vw), 0) rotate(3deg); opacity: 0; }
+}
+.program-root .t-streak { animation: t-streak 2.8s ease-in-out forwards; }
+
+/* finale: a solid centered banner that pops in (matching the per-exercise cheer
+   treatment so the text stays readable over the parade of critters behind it). */
+.program-root .t-finale-banner {
+  position: absolute; top: 16%; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 16px 28px; border-radius: 18px;
+  background: linear-gradient(135deg, var(--t-cheer-a), var(--t-cheer-b));
+  box-shadow: 0 16px 42px rgba(0,0,0,0.6);
+  text-align: center; animation: t-pop 0.5s cubic-bezier(.2,1.4,.4,1) both;
+}
+.program-root .t-finale-banner .big {
+  font-size: 26px; font-weight: 800; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+@keyframes t-pop {
+  0% { transform: translateX(-50%) scale(0.4); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+@keyframes t-streak-fast {
+  0%   { transform: translateX(-50vw) rotate(-6deg); opacity: 0; }
+  15%  { opacity: 1; }
+  55%  { transform: translateX(45vw) rotate(0deg); opacity: 1; } /* lingers mid-screen */
+  88%  { opacity: 1; }
+  100% { transform: translateX(120vw) rotate(6deg); opacity: 0; }
+}
+.program-root .t-streak-fast { animation: t-streak-fast 4.5s ease-in-out forwards; }
+@keyframes t-confetti {
+  0% { transform: translateY(-10vh) rotate(0); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0.2; }
+}
+.program-root .t-confetti { position: absolute; font-size: 18px; animation: t-confetti 4.5s linear forwards; }
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .program-root *, .program-root *::before, .program-root *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- in-app confirm dialog + toast ---- */
+.program-root .t-btn-danger {
+  background: linear-gradient(135deg, #e0533a, #c2410c); color: #fff;
+}
+.program-root .t-confirm-scrim {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.72);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: t-fadein 0.15s ease both;
+}
+.program-root .t-confirm {
+  width: 100%; max-width: 360px;
+  background: var(--t-surface); border: 1px solid var(--t-line);
+  border-radius: 18px; padding: 22px 20px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  animation: t-pop 0.18s ease both;
+}
+.program-root .t-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+  z-index: 110; max-width: 90%;
+  background: #1d1d1d; border: 1px solid var(--t-line); color: var(--t-ink);
+  border-radius: 999px; padding: 11px 18px; font-size: 13px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  animation: t-fadein 0.2s ease both;
+}
+
+/* ---- sticky action footer (plan preview) ---- */
+.program-root .t-sticky-footer {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
+  display: flex; gap: 10px; align-items: stretch;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.92) 24%, var(--t-bg) 60%);
+}
+.program-root .t-sticky-footer .t-btn { margin: 0; }
+.program-root .t-sticky-footer .reroll { flex: 0 0 auto; width: 56px; padding: 14px 0; }
+.program-root .t-sticky-footer .approve { flex: 1; }
+
+/* ============================================================
+   The Block — program-specific additions (block map, progress
+   charts, up-next card, "see how it's done" video link).
+   ============================================================ */
+
+/* ---- Up Next hero card on Home ---- */
+.program-root .p-upnext {
+  background: linear-gradient(135deg, rgba(255,106,50,0.16), rgba(255,174,61,0.08));
+  border: 1px solid var(--t-flame); border-radius: 18px; padding: 20px;
+}
+
+/* ---- block progress ring (home) ---- */
+.program-root .p-ring-wrap { display: flex; align-items: center; gap: 16px; }
+
+/* ---- 4x4 block map grid ---- */
+.program-root .p-grid {
+  display: grid; grid-template-columns: auto repeat(4, 1fr); gap: 8px;
+}
+.program-root .p-grid-label {
+  display: flex; align-items: center; justify-content: center;
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--t-faint);
+}
+.program-root .p-cell {
+  aspect-ratio: 1; border-radius: 12px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: var(--t-surface2); border: 1px solid var(--t-line); color: var(--t-muted);
+  font-family: "JetBrains Mono", monospace; font-size: 11px; transition: all 0.15s ease;
+}
+.program-root .p-cell .p-cell-emoji { font-size: 17px; line-height: 1; }
+.program-root .p-cell.done {
+  background: linear-gradient(135deg, rgba(255,106,50,0.22), rgba(255,174,61,0.12));
+  border-color: var(--t-flame); color: var(--t-ink);
+}
+.program-root .p-cell.current {
+  border-color: var(--t-amber); color: var(--t-ink);
+  box-shadow: 0 0 0 1px var(--t-amber), 0 0 16px rgba(255,174,61,0.25);
+}
+.program-root .p-cell.locked { opacity: 0.55; }
+
+/* ---- "see how it's done" video link ---- */
+.program-root .p-video-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #1d1d1d; border: 1px solid #333; color: var(--t-amber);
+  border-radius: 10px; padding: 9px 12px; font-size: 12px; cursor: pointer;
+  font-family: "JetBrains Mono", monospace; text-decoration: none;
+}
+.program-root .p-video-link:active { background: #242424; }
+
+/* ---- progression chart ---- */
+.program-root .p-chart {
+  background: var(--t-deep); border: 1px solid var(--t-line);
+  border-radius: 14px; padding: 16px 14px;
+}
+.program-root .p-bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; }
+.program-root .p-bar-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%;
+  justify-content: flex-end;
+}
+.program-root .p-bar {
+  width: 100%; border-radius: 6px 6px 0 0; min-height: 3px;
+  background: linear-gradient(180deg, var(--t-flame), var(--t-amber)); transition: height 0.4s ease;
+}
+.program-root .p-bar.pr { box-shadow: 0 0 12px rgba(255,174,61,0.5); }
+.program-root .p-bar-label {
+  font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--t-faint);
+}
+.program-root .p-bar-val {
+  font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--t-ink); font-weight: 700;
+}
+
+/* ---- side (L/R) toggle for per-side logging ---- */
+.program-root .p-side-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
+.program-root .p-side-toggle button {
+  flex: 1; padding: 8px; border-radius: 9px; cursor: pointer;
+  font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700;
+  background: var(--t-surface2); border: 1px solid var(--t-line); color: var(--t-muted);
+}
+.program-root .p-side-toggle button.active {
+  border-color: var(--t-flame); color: var(--t-ink);
+  background: linear-gradient(135deg, rgba(255,106,50,0.18), rgba(255,174,61,0.1));
+}
+
+/* ---- round counter (sled) ---- */
+.program-root .p-rounds { display: flex; gap: 8px; justify-content: center; margin: 14px 0; }
+.program-root .p-round-dot {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "JetBrains Mono", monospace; font-weight: 700;
+  background: var(--t-surface2); border: 1px solid var(--t-line); color: var(--t-faint);
+}
+.program-root .p-round-dot.done {
+  background: linear-gradient(135deg, var(--t-flame), var(--t-amber)); color: #fff; border-color: transparent;
+}
