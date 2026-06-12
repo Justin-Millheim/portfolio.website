@@ -1,0 +1,247 @@
+/* ============================================================
+   /tote theme — "fresh market". A clean, app-like sans-serif UI
+   on cool off-white with a teal + coral palette. Scoped under
+   .tote-root so it sits above the portfolio body + noise overlay
+   and shares nothing with the marketing site or the other apps.
+   ============================================================ */
+.tote-root {
+  --bg: #eef1ef;
+  --surface: #ffffff;
+  --surface2: #f4f6f4;
+  --line: #e4e8e4;
+  --line2: #d3dad4;
+  --ink: #17302a;
+  --muted: #5d6b64;     /* ~6:1 on surface */
+  --faint: #8a958d;     /* ~4.5:1 */
+  --teal: #0f9d8e;
+  --teal-dk: #0b7d72;
+  --teal-soft: #e2f3f0;
+  --coral: #f2674e;
+  --coral-dk: #d8492f;
+  --coral-soft: #fde7e1;
+
+  position: relative;
+  z-index: 5; /* above the portfolio's fixed noise overlay (z-index 1) */
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+.tote-root * { box-sizing: border-box; }
+.tote-root h1, .tote-root h2, .tote-root h3 { margin: 0; letter-spacing: -0.3px; }
+.tote-root button { font-family: inherit; }
+
+/* Mobile-first column; everything lives above a fixed bottom tab bar. */
+.tote-root .t-app { width: 100%; max-width: 560px; margin: 0 auto; padding: 0 16px 96px; }
+.tote-root .t-scroll { padding-top: 14px; }
+
+/* ---- top bar ---- */
+.tote-root .t-top {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 16px 12px; background: rgba(238,241,239,0.92); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.tote-root .t-top h1 { font-size: 22px; font-weight: 800; }
+.tote-root .t-top .t-sub { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+
+/* ---- bottom tab bar ---- */
+.tote-root .t-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; justify-content: center; gap: 4px;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line);
+}
+.tote-root .t-tab {
+  flex: 1; max-width: 130px; border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px;
+  color: var(--faint); font-size: 11px; font-weight: 700; border-radius: 12px;
+}
+.tote-root .t-tab.active { color: var(--teal-dk); }
+.tote-root .t-tab.active .t-tab-ico { background: var(--teal-soft); }
+.tote-root .t-tab-ico {
+  display: flex; align-items: center; justify-content: center;
+  width: 46px; height: 28px; border-radius: 999px; transition: background 0.15s ease;
+}
+
+/* ---- buttons ---- */
+.tote-root .t-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 11px 15px; border: none; border-radius: 12px; cursor: pointer;
+  font-size: 14px; font-weight: 700; transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
+}
+.tote-root .t-btn:active { transform: scale(0.98); }
+.tote-root .t-btn-block { width: 100%; padding: 14px; }
+.tote-root .t-btn-primary { background: var(--teal); color: #fff; }
+.tote-root .t-btn-primary:hover { background: var(--teal-dk); }
+.tote-root .t-btn-accent { background: var(--coral); color: #fff; }
+.tote-root .t-btn-accent:hover { background: var(--coral-dk); }
+.tote-root .t-btn-ghost { background: var(--surface); border: 1px solid var(--line2); color: var(--ink); }
+.tote-root .t-btn-ghost:hover { background: var(--surface2); }
+.tote-root .t-btn-quiet { background: transparent; color: var(--muted); font-weight: 600; }
+.tote-root .t-btn-quiet:hover { color: var(--ink); }
+.tote-root .t-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.tote-root .t-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 11px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line2); color: var(--ink); flex-shrink: 0;
+}
+.tote-root .t-iconbtn:hover { background: var(--surface2); }
+.tote-root .t-fab {
+  width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--teal); color: #fff; font-size: 22px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15,157,142,0.35);
+}
+
+/* ---- cards ---- */
+.tote-root .t-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+}
+.tote-root .t-tap-card { cursor: pointer; transition: transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+.tote-root .t-tap-card:hover { transform: translateY(-2px); border-color: var(--line2); box-shadow: 0 8px 20px rgba(23,48,42,0.08); }
+
+/* ---- inputs ---- */
+.tote-root input[type="text"], .tote-root input[type="number"], .tote-root input[type="search"],
+.tote-root input[type="email"], .tote-root input[type="password"], .tote-root input[type="url"],
+.tote-root select, .tote-root textarea {
+  width: 100%; display: block; background: var(--surface); border: 1px solid var(--line2);
+  border-radius: 11px; color: var(--ink); padding: 12px 13px; font-size: 16px; /* no iOS zoom */
+  font-family: inherit; line-height: 1.35; -webkit-appearance: none; appearance: none;
+}
+.tote-root textarea { resize: vertical; min-height: 70px; }
+.tote-root input::placeholder, .tote-root textarea::placeholder { color: #a3aca5; }
+.tote-root input:focus, .tote-root textarea:focus, .tote-root select:focus {
+  outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(15,157,142,0.13);
+}
+.tote-root .t-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 0 0 6px; }
+.tote-root .t-field { margin-bottom: 14px; }
+
+/* ---- quick add bar ---- */
+.tote-root .t-quickadd {
+  position: sticky; top: 60px; z-index: 15; padding: 10px 0;
+  background: linear-gradient(var(--bg) 78%, transparent);
+}
+.tote-root .t-quickadd-row { display: flex; gap: 8px; align-items: center; }
+.tote-root .t-quickadd input { border-radius: 999px; padding-left: 16px; box-shadow: 0 2px 8px rgba(23,48,42,0.06); }
+.tote-root .t-suggest {
+  margin-top: 6px; background: var(--surface); border: 1px solid var(--line2); border-radius: 12px;
+  overflow: hidden; box-shadow: 0 8px 24px rgba(23,48,42,0.12);
+}
+.tote-root .t-suggest button {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 11px 14px; border: none; background: none; cursor: pointer; font-size: 15px; color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.tote-root .t-suggest button:last-child { border-bottom: none; }
+.tote-root .t-suggest button:hover { background: var(--surface2); }
+.tote-root .t-suggest .t-cat-emoji { font-size: 15px; }
+
+/* ---- aisle sections + item rows ---- */
+.tote-root .t-aisle-head {
+  display: flex; align-items: center; gap: 8px; margin: 20px 0 6px;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted);
+}
+.tote-root .t-aisle-dot { width: 9px; height: 9px; border-radius: 50%; }
+.tote-root .t-aisle-count { margin-left: auto; color: var(--faint); font-weight: 700; }
+
+.tote-root .t-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 4px;
+  border-bottom: 1px solid var(--line); cursor: pointer;
+}
+.tote-root .t-check {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line2); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; background: var(--surface);
+}
+.tote-root .t-check.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.tote-root .t-item-body { flex: 1; min-width: 0; }
+.tote-root .t-item-name { font-size: 15.5px; font-weight: 600; }
+.tote-root .t-item-qty { font-size: 13px; color: var(--muted); }
+.tote-root .t-item.done .t-item-name { text-decoration: line-through; color: var(--faint); font-weight: 500; }
+.tote-root .t-item.done .t-item-qty { text-decoration: line-through; }
+.tote-root .t-item-x {
+  border: none; background: none; color: var(--faint); cursor: pointer; padding: 4px; font-size: 16px; line-height: 1;
+}
+.tote-root .t-item-x:hover { color: var(--coral-dk); }
+
+/* ---- chips / pills ---- */
+.tote-root .t-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tote-root .t-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+  cursor: pointer; font-size: 13px; font-weight: 700; background: var(--surface); border: 1px solid var(--line2); color: var(--muted);
+}
+.tote-root .t-chip.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+.tote-root .t-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; background: var(--surface2); border: 1px solid var(--line2); color: var(--muted);
+}
+
+/* ---- list picker rows ---- */
+.tote-root .t-listrow {
+  display: flex; align-items: center; gap: 12px; padding: 16px; margin-bottom: 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+.tote-root .t-listrow:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(23,48,42,0.08); }
+.tote-root .t-listrow .t-listrow-ico {
+  width: 42px; height: 42px; border-radius: 12px; background: var(--teal-soft); color: var(--teal-dk);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tote-root .t-listrow h3 { font-size: 16px; font-weight: 700; }
+.tote-root .t-listrow .t-listrow-meta { font-size: 13px; color: var(--muted); margin-top: 1px; }
+
+/* ---- meal plan grid ---- */
+.tote-root .t-week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.tote-root .t-day {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
+}
+.tote-root .t-day.today { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(15,157,142,0.12); }
+.tote-root .t-day-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.tote-root .t-day-head .t-dow { font-size: 15px; font-weight: 800; }
+.tote-root .t-day-head .t-date { font-size: 12.5px; color: var(--faint); }
+.tote-root .t-day-head .t-today-badge { margin-left: auto; font-size: 10px; font-weight: 800; color: var(--teal-dk); background: var(--teal-soft); padding: 2px 8px; border-radius: 999px; }
+.tote-root .t-slot { display: flex; align-items: center; gap: 8px; padding: 7px 0; }
+.tote-root .t-slot .t-slot-label { font-size: 11px; font-weight: 700; color: var(--faint); width: 70px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+.tote-root .t-slot .t-slot-val { flex: 1; font-size: 14.5px; }
+.tote-root .t-slot .t-slot-val.empty { color: var(--faint); }
+.tote-root .t-slot button.t-slot-tap {
+  flex: 1; text-align: left; background: none; border: none; cursor: pointer; font-size: 14.5px; color: var(--ink); padding: 4px 0;
+}
+.tote-root .t-slot button.t-slot-tap.empty { color: var(--faint); }
+
+/* ---- misc ---- */
+.tote-root .t-empty { text-align: center; padding: 54px 18px; color: var(--muted); }
+.tote-root .t-empty .t-emoji { font-size: 42px; }
+.tote-root .t-fadein { animation: t-fade 0.25s ease both; }
+@keyframes t-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.tote-root .t-section-title { font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: var(--faint); margin: 22px 0 10px; }
+.tote-root .t-divider { height: 1px; background: var(--line); margin: 18px 0; border: 0; }
+.tote-root .t-link { color: var(--teal-dk); font-weight: 700; cursor: pointer; background: none; border: none; padding: 0; font-size: inherit; }
+.tote-root .t-row { display: grid; gap: 8px; align-items: center; margin-bottom: 8px; }
+.tote-root .t-line-row { grid-template-columns: 60px 76px 1fr 36px; }
+@media (max-width: 480px) { .tote-root .t-line-row { grid-template-columns: 52px 64px 1fr 32px; } }
+.tote-root .t-rowx { height: 38px; border-radius: 10px; border: 1px solid var(--line2); background: var(--surface); color: var(--coral-dk); cursor: pointer; font-size: 18px; }
+.tote-root .t-rowx:hover { background: var(--coral-soft); }
+
+/* sheet / modal picker */
+.tote-root .t-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 60; background: rgba(23,48,42,0.45);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.tote-root .t-sheet {
+  width: 100%; max-width: 560px; background: var(--surface); border-radius: 18px 18px 0 0;
+  padding: 18px 16px calc(20px + env(safe-area-inset-bottom)); max-height: 80vh; overflow-y: auto;
+  animation: t-sheet-up 0.22s ease both;
+}
+@keyframes t-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+.tote-root .t-sheet h3 { font-size: 17px; margin-bottom: 12px; }
+.tote-root .t-sheet-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 13px 12px; border: none; background: none; cursor: pointer; font-size: 15px; color: var(--ink);
+  border-radius: 11px;
+}
+.tote-root .t-sheet-item:hover { background: var(--surface2); }
