@@ -25,7 +25,7 @@ export default function Progress({
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 36 }}>
-      <button onClick={onBack} className="t-mono" style={{ background: "none", border: "none", color: "var(--t-muted)", fontSize: 12, cursor: "pointer", marginBottom: 8 }}>
+      <button onClick={onBack} className="p-nav-btn">
         ← Back
       </button>
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 4px" }}>

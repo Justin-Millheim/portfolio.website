@@ -411,9 +411,17 @@ export default function Runner({
       {subMode === "ready" ? (
         <div className="t-card t-fadein" style={{ textAlign: "center", borderRadius: 20, padding: 28 }}>
           <div className="t-eyebrow" style={{ marginBottom: 6 }}>Up next</div>
-          <div style={{ fontSize: 44 }}>{ex.emoji}</div>
-          <h2 style={{ fontSize: 23, margin: "6px 0 2px" }}>{displayName}</h2>
-          <p className="t-mono" style={{ color: "var(--t-muted)", fontSize: 12, margin: "0 0 18px" }}>{step.display}</p>
+          {/* Tap the move to read what's coming while you get set. */}
+          <button
+            onClick={() => onOpenExercise(ex)}
+            aria-label={`How to do ${displayName}`}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--t-ink)", width: "100%", padding: 0 }}
+          >
+            <div style={{ fontSize: 44 }}>{ex.emoji}</div>
+            <h2 style={{ fontSize: 23, margin: "6px 0 2px" }}>{displayName}</h2>
+            <span className="t-mono" style={{ fontSize: 11, color: "var(--t-amber)" }}>ⓘ Tap to see how it&apos;s done</span>
+          </button>
+          <p className="t-mono" style={{ color: "var(--t-muted)", fontSize: 12, margin: "12px 0 18px" }}>{step.display}</p>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <Ring value={timer} active={!paused} amber label="GET READY" />
           </div>
@@ -583,7 +591,9 @@ function Ring({ value, active, amber, label }: { value: number | null; active: b
       boxShadow: active ? `0 0 20px ${amber ? "rgba(255,174,61,0.25)" : "rgba(255,106,50,0.3)"}` : "none",
     }}>
       {label && <span className="t-mono" style={{ fontSize: 9, letterSpacing: 1, color: "var(--t-faint)" }}>{label}</span>}
-      <span className="t-mono" style={{ fontSize: 30, fontWeight: 700, color: active ? color : "var(--t-ink)" }}>
+      {/* Bright near-white digits read far better at a glance (esp. in Safari)
+          than flame-on-black; the ring border still carries the active state. */}
+      <span style={{ fontSize: 36, fontWeight: 800, color: "var(--t-ink)", letterSpacing: 0.5, fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" }}>
         {value !== null ? formatTime(value) : "--"}
       </span>
     </div>

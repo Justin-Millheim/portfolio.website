@@ -1,6 +1,7 @@
 "use client";
 
 import type { Exercise } from "@/lib/program/types";
+import ProgramPortal from "./ProgramPortal";
 
 // "How do I do this" drill-down. The headline difference from /train: the
 // "See how it's done" links are the COACH'S OWN demo videos pulled from the
@@ -16,6 +17,7 @@ export default function ExerciseModal({
     ?? (exercise.videoUrl ? [{ label: "Watch the demo", url: exercise.videoUrl }] : []);
 
   return (
+   <ProgramPortal>
     <div className="t-modal-scrim" onClick={onClose}>
       <div className="t-modal" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -87,6 +89,7 @@ export default function ExerciseModal({
         </div>
       </div>
     </div>
+   </ProgramPortal>
   );
 }
 
