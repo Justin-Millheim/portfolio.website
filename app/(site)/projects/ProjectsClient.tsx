@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/content/projects";
@@ -71,29 +72,37 @@ export default function ProjectsClient({
               transition={{ duration: reduce ? 0.12 : 0.26, ease: [0.22, 1, 0.36, 1] }}
             >
               {shown.map((p) => {
+                const cls = `tile${p.cover ? " tile--cover" : ""}`;
                 const inner = (
                   <>
-                    <span className="dom">{p.tags.join(" · ")}</span>
-                    <h4>{p.title}</h4>
-                    <p>{p.blurb}</p>
-                    {p.post && (
-                      <span className="go">
-                        <ArrowUpRight size={17} />
+                    {p.cover && (
+                      <span className="tile-cover">
+                        <Image src={p.cover} alt="" fill sizes="(max-width:560px) 100vw, 340px" unoptimized />
                       </span>
                     )}
+                    <span className="tile-body">
+                      <span className="dom">{p.tags.join(" · ")}</span>
+                      <h4>{p.title}</h4>
+                      <p>{p.blurb}</p>
+                      {p.post && (
+                        <span className="go">
+                          <ArrowUpRight size={17} />
+                        </span>
+                      )}
+                    </span>
                   </>
                 );
                 return p.post ? (
                   <Link
                     key={p.id}
-                    className="tile"
+                    className={cls}
                     href={`/blog/${p.post}`}
                     onClick={() => track("content_click", { to: `/blog/${p.post}`, kind: "project_tile", label: p.title, from: "/projects" })}
                   >
                     {inner}
                   </Link>
                 ) : (
-                  <div key={p.id} className="tile" style={{ cursor: "default" }}>
+                  <div key={p.id} className={cls} style={{ cursor: "default" }}>
                     {inner}
                   </div>
                 );

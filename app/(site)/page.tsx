@@ -1,47 +1,86 @@
-import { Boxes, Users, Sparkles, ArrowRight, ArrowUpRight, Mail } from "lucide-react";
+import { Fragment } from "react";
+import Image from "next/image";
+import { Mail, CalendarClock } from "lucide-react";
 import { projects } from "@/content/projects";
+import { getLogPosts, formatDate } from "@/lib/log";
+import { scheduleUrl } from "@/content/site";
 import Reveal from "@/components/Reveal";
 import Testimonials from "@/components/Testimonials";
 import ContactButton from "@/components/ContactButton";
 import ContentLink from "@/components/ContentLink";
+import OutboundLink from "@/components/OutboundLink";
+import ModeCards from "@/components/home/ModeCards";
+import FeaturedTiles from "@/components/home/FeaturedTiles";
+import Stats from "@/components/home/Stats";
 
-const modes = [
-  { icon: Boxes, title: "Builder", line: "Tools, systems, and side projects I can not leave alone, built to make the work better.", href: "/blog/what-builder-means" },
-  { icon: Users, title: "Connector", line: "Communities, events, and experiences I design so people do their best work together.", href: "/blog/what-connector-means" },
-  { icon: Sparkles, title: "AI Enthusiast", line: "All-in on agentic AI: Claude Skills, MCP, and the workflows reshaping how product gets built.", href: "/blog/what-ai-enthusiast-means" },
+// Headline split into words so each can rise on its own (per-word stagger).
+// `em` flags the words that carry the ember-italic emphasis.
+const heroWords: { t: string; em?: boolean }[] = [
+  { t: "Cleaner" },
+  { t: "systems," },
+  { t: "closer" },
+  { t: "teams," },
+  { t: "better", em: true },
+  { t: "work.", em: true },
 ];
 
 export default function Home() {
   const featured = projects.filter((p) => p.featured);
+  const recent = getLogPosts().slice(0, 3);
 
   return (
     <>
       <header className="hero">
         <div className="wrap">
-          <div className="eyebrow rv" style={{ animationDelay: ".05s" }}>
-            Builder · Connector · AI Enthusiast
-          </div>
-          <h1 className="rv" style={{ animationDelay: ".15s" }}>
-            Cleaner systems, closer teams, <em>better work.</em>
-          </h1>
-          <p className="sub rv" style={{ animationDelay: ".3s" }}>
-            I build tools, systems, and communities &mdash; and I&rsquo;m all-in<br />
-            on where AI is taking the work.
-          </p>
-          <div className="now rv" style={{ animationDelay: ".45s" }}>
-            <span className="dot" />
-            <div>
-              <div className="label">Currently</div>
-              <p>
-                PM intern at Adobe, building Claude Skills, MCP workflows, and internal tooling, while finishing my MBA at Utah. President of the Product Management Association, Chair for Lassonde&rsquo;s Get Seeded program, and VP of the MBA Student Association.
+          <div className="hero-grid">
+            <div className="hero-copy">
+              <div className="eyebrow rv" style={{ animationDelay: ".05s" }}>
+                Builder · Connector · AI Enthusiast
+              </div>
+              <h1 className="hero-h1">
+                {heroWords.map((w, i) => (
+                  <Fragment key={i}>
+                    <span className="word-wrap" style={{ ["--wi" as string]: i } as React.CSSProperties}>
+                      {w.em ? <em>{w.t}</em> : w.t}
+                    </span>
+                    {i < heroWords.length - 1 ? " " : ""}
+                  </Fragment>
+                ))}
+              </h1>
+              <p className="sub rv" style={{ animationDelay: ".55s" }}>
+                I build tools, systems, and communities &mdash; and I&rsquo;m all-in<br />
+                on where AI is taking the work.
               </p>
-              <p style={{ color: "var(--muted)", marginTop: 10 }}>
-                Off the clock I&rsquo;m usually building something by hand or somewhere with bad cell service.
-              </p>
+              <div className="now rv" style={{ animationDelay: ".7s" }}>
+                <span className="dot" />
+                <div>
+                  <div className="label">Currently</div>
+                  <p>
+                    PM intern at Adobe, building Claude Skills, MCP workflows, and internal tooling, while finishing my MBA at Utah. President of the Product Management Association, Chair for Lassonde&rsquo;s Get Seeded program, and VP of the MBA Student Association.
+                  </p>
+                  <p style={{ color: "var(--muted)", marginTop: 10 }}>
+                    Off the clock I&rsquo;m usually building something by hand or somewhere with bad cell service.
+                  </p>
+                </div>
+              </div>
             </div>
+            <Reveal variant="right" delay={0.25}>
+              <div className="hero-portrait">
+                <Image
+                  src="/headshot.png"
+                  alt="Justin Millheim"
+                  fill
+                  sizes="(max-width:860px) 60vw, 320px"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
+              </div>
+            </Reveal>
           </div>
         </div>
       </header>
+
+      <Stats />
 
       <section className="section" style={{ paddingTop: "clamp(28px,5vw,56px)" }}>
         <div className="wrap">
@@ -50,21 +89,8 @@ export default function Home() {
               <h2 className="serif">What I&rsquo;m about</h2>
               <div className="rule" />
             </div>
-            <div className="modes">
-              {modes.map((m) => (
-                <ContentLink key={m.title} className="mode" to={m.href} kind="mode_card" label={m.title}>
-                  <div className="ic">
-                    <m.icon size={22} />
-                  </div>
-                  <h3>{m.title}</h3>
-                  <p>{m.line}</p>
-                  <span className="more">
-                    explore <ArrowRight size={13} />
-                  </span>
-                </ContentLink>
-              ))}
-            </div>
           </Reveal>
+          <ModeCards />
         </div>
       </section>
 
@@ -78,45 +104,66 @@ export default function Home() {
                 See recent projects →
               </ContentLink>
             </div>
-            <div className="grid">
-              {featured.map((p) => (
-                <ContentLink key={p.id} className="tile" to={p.post ? `/blog/${p.post}` : "/projects"} kind="featured_tile" label={p.title}>
-                  <span className="dom">{p.tags.join(" · ")}</span>
-                  <h4>{p.title}</h4>
-                  <p>{p.blurb}</p>
-                  <span className="go">
-                    <ArrowUpRight size={17} />
-                  </span>
-                </ContentLink>
-              ))}
-            </div>
           </Reveal>
+          <FeaturedTiles items={featured} />
         </div>
       </section>
 
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <Reveal>
+          <Reveal variant="scale">
             <Testimonials />
           </Reveal>
         </div>
       </section>
 
-      <section className="section">
-        <div className="wrap">
-          <Reveal>
-          <div className="cta">
-            <h2 className="serif">Got a project in mind?</h2>
-            <p>I love a good build. Tell me what you&rsquo;re working on and let&rsquo;s talk shop. Maybe I can help.</p>
-            <div className="cta-btns">
-              <ContactButton className="btn solid" source="home_cta">
-                <Mail size={15} /> Start a conversation
-              </ContactButton>
-              <ContentLink className="btn" to="/work" kind="cta_link" label="see_my_work">
-                See my work
-              </ContentLink>
+      {recent.length >= 2 && (
+        <section className="section section--alt">
+          <div className="wrap">
+            <Reveal>
+              <div className="sec-head">
+                <h2 className="serif">From the blog</h2>
+                <div className="rule" />
+                <ContentLink className="nav-link" to="/blog" kind="section_link" label="read_the_blog">
+                  Read the blog →
+                </ContentLink>
+              </div>
+            </Reveal>
+            <div className="feed">
+              {recent.map((l, i) => (
+                <Reveal key={l.slug} delay={i * 0.06}>
+                  <ContentLink className="entry" to={`/blog/${l.slug}`} kind="home_blog_entry" label={l.title}>
+                    <div className="d">{formatDate(l.date)}</div>
+                    <div className="entry-title serif">{l.title}</div>
+                    <p>{l.excerpt}</p>
+                  </ContentLink>
+                </Reveal>
+              ))}
             </div>
           </div>
+        </section>
+      )}
+
+      <section className="section">
+        <div className="wrap">
+          <Reveal variant="scale">
+            <div className="cta">
+              <h2 className="serif">Got a project in mind?</h2>
+              <p>I love a good build. Tell me what you&rsquo;re working on and let&rsquo;s talk shop. Maybe I can help.</p>
+              <div className="cta-btns">
+                <ContactButton className="btn solid" source="home_cta">
+                  <Mail size={15} /> Start a conversation
+                </ContactButton>
+                {scheduleUrl ? (
+                  <OutboundLink label="schedule" className="btn" href={scheduleUrl} target="_blank" rel="noopener noreferrer">
+                    <CalendarClock size={15} /> Book 30 minutes
+                  </OutboundLink>
+                ) : null}
+                <ContentLink className="btn" to="/work" kind="cta_link" label="see_my_work">
+                  See my work
+                </ContentLink>
+              </div>
+            </div>
           </Reveal>
         </div>
       </section>

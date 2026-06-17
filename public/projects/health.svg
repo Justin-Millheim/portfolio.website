@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Health Accountability Group">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#231B14"/>
+      <stop offset="1" stop-color="#15110D"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <circle cx="556" cy="64" r="150" fill="#C99A52" opacity="0.10"/>
+  <circle cx="556" cy="64" r="90" fill="#C99A52" opacity="0.08"/>
+  <rect x="44" y="86" width="40" height="3" rx="1.5" fill="#C99A52"/>
+  <text x="44" y="74" font-family="ui-monospace, 'JetBrains Mono', monospace" font-size="14" letter-spacing="3" fill="#C99A52">EXPERIENCES</text>
+  <text y="258" font-family="Georgia, 'Fraunces', serif" font-size="34" font-weight="500" fill="#F1E8DC"><tspan x="44" dy="0">Health Accountability</tspan><tspan x="44" dy="40">Group</tspan></text>
+  <text x="44" y="326" font-family="ui-monospace, 'JetBrains Mono', monospace" font-size="12" letter-spacing="2" fill="#9A8C7C">justinmillheim.com</text>
+</svg>
