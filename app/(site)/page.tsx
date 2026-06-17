@@ -11,6 +11,7 @@ import ContentLink from "@/components/ContentLink";
 import OutboundLink from "@/components/OutboundLink";
 import ModeCards from "@/components/home/ModeCards";
 import FeaturedTiles from "@/components/home/FeaturedTiles";
+import FeatureSpot from "@/components/home/FeatureSpot";
 import Stats from "@/components/home/Stats";
 
 // Headline split into words so each can rise on its own (per-word stagger).
@@ -26,6 +27,8 @@ const heroWords: { t: string; em?: boolean }[] = [
 
 export default function Home() {
   const featured = projects.filter((p) => p.featured);
+  const flagship = featured.find((p) => p.id === "pma-cc");
+  const tiles = featured.filter((p) => p.id !== "pma-cc");
   const recent = getLogPosts().slice(0, 3);
 
   return (
@@ -65,13 +68,15 @@ export default function Home() {
               </div>
             </div>
             <Reveal variant="right" delay={0.25}>
-              <div className="hero-portrait">
+              <div className="hero-figure">
+                <div className="hero-figure__panel" aria-hidden="true" />
                 <Image
-                  src="/headshot.png"
+                  className="hero-figure__img"
+                  src="/headshot-cutout.png"
                   alt="Justin Millheim"
-                  fill
-                  sizes="(max-width:860px) 60vw, 320px"
-                  style={{ objectFit: "cover" }}
+                  width={1020}
+                  height={1022}
+                  sizes="(max-width:860px) 60vw, 360px"
                   priority
                 />
               </div>
@@ -105,7 +110,17 @@ export default function Home() {
               </ContentLink>
             </div>
           </Reveal>
-          <FeaturedTiles items={featured} />
+          {flagship && (
+            <Reveal variant="up">
+              <FeatureSpot
+                p={flagship}
+                metric="A handoff-ready Notion operating system: pipeline, CRM, and live KPI dashboard, so each new presidency starts ahead."
+              />
+            </Reveal>
+          )}
+          <div style={{ marginTop: flagship ? "clamp(18px,2.5vw,28px)" : 0 }}>
+            <FeaturedTiles items={tiles} />
+          </div>
         </div>
       </section>
 
