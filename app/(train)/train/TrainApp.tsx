@@ -38,6 +38,16 @@ const GUEST_FLAG = "train.guest";
 const ONBOARDED_FLAG = "train.onboarded.v1";
 const NUDGE_FLAG = "train.guestNudge.v1";
 
+// Collision-proof id (two workouts saved in the same millisecond no longer
+// overwrite each other, which used to silently lose one).
+function uid(prefix: string): string {
+  const rand =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+  return `${prefix}_${rand}`;
+}
+
 export default function TrainApp() {
   const [entered, setEntered] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
@@ -165,8 +175,13 @@ export default function TrainApp() {
     const { data } = await sb.auth.getUser();
     const user = data.user;
     if (!user) { await enterGuest(); return; }
+    // Only fold on-device data into the cloud account if this device was actually
+    // being used as a guest — otherwise we'd merge a stranger's local data.
+    const wasGuest = typeof window !== "undefined" && window.localStorage.getItem(GUEST_FLAG) === "1";
     setActiveStore(new SupabaseStore(sb, user.id));
-    try { await migrateGuestDataToCloud(getStore()); } catch (e) { console.error(e); }
+    if (wasGuest) {
+      try { await migrateGuestDataToCloud(getStore()); } catch (e) { console.error(e); }
+    }
     if (typeof window !== "undefined") window.localStorage.removeItem(GUEST_FLAG);
     await finishEnter({ mode: "cloud", email: user.email ?? undefined });
   }
@@ -218,7 +233,7 @@ export default function TrainApp() {
       focus: s.focus, minutes: s.durationTarget, equipment: s.equipment,
       constraints: s.constraints, difficulty: s.plan.difficulty,
     });
-    setPlan({ ...s.plan, id: `plan_repeat_${Date.now()}`, createdAt: new Date().toISOString() });
+    setPlan({ ...s.plan, id: uid("plan_repeat"), createdAt: new Date().toISOString() });
     setScreen("preview");
   }
 
@@ -267,7 +282,8 @@ export default function TrainApp() {
     saveActive({ plan, pre: pre ?? undefined, snapshot, savedAt: new Date().toISOString() });
   }
   function handleRunComplete(logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) {
-    clearActive();
+    // NOTE: the resume cache is deliberately NOT cleared here — only after the
+    // workout is confirmed saved in handlePost — so it can't be lost in the gap.
     setRunnerInitial(null);
     setRunResult({ logs, totalSeconds, phaseTimes });
     setScreen("postcheck");
@@ -276,7 +292,7 @@ export default function TrainApp() {
     if (!plan || !runResult) return;
     const now = new Date().toISOString();
     const finished: WorkoutSession = {
-      id: `w_${Date.now()}`,
+      id: uid("w"),
       userId: account?.mode === "cloud" ? "cloud" : "local",
       date: now,
       focus: plan.focus,
@@ -292,7 +308,16 @@ export default function TrainApp() {
       phaseTimes: runResult.phaseTimes,
       completedAt: now,
     };
-    await getStore().save(finished);
+    try {
+      await getStore().save(finished);
+    } catch (e) {
+      // Don't strand the user or drop their work: keep the resume cache so they
+      // can retry, and tell them clearly.
+      console.error("[train] save failed", e);
+      toast("Couldn't save your workout — check your connection and tap again.");
+      return;
+    }
+    clearActive(); // safe now: it's durably stored
     setSession(finished);
     refresh();
     setScreen("summary");
@@ -300,9 +325,16 @@ export default function TrainApp() {
 
   async function handleToggleFavorite(favorite: boolean) {
     if (!session) return;
-    await getStore().setFavorite(session.id, favorite);
-    setSession({ ...session, favorite });
-    refresh();
+    const prevFavorite = session.favorite;
+    setSession({ ...session, favorite }); // optimistic
+    try {
+      await getStore().setFavorite(session.id, favorite);
+      refresh();
+    } catch (e) {
+      console.error("[train] favorite failed", e);
+      setSession({ ...session, favorite: prevFavorite }); // revert
+      toast("Couldn't update favorite — try again.");
+    }
   }
 
   function resetToHome() {
@@ -316,13 +348,12 @@ export default function TrainApp() {
 
   // Exiting mid-workout builds a summary from what was done (unfinished moves
   // marked skipped) and optionally saves it; the confirm itself lives in Runner.
-  function handleExit(mode: "save" | "discard", logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) {
-    clearActive();
+  async function handleExit(mode: "save" | "discard", logs: ExerciseLog[], totalSeconds: number, phaseTimes: PhaseTimes) {
     setRunnerInitial(null);
-    if (!plan) { resetToHome(); return; }
+    if (!plan) { clearActive(); resetToHome(); return; }
     const now = new Date().toISOString();
     const sess: WorkoutSession = {
-      id: `w_${Date.now()}`,
+      id: uid("w"),
       userId: account?.mode === "cloud" ? "cloud" : "local",
       date: now,
       focus: plan.focus,
@@ -337,7 +368,11 @@ export default function TrainApp() {
       phaseTimes,
       completedAt: now,
     };
-    if (mode === "save") getStore().save(sess).then(refresh).catch(console.error);
+    if (mode === "save") {
+      try { await getStore().save(sess); refresh(); }
+      catch (e) { console.error("[train] exit-save failed", e); toast("Couldn't sync that — it's on this device but cloud save failed."); }
+    }
+    clearActive();
     setRunResult(null);
     setSession(sess);
     setScreen("summary");
@@ -400,7 +435,7 @@ export default function TrainApp() {
         />
       )}
 
-      {screen === "postcheck" && <CheckIn variant="post" onSubmit={handlePost} />}
+      {screen === "postcheck" && plan && runResult && <CheckIn variant="post" onSubmit={handlePost} />}
 
       {screen === "summary" && session && (
         <Summary

@@ -40,7 +40,11 @@ export function loadPrefs(): ExercisePrefs {
 
 function writePrefs(p: ExercisePrefs) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(PREFS_KEY, JSON.stringify(p));
+  try {
+    window.localStorage.setItem(PREFS_KEY, JSON.stringify(p));
+  } catch {
+    throw new Error("Couldn't save on this device — storage may be full.");
+  }
 }
 
 // Pure toggles (no IO) — marking preferred clears any block on it, and vice
@@ -69,7 +73,13 @@ function readAll(): WorkoutSession[] {
 
 function writeAll(sessions: WorkoutSession[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, JSON.stringify(sessions));
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(sessions));
+  } catch {
+    // Surface a clear, catchable error instead of an unhandled rejection that
+    // would silently drop the just-finished workout.
+    throw new Error("Couldn't save on this device — storage may be full.");
+  }
 }
 
 // On-device adapter. Zero backend, zero cost. Data lives in this browser.
@@ -177,6 +187,19 @@ export function readLocalSessions(): WorkoutSession[] {
 }
 export function readLocalPrefs(): ExercisePrefs {
   return loadPrefs();
+}
+
+// Clear on-device history + prefs after a successful guest→cloud migration so
+// they can't be re-uploaded later (which would resurrect deleted cloud rows).
+// Leaves the in-progress resume cache alone.
+export function clearLocalData(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(KEY);
+    window.localStorage.removeItem(PREFS_KEY);
+  } catch {
+    /* non-fatal */
+  }
 }
 
 // ---- In-progress workout cache (resume where you left off) ----

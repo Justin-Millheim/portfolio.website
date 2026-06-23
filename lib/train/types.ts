@@ -130,6 +130,9 @@ export interface StepSnapshot {
   subMode: "work" | "rest" | "ready";
   timer: number | null;
   timerActive: boolean;
+  // Snapshot of the logs at this step so "Previous" can restore exactly what was
+  // recorded (un-doing a completed set rather than leaving it stale).
+  logs?: ExerciseLog[];
 }
 
 export interface RunnerSnapshot extends StepSnapshot {

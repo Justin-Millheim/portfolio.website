@@ -63,16 +63,23 @@ const FOCUS_MUSCLES: Record<Focus, MuscleGroup[]> = {
   cardio: ["cardio", "fullbody"],
 };
 
+function isEachSide(ex: Exercise): boolean {
+  return /each side|per side|each leg|each arm/i.test(ex.defaultReps);
+}
+
 // Rough seconds one working set takes, for time budgeting.
 function setWorkSecondsFromReps(ex: Exercise): number {
   if (ex.defaultDuration) return ex.defaultDuration;
   const m = ex.defaultReps.match(/\d+/);
-  const n = m ? parseInt(m[0], 10) : 12;
-  return Math.min(60, Math.max(20, Math.round(n * 2.6))); // ~2.6s per rep, clamped
+  let n = m ? parseInt(m[0], 10) : 12;
+  if (isEachSide(ex)) n *= 2; // "10 each side" is ~20 reps of work
+  return Math.min(80, Math.max(20, Math.round(n * 2.6))); // ~2.6s per rep, clamped
 }
 
 function itemSeconds(ex: Exercise, sets: number): number {
-  const work = ex.defaultDuration ?? setWorkSecondsFromReps(ex);
+  let work = ex.defaultDuration ?? setWorkSecondsFromReps(ex);
+  // A timed "each side" hold runs for both sides (the runner doubles it too).
+  if (ex.defaultDuration && isEachSide(ex)) work *= 2;
   return sets * work + (sets - 1) * ex.defaultRest + 12; // +12s transition/setup
 }
 
@@ -171,12 +178,20 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
     return null;
   }
 
+  // Scale the move cap with the session length so longer workouts actually fill
+  // the time (the old fixed cap of 8 capped every plan at ~29 min).
+  const maxCircuit = Math.min(16, Math.max(4, Math.round(input.minutes / 4)));
+
   // Fill the circuit. When the user has preferred moves, keep ~30-40% of the
   // circuit from the general/primary bank (a soft 60/40 split), the rest preferred.
-  while (circUsed < circuitBudget && circuit.length < 8) {
-    const total = circuit.length;
-    const genShare = total === 0 ? 0 : generalCount / total;
-    const wantGeneral = preferredBank.length === 0 || (generalBank.length > 0 && genShare < 0.35);
+  while (circUsed < circuitBudget && circuit.length < maxCircuit) {
+    // Aim for ~40% general / ~60% preferred BY COUNT. Take preferred first, then
+    // top up general whenever it's running below its target share of the circuit
+    // so far. (The old ratio test forced the first pick to be general and skewed
+    // the whole circuit toward general — the user's favorites were under-served.)
+    const wantGeneral =
+      preferredBank.length === 0 ||
+      (generalBank.length > 0 && generalCount < Math.round((circuit.length + 1) * 0.4));
     let pick = nextFrom(wantGeneral ? generalBank : preferredBank);
     let pickedGeneral = wantGeneral;
     if (!pick) { pick = nextFrom(wantGeneral ? preferredBank : generalBank); pickedGeneral = !wantGeneral; }
@@ -188,13 +203,37 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
     circUsed += pick.cost;
   }
 
-  // Top up if we under-filled (short workout / small pool), allowing muscle repeats.
+  // Top up toward a 3-move minimum if we under-filled (short workout / small
+  // pool), allowing muscle repeats — but still respect the time budget so a small
+  // pool can't blow the target duration.
   if (circuit.length < 3) {
     for (const ex of ordered) {
       if (used.has(ex.id)) continue;
-      circuit.push(toItem(ex, "circuit", sets));
+      const exSets = exSetsFor(ex);
+      const cost = itemSeconds(ex, exSets);
+      if (circuit.length >= 1 && circUsed + cost > circuitBudget + 45) continue;
+      circuit.push(toItem(ex, "circuit", exSets));
       used.add(ex.id);
+      circUsed += cost;
       if (circuit.length >= 4) break;
+    }
+  }
+
+  // Long sessions can exhaust the unique-move pool before the time budget — cycle
+  // back through the moves (never the same one twice in a row) to fill the rest.
+  if (ordered.length > 0) {
+    let guard = 0;
+    let i = 0;
+    while (circUsed < circuitBudget && circuit.length < maxCircuit && guard < ordered.length * 4) {
+      guard += 1;
+      const ex = ordered[i % ordered.length];
+      i += 1;
+      if (ex.id === circuit[circuit.length - 1]?.exerciseId) continue;
+      const exSets = exSetsFor(ex);
+      const cost = itemSeconds(ex, exSets);
+      if (circUsed + cost > circuitBudget + 45) continue;
+      circuit.push(toItem(ex, "circuit", exSets));
+      circUsed += cost;
     }
   }
 
@@ -219,9 +258,12 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
     const out: PlanItem[] = [];
     let spent = 0;
     for (const ex of ranked) {
-      if (spent >= budget && out.length >= 2) break;
+      const cost = (ex.defaultDuration ?? fallbackDur) + 6;
+      // Always take at least 1; otherwise stop before exceeding the phase budget
+      // (the old "min 2" floor guaranteed an overshoot on short workouts).
+      if (out.length >= 1 && spent + cost > budget) break;
       out.push(toItem(ex, phase, 1));
-      spent += (ex.defaultDuration ?? fallbackDur) + 6;
+      spent += cost;
       if (out.length >= maxCount) break;
     }
     return out;
@@ -251,6 +293,7 @@ export function generatePlan(input: GenerateInput): WorkoutPlan {
 export function swapItem(plan: WorkoutPlan, index: number, blocked: string[] = []): WorkoutPlan {
   const target = plan.items[index];
   if (!target) return plan;
+  const targetEx = getExercise(target.exerciseId);
   const allowed = allowedTiers(plan.equipment);
   const used = new Set(plan.items.map((i) => i.exerciseId));
   const blockedSet = new Set(blocked);
@@ -262,6 +305,9 @@ export function swapItem(plan: WorkoutPlan, index: number, blocked: string[] = [
       if (target.phase === "warmup") return e.type === "warmup" && equipConstraintOk(e, allowed, plan.constraints);
       if (target.phase === "cooldown") return e.type === "cooldown" && equipConstraintOk(e, allowed, plan.constraints);
       if (!isValid(e, plan.focus, allowed, plan.constraints)) return false;
+      // "Swap for a similar move" — keep the same kind (strength↔strength,
+      // cardio↔cardio) so a leg lift isn't replaced by shadow-boxing.
+      if (targetEx) return e.type === targetEx.type;
       return e.type === "strength" || e.type === "cardio";
     }),
     rnd

@@ -33,11 +33,29 @@ Only the public *anon* key reaches the browser — that's safe **because** RLS (
 `schema.sql`) gates every row. Never expose the `service_role` key. Redeploy
 after adding them in Vercel.
 
-## 3. (Optional) turn off email confirmation for easy testing
-Auth is **email + password**. By default Supabase requires email confirmation
-before the first sign-in. For quick solo testing, go to
-**Authentication → Providers → Email** and disable "Confirm email" — then
-sign-up logs you straight in. Leave it on for real use.
+## 3. Account creation — avoid the "need a Vercel account" trap ⚠️
+If new users get bounced to a **Vercel login page** when creating an account,
+it's one of these (all dashboard config, not code):
+
+1. **Turn OFF email confirmation (recommended for this app).**
+   **Authentication → Providers → Email → disable "Confirm email."** Then sign-up
+   logs the user straight in — no email round-trip, no link to misroute. This is
+   the simplest, friction-free fix and matches the "jump right in" intent.
+2. **Set the right URLs.** **Authentication → URL Configuration:**
+   - **Site URL** = `https://justinmillheim.com` (your real public domain — NOT a
+     `*.vercel.app` preview, which is Vercel-protected).
+   - **Redirect URLs** must include `https://justinmillheim.com/train`
+     (and `http://localhost:3000/train` for local dev). This is **required** for
+     password-reset and (if kept on) email-confirmation links to land back in the
+     app instead of a protected URL.
+3. **Disable Vercel Deployment Protection on the public site.**
+   **Vercel → Project → Settings → Deployment Protection → Vercel
+   Authentication = Disabled** for Production. If it's on, every visitor (and
+   every Supabase email link pointing at the deployment) hits a Vercel SSO wall —
+   exactly the "need a Vercel account to sign up" symptom.
+
+The app code already passes `emailRedirectTo: <origin>/train` on sign-up, so if
+you keep confirmation on, step 2's allowlist is what makes the link work.
 
 ## That's it
 With keys present, the gate shows **Sign in / Create account / Continue as

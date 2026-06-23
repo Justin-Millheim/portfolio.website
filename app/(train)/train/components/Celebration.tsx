@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 const CRITTERS = ["🦄", "🐘", "🦭", "🐧", "🦩", "🦔", "🐢", "🦫", "🦦", "🦙", "🦛", "🦨", "🐅", "🦥"];
 const HATS = ["🎉", "🕶️", "🎩", "👑", "🥳", "🎈"];
 const EXERCISE_MSGS = ["Good job!", "Keep it up!", "Nice work!", "Crushing it!", "Beast mode!", "On fire! 🔥", "You've got this!", "Boom! 💥", "Strong!"];
-const FINALE_MSGS = ["You killed it!", "Good work!", "Workout complete! 💪", "Absolute legend!", "That's a wrap! 🎉"];
+// Fires when the hard part (the circuit) is done and the cool-down begins — so
+// it celebrates the work, not the whole session (the calm "wrap" lives on the
+// summary screen). Wording must NOT claim the workout is over.
+const FINALE_MSGS = ["Circuit crushed! 💪", "Hard part's done!", "You powered through!", "Strong work — cool down 🧘", "That's the work! Now breathe."];
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
