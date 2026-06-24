@@ -12,16 +12,22 @@ export default function AuthGate({
   supabase,
   onGuest,
   onSignedIn,
+  initialMode,
+  initialNotice,
 }: {
   supabase: SupabaseClient | null;
   onGuest: () => void;
   onSignedIn: (userId: string) => void;
+  // Lets the app open the gate straight into a mode (e.g. "forgot") with a
+  // message — used when an expired reset link lands the user back here.
+  initialMode?: Mode;
+  initialNotice?: string;
 }) {
-  const [mode, setMode] = useState<Mode>("choose");
+  const [mode, setMode] = useState<Mode>(initialMode ?? "choose");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(initialNotice ?? null);
   const [loading, setLoading] = useState(false);
 
   function reset(next: Mode) { setMode(next); setError(null); setNotice(null); }

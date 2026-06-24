@@ -56,6 +56,16 @@ export default function TrainApp() {
   const [booting, setBooting] = useState(true);
   const [onboarded, setOnboarded] = useState(true);
   const [recovery, setRecovery] = useState(false);
+  // Captured during the first render (before the Supabase client consumes the
+  // URL) so an expired/used reset link shows a helpful message instead of
+  // silently dropping the user on the gate.
+  const [recoveryError, setRecoveryError] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const p = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    return p.get("error")
+      ? "That password-reset link expired or was already used — pop your email in below and I'll send a fresh one."
+      : null;
+  });
   const [pendingResume, setPendingResume] = useState<ActiveSession | null>(null);
   const [nudgeDismissed, setNudgeDismissed] = useState(true);
   const resumeAskedRef = useRef(false);
@@ -96,12 +106,25 @@ export default function TrainApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Strip an auth ERROR out of the address bar once we've read it (the success
+  // case is cleaned by Supabase itself after it consumes the recovery token —
+  // touching that here would race its async parse and break the session).
+  useEffect(() => {
+    if (typeof window === "undefined" || !recoveryError) return;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Detect a password-reset link landing -> show the "set new password" screen.
   useEffect(() => {
     const sb = getSupabase();
     if (!sb) return;
     const { data: sub } = sb.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") { setRecovery(true); setBooting(false); }
+      if (event === "PASSWORD_RECOVERY") {
+        setRecovery(true);
+        setRecoveryError(null);
+        setBooting(false);
+      }
     });
     return () => { sub.subscription.unsubscribe(); };
   }, []);
@@ -380,6 +403,18 @@ export default function TrainApp() {
 
   if (booting) return null;
   if (recovery) return <SetPasswordScreen supabase={getSupabase()} onDone={handleRecoveryDone} />;
+  // An expired/used reset link → open the gate in the resend form with a note.
+  if (recoveryError && !entered) {
+    return (
+      <AuthGate
+        supabase={getSupabase()}
+        onGuest={enterGuest}
+        onSignedIn={() => enterCloud()}
+        initialMode="forgot"
+        initialNotice={recoveryError}
+      />
+    );
+  }
   if (!onboarded) return <Onboarding onDone={handleOnboarded} />;
   if (!entered) {
     return <AuthGate supabase={getSupabase()} onGuest={enterGuest} onSignedIn={() => enterCloud()} />;

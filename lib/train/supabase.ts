@@ -9,7 +9,19 @@ export function getSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   _client = url && key
-    ? createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } })
+    ? createClient(url, key, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          // Parse auth tokens that arrive in the URL (password-recovery links).
+          detectSessionInUrl: true,
+          // Implicit flow puts the recovery token in the URL fragment, so a reset
+          // link works even when opened on a DIFFERENT device than it was
+          // requested from (PKCE would need a code-verifier from the original
+          // browser and silently break cross-device resets).
+          flowType: "implicit",
+        },
+      })
     : null;
   return _client;
 }
