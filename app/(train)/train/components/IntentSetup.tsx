@@ -77,10 +77,10 @@ export default function IntentSetup({
         )}
       </div>
       <h1 style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px", lineHeight: 1.15 }}>
-        Today&apos;s <span style={{ color: "var(--t-flame)" }}>Workout</span>
+        What are we <span style={{ color: "var(--t-flame)" }}>training</span> today?
       </h1>
       <p style={{ color: "var(--t-muted)", fontSize: 14, margin: "0 0 14px" }}>
-        Tell me what you&apos;re feeling — I&apos;ll build the plan.
+        Tell me what you&apos;re feeling and I&apos;ll build the whole thing — warm‑up, workout, and cool‑down.
       </p>
 
       {account && (
@@ -170,7 +170,7 @@ export default function IntentSetup({
       </div>
 
       <button className="t-btn t-btn-primary" onClick={onGenerate}>
-        Build my plan →
+        Build it, Trent →
       </button>
     </div>
   );

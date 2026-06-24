@@ -124,19 +124,19 @@ export default function History({
   );
 }
 
-// Compute consecutive-week streak (weeks containing >=1 workout, counting back from this week).
+// Compute consecutive-week streak (weeks containing >=1 workout, counting back
+// from this week). Uses a single continuous week index anchored to the epoch so
+// it never breaks across a year boundary (the old per-year math reset the streak
+// every New Year).
+const WEEK_MS = 7 * 864e5;
+function weekIndex(ms: number): number {
+  return Math.floor(ms / WEEK_MS);
+}
 function computeStreak(sessions: WorkoutSession[]): number {
   if (sessions.length === 0) return 0;
   const weeks = new Set<number>();
-  for (const s of sessions) {
-    const d = new Date(s.date);
-    const onejan = new Date(d.getFullYear(), 0, 1);
-    const week = Math.floor((d.getTime() - onejan.getTime()) / (7 * 864e5)) + d.getFullYear() * 53;
-    weeks.add(week);
-  }
-  const now = new Date();
-  const onejan = new Date(now.getFullYear(), 0, 1);
-  let cur = Math.floor((now.getTime() - onejan.getTime()) / (7 * 864e5)) + now.getFullYear() * 53;
+  for (const s of sessions) weeks.add(weekIndex(new Date(s.date).getTime()));
+  let cur = weekIndex(Date.now());
   let streak = 0;
   while (weeks.has(cur)) {
     streak++;

@@ -244,7 +244,9 @@ export default function Runner({
   }
 
   function pushStep() {
-    setStepHistory((h) => [...h, { itemIndex, currentSet, subMode, timer, timerActive }]);
+    // Capture the logs as they stand *before* this step's mutation so "Previous"
+    // can roll the recorded sets back, not just the cursor position.
+    setStepHistory((h) => [...h, { itemIndex, currentSet, subMode, timer, timerActive, logs }]);
   }
 
   function recordSet(completed: boolean) {
@@ -303,13 +305,17 @@ export default function Runner({
       onComplete(logs, Math.round(totalRef.current), roundedBuckets());
       return;
     }
-    // Celebration timing: a cheer between main moves and at the end of warm-up;
-    // the big finale fires once, when the cool-down phase is first reached.
+    // Celebration timing: only ever celebrate WORK the user actually did, and
+    // never before the real workout starts. A small cheer fires between two
+    // completed circuit moves; the bigger "circuit done" celebration fires once,
+    // when an actually-completed circuit hands off to the cool-down. No cheer at
+    // the warm-up→circuit boundary (that read as "congrats before you started"),
+    // and nothing fires on a skip.
     const pA = items[itemIndex].phase;
     const pB = items[nextIdx].phase;
-    if (pB === "cooldown" && pA !== "cooldown") {
+    if (completed && pA === "circuit" && pB === "cooldown") {
       setFinaleCheer((c) => c + 1);
-    } else if (completed && ((pA === "warmup" && pB === "circuit") || (pA === "circuit" && pB === "circuit"))) {
+    } else if (completed && pA === "circuit" && pB === "circuit") {
       setCheer((c) => c + 1);
     }
     enterReady(nextIdx);
@@ -327,6 +333,15 @@ export default function Runner({
 
   function jumpTo(idx: number) {
     pushStep();
+    // Skipping ahead leaves the exercises in between undone — mark any that
+    // weren't worked as skipped so the summary/history stats stay honest.
+    setLogs((prev) => {
+      const next = prev.map((l) => ({ ...l, sets: l.sets.map((s) => ({ ...s })) }));
+      for (let i = itemIndex; i < idx && i < next.length; i++) {
+        if (!next[i].sets.some((s) => s.completed)) next[i].skipped = true;
+      }
+      return next;
+    });
     setItemIndex(idx);
     resetForItem(idx);
   }
@@ -338,6 +353,7 @@ export default function Runner({
     setItemIndex(last.itemIndex);
     setCurrentSet(last.currentSet);
     setSubMode(last.subMode);
+    if (last.logs) setLogs(last.logs); // roll recorded sets back to that step
     disarmTimer(last.timer);
   }
 

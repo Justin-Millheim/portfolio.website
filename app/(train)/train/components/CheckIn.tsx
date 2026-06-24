@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CheckIn as CheckInType } from "@/lib/train/types";
 import { MOODS, MOOD_LABEL } from "@/lib/train/format";
+import TrentSays from "./TrentSays";
 
 // Shared pre/post "how are you feeling" capture.
 export default function CheckIn({
@@ -20,13 +21,11 @@ export default function CheckIn({
 
   return (
     <div className="t-wrap t-fadein" style={{ paddingTop: 48 }}>
-      <div style={{ fontSize: 44, textAlign: "center" }}>{pre ? "👋" : "🎉"}</div>
-      <h1 style={{ fontSize: 25, fontWeight: 700, textAlign: "center", margin: "10px 0 4px" }}>
-        {pre ? "Before we start" : "How'd that feel?"}
-      </h1>
-      <p style={{ color: "var(--t-muted)", fontSize: 14, textAlign: "center", margin: "0 0 28px" }}>
-        {pre ? "A quick check-in so you can track how you feel over time." : "Log it so future-you can see the trend."}
-      </p>
+      <TrentSays size={72} style={{ marginBottom: 26 }}>
+        {pre
+          ? "Trent here. Before we pounce — how's your energy today? I'll match the intensity to how you're feeling."
+          : "Strong work out there! How'd that feel? Be honest — it helps me plan your next one."}
+      </TrentSays>
 
       <div className="t-card" style={{ marginBottom: 16 }}>
         <div className="t-eyebrow" style={{ marginBottom: 12 }}>{pre ? "Energy right now" : "Energy after"}</div>

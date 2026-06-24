@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import Trent from "./Trent";
 
 type Mode = "choose" | "signin" | "signup" | "forgot";
 
@@ -33,17 +34,28 @@ export default function AuthGate({
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        // If email confirmation is enabled in Supabase, send the user back to the
+        // app (not a default/preview URL) after they confirm.
+        const emailRedirectTo = typeof window !== "undefined" ? `${window.location.origin}/train` : undefined;
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo } });
         if (error) throw error;
         if (data.session?.user) onSignedIn(data.session.user.id);
-        else setNotice("Account created. Check your email to confirm, then sign in.");
+        else setNotice("Account created! Check your email to confirm, then sign in. (If you don't get an email, you can sign in right away.)");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (data.session?.user) onSignedIn(data.session.user.id);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      const msg = e instanceof Error ? e.message : "Something went wrong.";
+      // Friendlier guidance for the most common signup/sign-in snag.
+      if (/email not confirmed/i.test(msg)) {
+        setError("Your email isn't confirmed yet — check your inbox for the confirmation link, then sign in.");
+      } else if (/invalid login credentials/i.test(msg)) {
+        setError("That email and password don't match. Double-check, or create an account.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -71,12 +83,12 @@ export default function AuthGate({
     <div className="t-wrap t-fadein" style={{ paddingTop: 64, maxWidth: 420 }}>
       <div className="t-accent-tr" />
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontSize: 52 }}>🐯</div>
-        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "8px 0 4px" }}>
+        <Trent size={120} style={{ margin: "0 auto" }} />
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 4px" }}>
           Trent the <span style={{ color: "var(--t-flame)" }}>Tiger Trainer</span>
         </h1>
         <p style={{ color: "var(--t-muted)", fontSize: 14, margin: 0 }}>
-          Your guided workout companion.
+          I&apos;m your coach. Sign in to save our progress — or jump in as a guest.
         </p>
       </div>
 

@@ -134,7 +134,7 @@ export default function PlanPreview({
           ← Change
         </button>
         <h1 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 4px" }}>
-          Your <span style={{ color: "var(--t-flame)" }}>{FOCUS_LABEL[plan.focus]}</span> plan
+          I built you a <span style={{ color: "var(--t-flame)" }}>{FOCUS_LABEL[plan.focus]}</span> plan
         </h1>
         <p className="t-mono" style={{ color: "var(--t-muted)", fontSize: 12, margin: "0 0 16px" }}>
           ~{plan.durationTarget} MIN · {EQUIPMENT_LABEL[plan.equipment].toUpperCase()} · {plan.items.length} MOVES
@@ -142,7 +142,7 @@ export default function PlanPreview({
 
         <div style={{ background: "var(--t-surface2)", border: "1px solid var(--t-line)", borderRadius: 12, padding: "12px 14px", marginBottom: 20 }}>
           <p style={{ fontSize: 13, color: "var(--t-muted)", margin: 0, lineHeight: 1.6 }}>
-            Review and approve today&apos;s plan. Tap{" "}
+            Here&apos;s what I&apos;ve got for you — make it yours. Tap{" "}
             <span aria-hidden style={{ display: "inline-flex", verticalAlign: "middle", width: 22, height: 22, borderRadius: "50%", background: "#1d1d1d", border: "1px solid #333", color: "var(--t-amber)", alignItems: "center", justifyContent: "center", fontSize: 13 }}>⟳</span>{" "}
             to swap a move, or drag{" "}
             <span aria-hidden style={{ verticalAlign: "middle", color: "var(--t-muted)", fontSize: 15 }}>⠿</span>{" "}
